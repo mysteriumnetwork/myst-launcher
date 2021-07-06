@@ -1,0 +1,41 @@
+{
+    "FixedFileInfo": {
+        "FileVersion": {
+            "Major": 1,
+            "Minor": 0,
+            "Patch": 0,
+            "Build": 0
+        },
+        "ProductVersion": {
+            "Major": 1,
+            "Minor": 0,
+            "Patch": 0,
+            "Build": 0
+        },
+        "FileFlagsMask": "3f",
+        "FileFlags ": "00",
+        "FileOS": "040004",
+        "FileType": "01",
+        "FileSubType": "00"
+    },
+    "StringFileInfo": {
+        "Comments": "Mysterium Network Exit Node Installer / Launcher",
+        "CompanyName": "BlockDev AG",
+        "FileDescription": "Installer",
+        "FileVersion": "v1.0.0.0",
+        "InternalName": "myst-node-launcher.exe",
+        "LegalCopyright": "Copyright (c) 2021",
+        "LegalTrademarks": "",
+        "OriginalFilename": "",
+        "PrivateBuild": "",
+        "ProductName": "myst-node-launcher",
+        "ProductVersion": "v1.0.0.0",
+        "SpecialBuild": ""
+    },
+    "VarFileInfo": {
+        "Translation": {
+            "LangID": "0409",
+            "CharsetID": "04B0"
+        }
+    },
+}
