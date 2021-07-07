@@ -24,9 +24,9 @@ func main() {
 	mod.inTray = false
 	if len(os.Args) > 1 {
 		mod.inTray = os.Args[1] == flagTray
+
 		if os.Args[1] == flagInstall {
 			fmt.Println(flagInstall, checkExe())
-
 			installExe()
 			return
 		}

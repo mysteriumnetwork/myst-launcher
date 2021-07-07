@@ -109,6 +109,9 @@ func createDialogue() {
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
+	if mod.inTray {
+		mod.mw.SetVisible(false)
+	}
 
 	var err error
 	mod.lv, err = NewLogView(mod.mw)

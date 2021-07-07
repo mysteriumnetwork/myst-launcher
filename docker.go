@@ -55,11 +55,13 @@ func checkSystemsAndTry() {
 			mod.lbDocker.SetText("Starting..")
 			mod.lbContainer.SetText("-")
 
+			if isProcessRunning("Docker Desktop.exe") {
+				break
+			}
 			dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
-			cmd := exec.Command(dd)
+			cmd := exec.Command(dd, "-Autostart")
 			if err := cmd.Start(); err != nil {
-				//log.Printf("Failed to start cmd: %v", err)
-				//return
+				log.Printf("Failed to start cmd: %v", err)
 			}
 			break
 
@@ -68,7 +70,7 @@ func checkSystemsAndTry() {
 			mod.WaitDialogueComplete()
 			mod.SetState(ST_INSTALL_INPROGRESS)
 
-			if !!CheckWindowsVersion() {
+			if !CheckWindowsVersion() {
 				mod.lbInstallationState2.SetText("Reason:\r\nYou must be running Windows 10 version 1607 (the Anniversary update) or above.")
 				mod.SetState(ST_INSTALL_ERR)
 				mod.WaitDialogueComplete()
@@ -90,8 +92,6 @@ func checkSystemsAndTry() {
 
 					err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, mod.PrintProgress)
 					if err != nil {
-						//log.Println("Download failed")
-
 						mod.lbInstallationState2.SetText("Reason:\r\nDownload failed")
 						mod.SetState(ST_INSTALL_ERR)
 						mod.WaitDialogueComplete()

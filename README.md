@@ -34,3 +34,7 @@ On the right side of the window, system information is displayed. Make sure the 
 
   `signtool verify /pa /v "c:\path\to\myst-node-launcher.exe"`
   
+
+# TODO
+* show notification when container is ready
+* enable open action 

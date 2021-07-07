@@ -111,12 +111,11 @@ func runMeElevated(exe string, args string, cwd string) error {
 }
 
 func SwitchToThisWindow(hwnd win.HWND, f bool) int32 {
-	ret, _, e := syscall.Syscall(switchToThisWindow.Addr(), 2,
+	ret, _, _ := syscall.Syscall(switchToThisWindow.Addr(), 2,
 		uintptr(hwnd),
 		uintptr(win.BoolToBOOL(f)),
 		0,
 	)
-	fmt.Println(e)
 	return int32(ret)
 }
 
@@ -233,6 +232,32 @@ func CheckWindowsVersion() bool {
 		return true
 	} else if v.MajorVersion > 10 {
 		return true
+	}
+	return false
+}
+
+// unsafe.Sizeof(windows.ProcessEntry32{})
+const processEntrySize = 568
+
+func isProcessRunning(name string) bool {
+	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
+	if e != nil {
+		return false
+	}
+	defer windows.CloseHandle(h)
+
+	p := windows.ProcessEntry32{Size: processEntrySize}
+	for {
+		e := windows.Process32Next(h, &p)
+		if e != nil {
+			break
+		}
+		s := windows.UTF16ToString(p.ExeFile[:])
+
+		if s == name {
+			println(s)
+			return true
+		}
 	}
 	return false
 }
