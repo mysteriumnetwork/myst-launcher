@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"unsafe"
 
@@ -22,6 +23,15 @@ import (
 	"github.com/go-ole/go-ole/oleutil"
 	"github.com/lxn/win"
 	"golang.org/x/sys/windows"
+	"golang.org/x/sys/windows/registry"
+)
+
+var (
+	modkernel32   = syscall.NewLazyDLL("kernel32.dll")
+	procCopyFileW = modkernel32.NewProc("CopyFileW")
+
+	user32DLL          = windows.NewLazyDLL("user32.dll")
+	switchToThisWindow = user32DLL.NewProc("SwitchToThisWindow")
 )
 
 func runProc(lv *LogView, name string, args []string) int {
@@ -101,9 +111,6 @@ func runMeElevated(exe string, args string, cwd string) error {
 }
 
 func SwitchToThisWindow(hwnd win.HWND, f bool) int32 {
-	user32DLL := windows.NewLazyDLL("user32.dll")
-	switchToThisWindow := user32DLL.NewProc("SwitchToThisWindow")
-
 	ret, _, e := syscall.Syscall(switchToThisWindow.Addr(), 2,
 		uintptr(hwnd),
 		uintptr(win.BoolToBOOL(f)),
@@ -142,11 +149,6 @@ func CurrentGroupMembership(group string) bool {
 	is, _ := t.IsMember(sid)
 	return is
 }
-
-var (
-	modkernel32   = syscall.NewLazyDLL("kernel32.dll")
-	procCopyFileW = modkernel32.NewProc("CopyFileW")
-)
 
 // CopyFile wraps windows function CopyFileW
 func CopyFile(src, dst string, failIfExists bool) error {
@@ -210,4 +212,27 @@ func installExe() {
 
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "mysterium node launcher.lnk")
 	CreateShortcut(shcDst, dst+"\\"+exe)
+}
+
+func CheckWindowsVersion() bool {
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, registry.QUERY_VALUE)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer k.Close()
+
+	releaseIdStr, _, err := k.GetStringValue("ReleaseId")
+	if err != nil {
+		log.Fatal(err)
+	}
+	releaseId, _ := strconv.Atoi(releaseIdStr)
+
+	v := windows.RtlGetVersion()
+	fmt.Println(v.MajorVersion)
+	if v.MajorVersion == 10 && releaseId >= 1906 {
+		return true
+	} else if v.MajorVersion > 10 {
+		return true
+	}
+	return false
 }

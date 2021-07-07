@@ -7,19 +7,20 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
-	"golang.org/x/sys/windows"
-
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
+	"golang.org/x/sys/windows"
 )
 
 const (
-	docker = "docker"
+	docker = "docker_"
 	group  = "docker-users"
 )
 
@@ -27,15 +28,11 @@ func checkSystemsAndTry() {
 	mod.Invalidate()
 	dckr := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
 
-_begin:
-	for i := 0; i < 10000; i++ {
-
-		//time.Sleep(5 * time.Second)
+	for {
 		ex := runProc(mod.lv, dckr, []string{"ps"})
 		switch ex {
 		case 0:
 			mod.lbDocker.SetText("Running [OK]")
-			//mod.lbContainer.SetText("Starting...")
 
 			ex := runProc(mod.lv, dckr, strings.Split("container start myst", " "))
 			switch ex {
@@ -50,7 +47,7 @@ _begin:
 				ex := runProc(mod.lv, dckr, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " "))
 				if ex == 0 {
 					mod.lbDocker.SetText("Running [OK]")
-					goto _begin
+					continue
 				}
 			}
 
@@ -65,55 +62,79 @@ _begin:
 				//return
 			}
 			break
-			//fmt.Println(dd)
-			//ex := runProc(lv, dd, nil)
-			//fmt.Println(ex)
-			//goto _begin
 
 		default:
 			mod.SetState(INSTALL_NEED)
 			mod.WaitDialogueComplete()
+			mod.SetState(INSTALL_INPROGRESS)
+
+			if !CheckWindowsVersion() {
+				mod.lbInstallationState2.SetText("Reason:\r\nYou must be running Windows 10 version 1607 (the Anniversary update) or above.")
+				mod.SetState(INSTALL_ERR)
+				mod.WaitDialogueComplete()
+				return
+			}
 
 			list := []struct{ url, name string }{
 				{"https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe", "DockerDesktopInstaller.exe"},
 				{"https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi", "wsl_update_x64.msi"},
 			}
-			for _, v := range list {
+			for fi, v := range list {
 				if _, err := os.Stat(os.Getenv("TMP") + v.name); err != nil {
+
+					mod.lbInstallationState2.SetText(fmt.Sprintf("%d of %d: %s", fi+1, len(list), v.name))
+					mod.PrintProgress(0)
+
 					err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, mod.PrintProgress)
 					if err != nil {
-						log.Println("Download failed")
+						//log.Println("Download failed")
+
+						mod.lbInstallationState2.SetText("Reason:\r\nDownload failed")
+						mod.SetState(INSTALL_ERR)
+						mod.WaitDialogueComplete()
+						return
 					}
 				}
 			}
 
-			log.Println("msiexec.exe /I wsl_update_x64.msi /quiet")
 			err := runMeElevated("msiexec.exe", "/I wsl_update_x64.msi /quiet", os.Getenv("TMP"))
 			if err != nil {
-				log.Println(err)
+				mod.lbInstallationState2.SetText("Reason:\r\nCommand failed: msiexec.exe /I wsl_update_x64.msi")
+				mod.SetState(INSTALL_ERR)
+				mod.WaitDialogueComplete()
+				return
 			}
 			ex := runProc(mod.lv, os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", []string{"install", "--quiet"})
 			if ex != 0 {
-				log.Println("DockerDesktopInstaller failed", ex)
-				goto _begin
+				mod.lbInstallationState2.SetText("Reason:\r\nDockerDesktopInstaller failed")
+				mod.SetState(INSTALL_ERR)
+				mod.WaitDialogueComplete()
+				return
 			}
 
 			if !checkExe() {
 				installExe()
 			}
 			if !CurrentGroupMembership(group) {
-				// request to logout
+				// request to logout //
 
-				walk.MsgBox(mod.mw, "Installation", "Log of from the current session to finish the installation.", walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
-				windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
+				ret := walk.MsgBox(mod.mw, "Installation", "Log of from the current session to finish the installation.", walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
+				if ret == win.IDYES {
+					windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
+					return
+				}
+				mod.SetState(INSTALL_ERR)
+				mod.lbInstallationState2.SetText("Log of from the current session to finish the installation.")
+				mod.WaitDialogueComplete()
 				return
 			}
 
 			mod.SetState(INSTALL_FIN)
 			mod.WaitDialogueComplete()
 			mod.SetState(0)
-			goto _begin
+			continue
 		}
+
 		time.Sleep(10000 * time.Millisecond)
 	}
 }

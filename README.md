@@ -3,9 +3,9 @@
 ## Requirements
 * You must be running Windows 10 version 1607 (the Anniversary update) or above.
 * WSL only runs on 64-bit versions of Windows 10. 32-bit versions are not supported.
-  To check that the computer meet the requirements, follow these steps:
 
 To check that the computer meet the requirements, follow these steps:
+
 1. Open your Settings. You can do this by clicking the gear icon on the Start menu, or by opening the Power User Tasks menu and choosing Settings.
 1. In the Settings window, choose System.
 2. On the left side of the System window, choose About.

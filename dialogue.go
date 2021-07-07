@@ -26,11 +26,7 @@ func createDialogue() {
 			//MarginsZero: true,
 		},
 		Children: []Widget{
-			//CustomWidget{},
-			//CustomWidget{},
 			VSpacer{RowSpan: 1},
-			//Composite{},
-			//Composite{
 
 			GroupBox{
 				Visible: false,
@@ -50,9 +46,13 @@ func createDialogue() {
 						Text:     "- installation info -",
 						AssignTo: &mod.lbInstallationState,
 					},
+					Label{
+						Text:     "-",
+						AssignTo: &mod.lbInstallationState2,
+					},
 					ProgressBar{
 						AssignTo: &mod.progressBar,
-						Visible:  false,
+						Enabled:  false,
 						Value:    50,
 					},
 					VSpacer{Row: 1},
@@ -101,16 +101,6 @@ func createDialogue() {
 						},
 						ColumnSpan: 2,
 					},
-					//PushButton{
-					//	Enabled:  false,
-					//	AssignTo: &mod.btnCmd2,
-					//	Text:     "Install",
-					//	OnClicked: func() {
-					//		fmt.Println(os.Args[0])
-					//		runMeElevated(os.Args[0], flagInstall, "")
-					//	},
-					//	ColumnSpan: 2,
-					//},
 					VSpacer{ColumnSpan: 2},
 				},
 			},

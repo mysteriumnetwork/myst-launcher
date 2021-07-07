@@ -29,8 +29,9 @@ type Model struct {
 	lbContainer *walk.Label
 
 	// inst
-	lbInstallationState *walk.Label
-	progressBar         *walk.ProgressBar
+	lbInstallationState  *walk.Label
+	lbInstallationState2 *walk.Label
+	progressBar          *walk.ProgressBar
 
 	// common
 	btnCmd  *walk.PushButton
@@ -40,10 +41,11 @@ type Model struct {
 }
 
 const (
-	STATUS_FRAME = 0
-	INSTALL_NEED = -1
-	INSTALL_     = -2
-	INSTALL_FIN  = -3
+	STATUS_FRAME       = 0
+	INSTALL_NEED       = -1
+	INSTALL_INPROGRESS = -2
+	INSTALL_FIN        = -3
+	INSTALL_ERR        = -4
 )
 
 var mod Model
@@ -53,16 +55,13 @@ func init() {
 }
 
 func (m *Model) ShowMain() {
-	m.mw.Show()
-	win.BringWindowToTop(m.mw.Handle())
-
 	win.ShowWindow(m.mw.Handle(), win.SW_SHOW)
 	win.ShowWindow(m.mw.Handle(), win.SW_SHOWNORMAL)
-	//win.ShowWindow(m.mw.Handle(), win.SW_RESTORE)
 
-	//win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-	//win.SetWindowPos(m.mw.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-	//win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+	SwitchToThisWindow(m.mw.Handle(), false)
+	win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+	win.SetWindowPos(m.mw.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+	win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 }
 
 func (m *Model) SetState(s int) {
@@ -77,7 +76,6 @@ func (m *Model) Invalidate() {
 	if m.state == 0 {
 		m.mw.Children().At(frameI).SetVisible(false)
 		m.mw.Children().At(frameS).SetVisible(true)
-
 	}
 	if m.state == INSTALL_NEED {
 		m.mw.Children().At(frameI).SetVisible(true)
@@ -88,37 +86,38 @@ func (m *Model) Invalidate() {
 		m.btnCmd.SetText("Install")
 		m.btnCmd.SetFocus()
 
-		m.lbInstallationState.SetText("Docker desktop is requred to run exit node.\r\n" +
-			"Press button to begin installation.")
+		m.lbInstallationState.SetText("Docker desktop is required to run exit node.")
+		m.lbInstallationState2.SetText("Press button to begin installation.")
 
 		m.lbDocker.SetText("OK")
 	}
-	if m.state == INSTALL_ {
+	if m.state == INSTALL_INPROGRESS {
 		m.btnCmd.SetEnabled(false)
-		m.lbInstallationState.SetText("Downloading installation packages.\r\n" + "_")
+		m.lbInstallationState.SetText("Downloading installation packages.")
+		m.lbInstallationState2.SetText("-")
 	}
 	if m.state == INSTALL_FIN {
-		m.lbInstallationState.SetText("Installation successfully finished!\r\n_")
+		m.lbInstallationState.SetText("Installation successfully finished!")
 		m.btnCmd.SetEnabled(true)
 		m.btnCmd.SetText("Finish !")
+	}
+	if m.state == INSTALL_ERR {
+		m.lbInstallationState.SetText("Installation failed")
+		m.btnCmd.SetEnabled(true)
+		m.btnCmd.SetText("Exit installer")
 	}
 }
 
 func (m *Model) BtnOnClick() {
-	fmt.Println("BtnOnClick", m.state)
+	m.dlg <- 0
 
-	if m.state == INSTALL_FIN {
-		//m.SetState(0)
-		m.dlg <- 0
-	}
-	if m.state == INSTALL_NEED {
-		m.SetState(INSTALL_)
-		m.dlg <- 0
+	if m.state == INSTALL_ERR {
+		// can be called only from the main thread
+		walk.App().Exit(0)
 	}
 }
 
 func (m *Model) WaitDialogueComplete() {
-	//log.Println("WaitDialogueComplete>")
 	<-m.dlg
 }
 
