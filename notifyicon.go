@@ -1,6 +1,9 @@
-// Copyright 2011 The Walk Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 package main
 
@@ -36,10 +39,8 @@ func createNotifyIcon() {
 		}
 		mod.mw.Show()
 	})
-	ni.MessageClicked().Attach(func() {
-	})
+	ni.MessageClicked().Attach(func() {})
 
-	// We put an exit action into the context menu.
 	exitAction := walk.NewAction()
 	if err := exitAction.SetText("E&xit"); err != nil {
 		log.Fatal(err)

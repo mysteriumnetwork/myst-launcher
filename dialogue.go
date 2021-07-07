@@ -1,9 +1,13 @@
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"os/exec"
 
 	"github.com/lxn/walk"
@@ -13,7 +17,7 @@ import (
 func createDialogue() {
 	if err := (MainWindow{
 		AssignTo: &mod.mw,
-		Title:    "Mysterium Exit Node launcher",
+		Title:    "Mysterium Exit Node Launcher",
 		MinSize:  Size{320, 240},
 		Size:     Size{400, 600},
 		Icon:     mod.icon,
@@ -97,16 +101,16 @@ func createDialogue() {
 						},
 						ColumnSpan: 2,
 					},
-					PushButton{
-						Enabled:  false,
-						AssignTo: &mod.btnCmd2,
-						Text:     "Install",
-						OnClicked: func() {
-							fmt.Println(os.Args[0])
-							runMeElevated(os.Args[0], flagInstall, "")
-						},
-						ColumnSpan: 2,
-					},
+					//PushButton{
+					//	Enabled:  false,
+					//	AssignTo: &mod.btnCmd2,
+					//	Text:     "Install",
+					//	OnClicked: func() {
+					//		fmt.Println(os.Args[0])
+					//		runMeElevated(os.Args[0], flagInstall, "")
+					//	},
+					//	ColumnSpan: 2,
+					//},
 					VSpacer{ColumnSpan: 2},
 				},
 			},

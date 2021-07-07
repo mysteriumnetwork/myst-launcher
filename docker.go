@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	docker = "docker_"
+	docker = "docker"
+	group  = "docker-users"
 )
 
 func checkSystemsAndTry() {
@@ -100,7 +101,7 @@ _begin:
 			if !checkExe() {
 				installExe()
 			}
-			if !CurrentGroupMembership("docker-users_") {
+			if !CurrentGroupMembership(group) {
 				// request to logout
 
 				walk.MsgBox(mod.mw, "Installation", "Log of from the current session to finish the installation.", walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
