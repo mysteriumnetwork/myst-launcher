@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 package main
 
 import (
@@ -7,9 +13,14 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
+	"path"
+	"path/filepath"
 	"syscall"
+	"unsafe"
 
+	"github.com/go-ole/go-ole"
+	"github.com/go-ole/go-ole/oleutil"
+	"github.com/lxn/win"
 	"golang.org/x/sys/windows"
 )
 
@@ -73,22 +84,6 @@ func runProc(lv *LogView, name string, args []string) int {
 	return exitCode
 }
 
-func env() map[string]string {
-	env := make(map[string]string)
-	for _, e := range os.Environ() {
-		j := strings.Index(e, "=")
-		if j == 0 {
-			continue
-		}
-		name := e[0:j]
-		value := strings.Replace(e[j+1:], ";", "\r\n", -1)
-
-		//fmt.Println("nv", name, value)
-		env[name] = value
-	}
-	return env
-}
-
 func runMeElevated(exe string, args string, cwd string) error {
 	verb := "runas"
 	//cwd, _ := os.Getwd()
@@ -103,4 +98,116 @@ func runMeElevated(exe string, args string, cwd string) error {
 
 	err := windows.ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd)
 	return err
+}
+
+func SwitchToThisWindow(hwnd win.HWND, f bool) int32 {
+	user32DLL := windows.NewLazyDLL("user32.dll")
+	switchToThisWindow := user32DLL.NewProc("SwitchToThisWindow")
+
+	ret, _, e := syscall.Syscall(switchToThisWindow.Addr(), 2,
+		uintptr(hwnd),
+		uintptr(win.BoolToBOOL(f)),
+		0,
+	)
+	fmt.Println(e)
+	return int32(ret)
+}
+
+func CreateShortcut(dst, target string) error {
+	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
+	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
+	if err != nil {
+		return err
+	}
+	defer oleShellObject.Release()
+	wshell, err := oleShellObject.QueryInterface(ole.IID_IDispatch)
+	if err != nil {
+		return err
+	}
+	defer wshell.Release()
+
+	cs, err := oleutil.CallMethod(wshell, "CreateShortcut", dst)
+	if err != nil {
+		return err
+	}
+	idispatch := cs.ToIDispatch()
+	oleutil.PutProperty(idispatch, "TargetPath", target)
+	oleutil.CallMethod(idispatch, "Save")
+	return nil
+}
+
+func CurrentGroupMembership(group string) bool {
+	t := windows.GetCurrentProcessToken()
+	sid, _, _, _ := windows.LookupSID("", group)
+	is, _ := t.IsMember(sid)
+	return is
+}
+
+var (
+	modkernel32   = syscall.NewLazyDLL("kernel32.dll")
+	procCopyFileW = modkernel32.NewProc("CopyFileW")
+)
+
+// CopyFile wraps windows function CopyFileW
+func CopyFile(src, dst string, failIfExists bool) error {
+	lpExistingFileName, err := syscall.UTF16PtrFromString(src)
+	if err != nil {
+		return err
+	}
+
+	lpNewFileName, err := syscall.UTF16PtrFromString(dst)
+	if err != nil {
+		return err
+	}
+
+	var bFailIfExists uint32
+	if failIfExists {
+		bFailIfExists = 1
+	} else {
+		bFailIfExists = 0
+	}
+
+	r1, _, err := syscall.Syscall(
+		procCopyFileW.Addr(),
+		3,
+		uintptr(unsafe.Pointer(lpExistingFileName)),
+		uintptr(unsafe.Pointer(lpNewFileName)),
+		uintptr(bFailIfExists))
+
+	if r1 == 0 {
+		return err
+	}
+	return nil
+}
+
+func getExeName() (string, string) {
+	fullExe, _ := os.Executable()
+	exe := filepath.Clean(fullExe)
+	fmt.Println(exe, filepath.Dir(exe))
+	exe = exe[len(filepath.Dir(exe))+1:]
+	fmt.Println(exe)
+
+	return fullExe, exe
+}
+
+func checkExe() bool {
+	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
+
+	_, exe := getExeName()
+	_, err := os.Stat(dst + "\\" + exe)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func installExe() {
+	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
+	os.Mkdir(dst, os.ModePerm)
+
+	fullExe, exe := getExeName()
+	CopyFile(fullExe, dst+"\\"+exe, false)
+
+	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "mysterium node launcher.lnk")
+	CreateShortcut(shcDst, dst+"\\"+exe)
 }

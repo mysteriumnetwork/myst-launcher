@@ -24,7 +24,7 @@
         "FileDescription": "Installer",
         "FileVersion": "v1.0.0.0",
         "InternalName": "myst-node-launcher.exe",
-        "LegalCopyright": "Copyright (c) 2021",
+        "LegalCopyright": "Copyright (c) 2021 BlockDev AG",
         "LegalTrademarks": "",
         "OriginalFilename": "",
         "PrivateBuild": "",
@@ -37,5 +37,5 @@
             "LangID": "0409",
             "CharsetID": "04B0"
         }
-    },
+    }
 }
