@@ -119,7 +119,9 @@ func createDialogue() {
 
 	// prevent closing the app
 	mod.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		if reason == walk.CloseReasonUser {
+		if mod.isExiting() {
+			// works only from main thread
+			walk.App().Exit(0)
 		}
 		*canceled = true
 		mod.mw.Hide()

@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	docker = "docker_"
+	docker = "docker"
 	group  = "docker-users"
 )
 
@@ -64,14 +64,17 @@ func checkSystemsAndTry() {
 			break
 
 		default:
-			mod.SetState(INSTALL_NEED)
+			mod.SetState(ST_INSTALL_NEED)
 			mod.WaitDialogueComplete()
-			mod.SetState(INSTALL_INPROGRESS)
+			mod.SetState(ST_INSTALL_INPROGRESS)
 
-			if !CheckWindowsVersion() {
+			if !!CheckWindowsVersion() {
 				mod.lbInstallationState2.SetText("Reason:\r\nYou must be running Windows 10 version 1607 (the Anniversary update) or above.")
-				mod.SetState(INSTALL_ERR)
+				mod.SetState(ST_INSTALL_ERR)
 				mod.WaitDialogueComplete()
+
+				// exit
+				win.SendMessage(mod.mw.Handle(), win.WM_CLOSE, 0, 0)
 				return
 			}
 
@@ -90,7 +93,7 @@ func checkSystemsAndTry() {
 						//log.Println("Download failed")
 
 						mod.lbInstallationState2.SetText("Reason:\r\nDownload failed")
-						mod.SetState(INSTALL_ERR)
+						mod.SetState(ST_INSTALL_ERR)
 						mod.WaitDialogueComplete()
 						return
 					}
@@ -100,14 +103,14 @@ func checkSystemsAndTry() {
 			err := runMeElevated("msiexec.exe", "/I wsl_update_x64.msi /quiet", os.Getenv("TMP"))
 			if err != nil {
 				mod.lbInstallationState2.SetText("Reason:\r\nCommand failed: msiexec.exe /I wsl_update_x64.msi")
-				mod.SetState(INSTALL_ERR)
+				mod.SetState(ST_INSTALL_ERR)
 				mod.WaitDialogueComplete()
 				return
 			}
 			ex := runProc(mod.lv, os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", []string{"install", "--quiet"})
 			if ex != 0 {
 				mod.lbInstallationState2.SetText("Reason:\r\nDockerDesktopInstaller failed")
-				mod.SetState(INSTALL_ERR)
+				mod.SetState(ST_INSTALL_ERR)
 				mod.WaitDialogueComplete()
 				return
 			}
@@ -123,15 +126,15 @@ func checkSystemsAndTry() {
 					windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
 					return
 				}
-				mod.SetState(INSTALL_ERR)
+				mod.SetState(ST_INSTALL_ERR)
 				mod.lbInstallationState2.SetText("Log of from the current session to finish the installation.")
 				mod.WaitDialogueComplete()
 				return
 			}
 
-			mod.SetState(INSTALL_FIN)
+			mod.SetState(ST_INSTALL_FIN)
 			mod.WaitDialogueComplete()
-			mod.SetState(0)
+			mod.SetState(ST_STATUS_FRAME)
 			continue
 		}
 

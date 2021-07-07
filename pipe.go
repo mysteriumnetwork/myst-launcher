@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/microsoft/go-winio"
+	"github.com/Microsoft/go-winio"
 )
 
 var testPipeName = `\\.\pipe\mysterium_node_launcher`

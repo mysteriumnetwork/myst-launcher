@@ -41,11 +41,12 @@ type Model struct {
 }
 
 const (
-	STATUS_FRAME       = 0
-	INSTALL_NEED       = -1
-	INSTALL_INPROGRESS = -2
-	INSTALL_FIN        = -3
-	INSTALL_ERR        = -4
+	// state
+	ST_STATUS_FRAME       = 0
+	ST_INSTALL_NEED       = -1
+	ST_INSTALL_INPROGRESS = -2
+	ST_INSTALL_FIN        = -3
+	ST_INSTALL_ERR        = -4
 )
 
 var mod Model
@@ -77,7 +78,7 @@ func (m *Model) Invalidate() {
 		m.mw.Children().At(frameI).SetVisible(false)
 		m.mw.Children().At(frameS).SetVisible(true)
 	}
-	if m.state == INSTALL_NEED {
+	if m.state == ST_INSTALL_NEED {
 		m.mw.Children().At(frameI).SetVisible(true)
 		m.mw.Children().At(frameS).SetVisible(false)
 		m.HideProgress()
@@ -91,17 +92,17 @@ func (m *Model) Invalidate() {
 
 		m.lbDocker.SetText("OK")
 	}
-	if m.state == INSTALL_INPROGRESS {
+	if m.state == ST_INSTALL_INPROGRESS {
 		m.btnCmd.SetEnabled(false)
 		m.lbInstallationState.SetText("Downloading installation packages.")
 		m.lbInstallationState2.SetText("-")
 	}
-	if m.state == INSTALL_FIN {
+	if m.state == ST_INSTALL_FIN {
 		m.lbInstallationState.SetText("Installation successfully finished!")
 		m.btnCmd.SetEnabled(true)
 		m.btnCmd.SetText("Finish !")
 	}
-	if m.state == INSTALL_ERR {
+	if m.state == ST_INSTALL_ERR {
 		m.lbInstallationState.SetText("Installation failed")
 		m.btnCmd.SetEnabled(true)
 		m.btnCmd.SetText("Exit installer")
@@ -110,11 +111,6 @@ func (m *Model) Invalidate() {
 
 func (m *Model) BtnOnClick() {
 	m.dlg <- 0
-
-	if m.state == INSTALL_ERR {
-		// can be called only from the main thread
-		walk.App().Exit(0)
-	}
 }
 
 func (m *Model) WaitDialogueComplete() {
@@ -129,4 +125,8 @@ func (m *Model) PrintProgress(progress int) {
 	m.lv.AppendText(fmt.Sprintf("Download %d %%\r\n", progress))
 	m.progressBar.SetVisible(true)
 	m.progressBar.SetValue(progress)
+}
+
+func (m *Model) isExiting() bool {
+	return mod.state == ST_INSTALL_ERR
 }
