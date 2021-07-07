@@ -8,7 +8,6 @@ package main
 
 import (
 	"log"
-	"os/exec"
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -95,9 +94,7 @@ func createDialogue() {
 						AssignTo: &mod.btnCmd2,
 						Text:     "Open Node UI",
 						OnClicked: func() {
-							cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", "http://localhost:4449")
-							if err := cmd.Start(); err != nil {
-							}
+							mod.openUI()
 						},
 						ColumnSpan: 2,
 					},

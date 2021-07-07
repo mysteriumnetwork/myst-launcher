@@ -9,10 +9,10 @@ package main
 import (
 	"fmt"
 	"net"
-
-	"github.com/lxn/win"
+	"os/exec"
 
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type Model struct {
@@ -129,4 +129,10 @@ func (m *Model) PrintProgress(progress int) {
 
 func (m *Model) isExiting() bool {
 	return mod.state == ST_INSTALL_ERR
+}
+
+func (m *Model) openUI() {
+	cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", "http://localhost:4449")
+	if err := cmd.Start(); err != nil {
+	}
 }

@@ -37,4 +37,3 @@ On the right side of the window, system information is displayed. Make sure the 
 
 # TODO
 * show notification when container is ready
-* enable open action 

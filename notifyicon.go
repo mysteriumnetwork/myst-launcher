@@ -48,10 +48,21 @@ func createNotifyIcon() {
 	exitAction.Triggered().Attach(func() {
 		walk.App().Exit(0)
 	})
-
 	if err := ni.ContextMenu().Actions().Add(exitAction); err != nil {
 		log.Fatal(err)
 	}
+
+	openUIAction := walk.NewAction()
+	if err := openUIAction.SetText("Open &UI"); err != nil {
+		log.Fatal(err)
+	}
+	openUIAction.Triggered().Attach(func() {
+		mod.openUI()
+	})
+	if err := ni.ContextMenu().Actions().Add(openUIAction); err != nil {
+		log.Fatal(err)
+	}
+
 	if err := ni.SetVisible(true); err != nil {
 		log.Fatal(err)
 	}
