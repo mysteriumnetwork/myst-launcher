@@ -16,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -35,7 +36,7 @@ var (
 )
 
 func cmdRun(lv *LogView, name string, args ...string) int {
-	lv.PostAppendText(fmt.Sprintf("Run %v %v \r\n", name, args))
+	lv.PostAppendText(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
 
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
