@@ -34,8 +34,8 @@ type Model struct {
 	progressBar          *walk.ProgressBar
 
 	// common
-	btnCmd  *walk.PushButton
-	btnCmd2 *walk.PushButton
+	btnCmd        *walk.PushButton
+	btnOpenNodeUI *walk.PushButton
 
 	dlg chan int
 }
@@ -49,10 +49,10 @@ const (
 	ST_INSTALL_ERR        = -4
 )
 
-var mod Model
+var model Model
 
 func init() {
-	mod.dlg = make(chan int)
+	model.dlg = make(chan int)
 }
 
 func (m *Model) ShowMain() {
@@ -128,10 +128,10 @@ func (m *Model) PrintProgress(progress int) {
 }
 
 func (m *Model) isExiting() bool {
-	return mod.state == ST_INSTALL_ERR
+	return model.state == ST_INSTALL_ERR
 }
 
-func (m *Model) openUI() {
+func (m *Model) openNodeUI() {
 	cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", "http://localhost:4449")
 	if err := cmd.Start(); err != nil {
 	}

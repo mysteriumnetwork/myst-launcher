@@ -25,7 +25,7 @@ func createNotifyIcon() {
 	}
 	defer ni.Dispose()
 
-	if err := ni.SetIcon(mod.icon); err != nil {
+	if err := ni.SetIcon(model.icon); err != nil {
 		log.Fatal(err)
 	}
 	if err := ni.SetToolTip("Mysterium Network - Node Launcher"); err != nil {
@@ -37,7 +37,7 @@ func createNotifyIcon() {
 		if button != walk.LeftButton {
 			return
 		}
-		mod.mw.Show()
+		model.mw.Show()
 	})
 	ni.MessageClicked().Attach(func() {})
 
@@ -57,7 +57,7 @@ func createNotifyIcon() {
 		log.Fatal(err)
 	}
 	openUIAction.Triggered().Attach(func() {
-		mod.openUI()
+		model.openNodeUI()
 	})
 	if err := ni.ContextMenu().Actions().Add(openUIAction); err != nil {
 		log.Fatal(err)

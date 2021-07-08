@@ -15,11 +15,11 @@ import (
 
 func createDialogue() {
 	if err := (MainWindow{
-		AssignTo: &mod.mw,
+		AssignTo: &model.mw,
 		Title:    "Mysterium Exit Node Launcher",
 		MinSize:  Size{320, 240},
 		Size:     Size{400, 600},
-		Icon:     mod.icon,
+		Icon:     model.icon,
 
 		Layout: VBox{
 			//MarginsZero: true,
@@ -43,23 +43,23 @@ func createDialogue() {
 					},
 					Label{
 						Text:     "- installation info -",
-						AssignTo: &mod.lbInstallationState,
+						AssignTo: &model.lbInstallationState,
 					},
 					Label{
 						Text:     "-",
-						AssignTo: &mod.lbInstallationState2,
+						AssignTo: &model.lbInstallationState2,
 					},
 					ProgressBar{
-						AssignTo: &mod.progressBar,
+						AssignTo: &model.progressBar,
 						Enabled:  false,
 						Value:    50,
 					},
 					VSpacer{Row: 1},
 					PushButton{
-						AssignTo: &mod.btnCmd,
+						AssignTo: &model.btnCmd,
 						Text:     "-",
 						OnClicked: func() {
-							mod.BtnOnClick()
+							model.BtnOnClick()
 						},
 					},
 				},
@@ -76,14 +76,14 @@ func createDialogue() {
 					},
 					Label{
 						Text:     "-",
-						AssignTo: &mod.lbDocker,
+						AssignTo: &model.lbDocker,
 					},
 					Label{
 						Text: "Container",
 					},
 					Label{
 						Text:     "-",
-						AssignTo: &mod.lbContainer,
+						AssignTo: &model.lbContainer,
 					},
 					VSpacer{
 						ColumnSpan: 2,
@@ -91,10 +91,10 @@ func createDialogue() {
 					},
 					PushButton{
 						Enabled:  false,
-						AssignTo: &mod.btnCmd2,
+						AssignTo: &model.btnOpenNodeUI,
 						Text:     "Open Node UI",
 						OnClicked: func() {
-							mod.openUI()
+							model.openNodeUI()
 						},
 						ColumnSpan: 2,
 					},
@@ -106,24 +106,24 @@ func createDialogue() {
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
-	if mod.inTray {
-		mod.mw.SetVisible(false)
+	if model.inTray {
+		model.mw.SetVisible(false)
 	}
 
 	var err error
-	mod.lv, err = NewLogView(mod.mw)
+	model.lv, err = NewLogView(model.mw)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.SetOutput(mod.lv)
+	log.SetOutput(model.lv)
 
 	// prevent closing the app
-	mod.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		if mod.isExiting() {
+	model.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
+		if model.isExiting() {
 			// works only from main thread
 			walk.App().Exit(0)
 		}
 		*canceled = true
-		mod.mw.Hide()
+		model.mw.Hide()
 	})
 }

@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/lxn/walk"
 )
@@ -21,9 +22,8 @@ const (
 )
 
 func main() {
-	mod.inTray = false
 	if len(os.Args) > 1 {
-		mod.inTray = os.Args[1] == flagTray
+		model.inTray = os.Args[1] == flagTray
 
 		if os.Args[1] == flagInstall {
 			fmt.Println(flagInstall, checkExe())
@@ -32,15 +32,21 @@ func main() {
 		}
 	}
 
-	// allow only one instance of launcher
-	if !initPipe() {
+	if !isAnotherInstanceRunning() {
 		return
 	}
-	mod.icon, _ = walk.NewIconFromResourceId(2)
+	model.icon, _ = walk.NewIconFromResourceId(2)
 	createDialogue()
-	go func() {
-		checkSystemsAndTry()
-	}()
+
+	productName := windowsProductName()
+	if productSupported(productName) {
+		go func() {
+			superviseDockerNode()
+		}()
+	} else {
+		sadMsg := fmt.Sprintf(`Supported windows products are: %s.Your windows product: %s`, strings.Join(supportedProductName, ", "), productName)
+		model.lv.PostAppendText(sadMsg)
+	}
+
 	createNotifyIcon()
-	//mod.mw.Run()
 }

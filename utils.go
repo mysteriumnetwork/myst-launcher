@@ -16,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -34,8 +35,8 @@ var (
 	switchToThisWindow = user32DLL.NewProc("SwitchToThisWindow")
 )
 
-func runProc(lv *LogView, name string, args []string) int {
-	lv.PostAppendText(fmt.Sprintf("Run %v %v \r\n", name, args))
+func cmdRun(lv *LogView, name string, args ...string) int {
+	lv.PostAppendText(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
 
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
@@ -51,6 +52,8 @@ func runProc(lv *LogView, name string, args []string) int {
 		log.Println(err)
 		return -1
 	}
+	defer stdout.Close()
+
 	if err = cmd.Start(); err != nil {
 		log.Println(err)
 		return -1
@@ -256,6 +259,35 @@ func isProcessRunning(name string) bool {
 
 		if s == name {
 			println(s)
+			return true
+		}
+	}
+	return false
+}
+
+func windowsProductName() string {
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, registry.QUERY_VALUE)
+	if err != nil {
+		return "unknown"
+	}
+	defer k.Close()
+
+	pn, _, err := k.GetStringValue("ProductName")
+	if err != nil {
+		return "unknown"
+	}
+
+	return pn
+}
+
+var supportedProductName = []string{
+	"Windows 10 Pro",
+	"Windows 10 Enterprise",
+}
+
+func productSupported(productName string) bool {
+	for _, name := range supportedProductName {
+		if productName == name {
 			return true
 		}
 	}
