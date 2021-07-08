@@ -51,6 +51,8 @@ func cmdRun(lv *LogView, name string, args ...string) int {
 		log.Println(err)
 		return -1
 	}
+	defer stdout.Close()
+
 	if err = cmd.Start(); err != nil {
 		log.Println(err)
 		return -1
