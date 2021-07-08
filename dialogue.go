@@ -91,10 +91,10 @@ func createDialogue() {
 					},
 					PushButton{
 						Enabled:  false,
-						AssignTo: &model.btnCmd2,
+						AssignTo: &model.btnOpenNodeUI,
 						Text:     "Open Node UI",
 						OnClicked: func() {
-							model.openUI()
+							model.openNodeUI()
 						},
 						ColumnSpan: 2,
 					},

@@ -38,7 +38,7 @@ func superviseDockerNode() {
 			switch ex {
 			case 0:
 				model.lbContainer.SetText("Running [OK]")
-				model.btnCmd2.SetEnabled(true)
+				model.btnOpenNodeUI.SetEnabled(true)
 
 			default:
 				log.Printf("Failed to start cmd: %v", ex)

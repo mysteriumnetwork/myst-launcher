@@ -34,8 +34,8 @@ type Model struct {
 	progressBar          *walk.ProgressBar
 
 	// common
-	btnCmd  *walk.PushButton
-	btnCmd2 *walk.PushButton
+	btnCmd        *walk.PushButton
+	btnOpenNodeUI *walk.PushButton
 
 	dlg chan int
 }
@@ -131,7 +131,7 @@ func (m *Model) isExiting() bool {
 	return model.state == ST_INSTALL_ERR
 }
 
-func (m *Model) openUI() {
+func (m *Model) openNodeUI() {
 	cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", "http://localhost:4449")
 	if err := cmd.Start(); err != nil {
 	}

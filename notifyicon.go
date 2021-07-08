@@ -57,7 +57,7 @@ func createNotifyIcon() {
 		log.Fatal(err)
 	}
 	openUIAction.Triggered().Attach(func() {
-		model.openUI()
+		model.openNodeUI()
 	})
 	if err := ni.ContextMenu().Actions().Add(openUIAction); err != nil {
 		log.Fatal(err)
