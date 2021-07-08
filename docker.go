@@ -29,12 +29,12 @@ func checkSystemsAndTry() {
 	dckr := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
 
 	for {
-		ex := cmdRun(mod.lv, dckr, []string{"ps"})
+		ex := cmdRun(mod.lv, dckr, "ps")
 		switch ex {
 		case 0:
 			mod.lbDocker.SetText("Running [OK]")
+			ex := cmdRun(mod.lv, dckr, "container", "start", "myst")
 
-			ex := cmdRun(mod.lv, dckr, strings.Split("container start myst", " "))
 			switch ex {
 			case 0:
 				mod.lbContainer.SetText("Running [OK]")
@@ -44,7 +44,7 @@ func checkSystemsAndTry() {
 				log.Printf("Failed to start cmd: %v", ex)
 				mod.lbContainer.SetText("Installing")
 
-				ex := cmdRun(mod.lv, dckr, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " "))
+				ex := cmdRun(mod.lv, dckr, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " ")...)
 				if ex == 0 {
 					mod.lbDocker.SetText("Running [OK]")
 					continue
@@ -107,7 +107,7 @@ func checkSystemsAndTry() {
 				mod.WaitDialogueComplete()
 				return
 			}
-			ex := cmdRun(mod.lv, os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", []string{"install", "--quiet"})
+			ex := cmdRun(mod.lv, os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
 			if ex != 0 {
 				mod.lbInstallationState2.SetText("Reason:\r\nDockerDesktopInstaller failed")
 				mod.SetState(ST_INSTALL_ERR)
