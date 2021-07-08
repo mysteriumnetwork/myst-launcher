@@ -263,3 +263,32 @@ func isProcessRunning(name string) bool {
 	}
 	return false
 }
+
+func windowsProductName() string {
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, registry.QUERY_VALUE)
+	if err != nil {
+		return "unknown"
+	}
+	defer k.Close()
+
+	pn, _, err := k.GetStringValue("ProductName")
+	if err != nil {
+		return "unknown"
+	}
+
+	return pn
+}
+
+var supportedProductName = []string{
+	"Windows 10 Pro",
+	"Windows 10 Enterprise",
+}
+
+func productSupported(productName string) bool {
+	for _, name := range supportedProductName {
+		if productName == name {
+			return true
+		}
+	}
+	return false
+}

@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/lxn/walk"
 )
@@ -36,8 +37,16 @@ func main() {
 	}
 	mod.icon, _ = walk.NewIconFromResourceId(2)
 	createDialogue()
-	go func() {
-		superviseDockerNode()
-	}()
+
+	productName := windowsProductName()
+	if productSupported(productName) {
+		go func() {
+			superviseDockerNode()
+		}()
+	} else {
+		sadMsg := fmt.Sprintf(`Supported windows products are: %s.Your windows product: %s`, strings.Join(supportedProductName, ", "), productName)
+		mod.lv.PostAppendText(sadMsg)
+	}
+
 	createNotifyIcon()
 }
