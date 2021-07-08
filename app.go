@@ -31,15 +31,13 @@ func main() {
 		}
 	}
 
-	// allow only one instance of launcher
-	if !initPipe() {
+	if !isAnotherInstanceRunning() {
 		return
 	}
 	mod.icon, _ = walk.NewIconFromResourceId(2)
 	createDialogue()
 	go func() {
-		checkSystemsAndTry()
+		superviseDockerNode()
 	}()
 	createNotifyIcon()
-	//mod.mw.Run()
 }

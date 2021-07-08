@@ -24,7 +24,7 @@ const (
 	group  = "docker-users"
 )
 
-func checkSystemsAndTry() {
+func superviseDockerNode() {
 	mod.Invalidate()
 	dckr := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
 

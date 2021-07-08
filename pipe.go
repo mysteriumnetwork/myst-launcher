@@ -10,7 +10,7 @@ import (
 
 var testPipeName = `\\.\pipe\mysterium_node_launcher`
 
-func initPipe() bool {
+func isAnotherInstanceRunning() bool {
 	pipe, err := winio.DialPipe(testPipeName, nil)
 	if err == nil {
 		pipe.Write([]byte("popup\n"))
