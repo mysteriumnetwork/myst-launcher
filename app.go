@@ -21,7 +21,6 @@ const (
 )
 
 func main() {
-	mod.inTray = false
 	if len(os.Args) > 1 {
 		mod.inTray = os.Args[1] == flagTray
 
