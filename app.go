@@ -23,7 +23,7 @@ const (
 
 func main() {
 	if len(os.Args) > 1 {
-		mod.inTray = os.Args[1] == flagTray
+		model.inTray = os.Args[1] == flagTray
 
 		if os.Args[1] == flagInstall {
 			fmt.Println(flagInstall, checkExe())
@@ -35,7 +35,7 @@ func main() {
 	if !isAnotherInstanceRunning() {
 		return
 	}
-	mod.icon, _ = walk.NewIconFromResourceId(2)
+	model.icon, _ = walk.NewIconFromResourceId(2)
 	createDialogue()
 
 	productName := windowsProductName()
@@ -45,7 +45,7 @@ func main() {
 		}()
 	} else {
 		sadMsg := fmt.Sprintf(`Supported windows products are: %s.Your windows product: %s`, strings.Join(supportedProductName, ", "), productName)
-		mod.lv.PostAppendText(sadMsg)
+		model.lv.PostAppendText(sadMsg)
 	}
 
 	createNotifyIcon()

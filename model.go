@@ -49,10 +49,10 @@ const (
 	ST_INSTALL_ERR        = -4
 )
 
-var mod Model
+var model Model
 
 func init() {
-	mod.dlg = make(chan int)
+	model.dlg = make(chan int)
 }
 
 func (m *Model) ShowMain() {
@@ -128,7 +128,7 @@ func (m *Model) PrintProgress(progress int) {
 }
 
 func (m *Model) isExiting() bool {
-	return mod.state == ST_INSTALL_ERR
+	return model.state == ST_INSTALL_ERR
 }
 
 func (m *Model) openUI() {
