@@ -16,7 +16,7 @@ import (
 )
 
 type Model struct {
-	state        int
+	state        modalState
 	inTray       bool
 	pipeListener net.Listener
 
@@ -40,13 +40,15 @@ type Model struct {
 	dlg chan int
 }
 
+type modalState int
+
 const (
 	// state
-	ST_STATUS_FRAME       = 0
-	ST_INSTALL_NEED       = -1
-	ST_INSTALL_INPROGRESS = -2
-	ST_INSTALL_FIN        = -3
-	ST_INSTALL_ERR        = -4
+	initial           modalState = 0
+	installNeeded     modalState = -1
+	installInProgress modalState = -2
+	installFinished   modalState = -3
+	installError      modalState = -4
 )
 
 var model Model
@@ -65,7 +67,7 @@ func (m *Model) ShowMain() {
 	win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 }
 
-func (m *Model) SetState(s int) {
+func (m *Model) SetState(s modalState) {
 	m.state = s
 	m.Invalidate()
 }
@@ -74,11 +76,11 @@ const frameI = 1
 const frameS = 2
 
 func (m *Model) Invalidate() {
-	if m.state == 0 {
+	switch m.state {
+	case initial:
 		m.mw.Children().At(frameI).SetVisible(false)
 		m.mw.Children().At(frameS).SetVisible(true)
-	}
-	if m.state == ST_INSTALL_NEED {
+	case installNeeded:
 		m.mw.Children().At(frameI).SetVisible(true)
 		m.mw.Children().At(frameS).SetVisible(false)
 		m.HideProgress()
@@ -91,18 +93,15 @@ func (m *Model) Invalidate() {
 		m.lbInstallationState2.SetText("Press button to begin installation.")
 
 		m.lbDocker.SetText("OK")
-	}
-	if m.state == ST_INSTALL_INPROGRESS {
+	case installInProgress:
 		m.btnCmd.SetEnabled(false)
 		m.lbInstallationState.SetText("Downloading installation packages.")
 		m.lbInstallationState2.SetText("-")
-	}
-	if m.state == ST_INSTALL_FIN {
+	case installFinished:
 		m.lbInstallationState.SetText("Installation successfully finished!")
 		m.btnCmd.SetEnabled(true)
 		m.btnCmd.SetText("Finish !")
-	}
-	if m.state == ST_INSTALL_ERR {
+	case installError:
 		m.lbInstallationState.SetText("Installation failed")
 		m.btnCmd.SetEnabled(true)
 		m.btnCmd.SetText("Exit installer")
@@ -128,7 +127,7 @@ func (m *Model) PrintProgress(progress int) {
 }
 
 func (m *Model) isExiting() bool {
-	return model.state == ST_INSTALL_ERR
+	return model.state == installError
 }
 
 func (m *Model) openNodeUI() {
