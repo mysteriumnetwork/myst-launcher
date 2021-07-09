@@ -93,7 +93,7 @@ func cmdRun(name string, args ...string) int {
 		exitCode = ws.ExitStatus()
 	}
 
-	//log.Printf("command exitCode: %v \r\n", exitCode)
+	log.Printf("command exitCode: %v \r\n", exitCode)
 	return exitCode
 }
 
@@ -229,9 +229,9 @@ func CheckWindowsVersion() bool {
 	}
 	releaseId, _ := strconv.Atoi(releaseIdStr)
 
+	// https://docs.docker.com/docker-for-windows/install/#wsl-2-backend
 	v := windows.RtlGetVersion()
-	fmt.Println(v.MajorVersion)
-	if v.MajorVersion == 10 && releaseId >= 1906 {
+	if v.MajorVersion == 10 && releaseId >= 2004 {
 		return true
 	} else if v.MajorVersion > 10 {
 		return true
@@ -287,7 +287,7 @@ var supportedProductName = []string{
 
 func productSupported(productName string) bool {
 	for _, name := range supportedProductName {
-		if productName == name {
+		if strings.HasPrefix(productName, name) {
 			return true
 		}
 	}

@@ -82,8 +82,13 @@ func superviseDockerNode() {
 			model.SwitchState(installInProgress)
 
 			if !CheckWindowsVersion() {
-				model.lbInstallationState2.SetText("Reason:\r\nYou must be running Windows 10 version 1607 (the Anniversary update) or above.")
+				model.lbInstallationState2.SetText("Reason:\r\nYou must run Windows 10 version 2004 or above.")
 				model.SwitchState(installError)
+
+				ret := walk.MsgBox(model.mw, "Installation", "Please update to Windows 10 version 2004 or above. \r\nClick OK to open Update settings", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+				if ret == win.IDOK {
+					cmdRun("rundll32", "url.dll,FileProtocolHandler", "ms-settings:windowsupdate-action")
+				}
 				model.WaitDialogueComplete()
 				model.ExitApp()
 				return
