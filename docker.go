@@ -99,7 +99,7 @@ func superviseDockerNode() {
 				{"https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi", "wsl_update_x64.msi"},
 			}
 			for fi, v := range list {
-				if _, err := os.Stat(os.Getenv("TMP") + v.name); err != nil {
+				if _, err := os.Stat(os.Getenv("TMP") + "\\" + v.name); err != nil {
 
 					model.lbInstallationState2.SetText(fmt.Sprintf("%d of %d: %s", fi+1, len(list), v.name))
 					model.PrintProgress(0)
@@ -115,6 +115,8 @@ func superviseDockerNode() {
 				}
 			}
 
+			model.lbInstallationState.SetText("Installing packages..")
+			model.lbInstallationState2.SetText("wsl_update_x64.msi")
 			err := runMeElevated("msiexec.exe", "/I wsl_update_x64.msi /quiet", os.Getenv("TMP"))
 			if err != nil {
 				model.lbInstallationState2.SetText("Reason:\r\nCommand failed: msiexec.exe /I wsl_update_x64.msi")
@@ -123,6 +125,7 @@ func superviseDockerNode() {
 				model.ExitApp()
 				return
 			}
+			model.lbInstallationState2.SetText("DockerDesktopInstaller.exe")
 			ex := cmdRun(os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
 			if ex != 0 {
 				model.lbInstallationState2.SetText("Reason:\r\nDockerDesktopInstaller failed")
@@ -136,7 +139,7 @@ func superviseDockerNode() {
 				installExe()
 			}
 			if !CurrentGroupMembership(group) {
-				// request to logout //
+				// request a logout //
 
 				ret := walk.MsgBox(model.mw, "Installation", "Log of from the current session to finish the installation.", walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
 				if ret == win.IDYES {
