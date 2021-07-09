@@ -25,7 +25,7 @@ const (
 )
 
 func superviseDockerNode() {
-	model.Invalidate()
+	model.refreshState()
 	dckr := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
 
 	for {
@@ -66,13 +66,13 @@ func superviseDockerNode() {
 			break
 
 		default:
-			model.SetState(installNeeded)
+			model.SwitchState(installNeeded)
 			model.WaitDialogueComplete()
-			model.SetState(installInProgress)
+			model.SwitchState(installInProgress)
 
 			if !CheckWindowsVersion() {
 				model.lbInstallationState2.SetText("Reason:\r\nYou must be running Windows 10 version 1607 (the Anniversary update) or above.")
-				model.SetState(installError)
+				model.SwitchState(installError)
 				model.WaitDialogueComplete()
 
 				// exit
@@ -93,7 +93,7 @@ func superviseDockerNode() {
 					err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, model.PrintProgress)
 					if err != nil {
 						model.lbInstallationState2.SetText("Reason:\r\nDownload failed")
-						model.SetState(installError)
+						model.SwitchState(installError)
 						model.WaitDialogueComplete()
 						return
 					}
@@ -103,14 +103,14 @@ func superviseDockerNode() {
 			err := runMeElevated("msiexec.exe", "/I wsl_update_x64.msi /quiet", os.Getenv("TMP"))
 			if err != nil {
 				model.lbInstallationState2.SetText("Reason:\r\nCommand failed: msiexec.exe /I wsl_update_x64.msi")
-				model.SetState(installError)
+				model.SwitchState(installError)
 				model.WaitDialogueComplete()
 				return
 			}
 			ex := cmdRun(model.lv, os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
 			if ex != 0 {
 				model.lbInstallationState2.SetText("Reason:\r\nDockerDesktopInstaller failed")
-				model.SetState(installError)
+				model.SwitchState(installError)
 				model.WaitDialogueComplete()
 				return
 			}
@@ -126,15 +126,15 @@ func superviseDockerNode() {
 					windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
 					return
 				}
-				model.SetState(installError)
+				model.SwitchState(installError)
 				model.lbInstallationState2.SetText("Log of from the current session to finish the installation.")
 				model.WaitDialogueComplete()
 				return
 			}
 
-			model.SetState(installFinished)
+			model.SwitchState(installFinished)
 			model.WaitDialogueComplete()
-			model.SetState(initial)
+			model.SwitchState(initial)
 			continue
 		}
 

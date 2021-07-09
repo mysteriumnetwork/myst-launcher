@@ -67,15 +67,15 @@ func (m *Model) ShowMain() {
 	win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 }
 
-func (m *Model) SetState(s modalState) {
+func (m *Model) SwitchState(s modalState) {
 	m.state = s
-	m.Invalidate()
+	m.refreshState()
 }
 
 const frameI = 1
 const frameS = 2
 
-func (m *Model) Invalidate() {
+func (m *Model) refreshState() {
 	switch m.state {
 	case initial:
 		m.mw.Children().At(frameI).SetVisible(false)
