@@ -26,14 +26,25 @@ const (
 
 func superviseDockerNode() {
 	model.refreshState()
-	dckr := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
+	dockerCmd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
+
+	productName := windowsProductName()
+	if !productSupported(productName) {
+		sadMsg := fmt.Sprintf(`Supported windows products are: %s.Your windows product: %s`, strings.Join(supportedProductName, ", "), productName)
+		model.lbInstallationState2.SetText(sadMsg)
+		model.SwitchState(installError)
+
+		model.WaitDialogueComplete()
+		model.ExitApp()
+		return
+	}
 
 	for {
-		ex := cmdRun(dckr, "ps")
+		ex := cmdRun(dockerCmd, "ps")
 		switch ex {
 		case 0:
 			model.lbDocker.SetText("Running [OK]")
-			ex := cmdRun(dckr, "container", "start", "myst")
+			ex := cmdRun(dockerCmd, "container", "start", "myst")
 
 			switch ex {
 			case 0:
@@ -44,7 +55,7 @@ func superviseDockerNode() {
 				log.Printf("Failed to start cmd: %v", ex)
 				model.lbContainer.SetText("Installing")
 
-				ex := cmdRun(dckr, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " ")...)
+				ex := cmdRun(dockerCmd, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " ")...)
 				if ex == 0 {
 					model.lbDocker.SetText("Running [OK]")
 					continue
@@ -74,9 +85,7 @@ func superviseDockerNode() {
 				model.lbInstallationState2.SetText("Reason:\r\nYou must be running Windows 10 version 1607 (the Anniversary update) or above.")
 				model.SwitchState(installError)
 				model.WaitDialogueComplete()
-
-				// exit
-				win.SendMessage(model.mw.Handle(), win.WM_CLOSE, 0, 0)
+				model.ExitApp()
 				return
 			}
 
@@ -95,6 +104,7 @@ func superviseDockerNode() {
 						model.lbInstallationState2.SetText("Reason:\r\nDownload failed")
 						model.SwitchState(installError)
 						model.WaitDialogueComplete()
+						model.ExitApp()
 						return
 					}
 				}
@@ -105,6 +115,7 @@ func superviseDockerNode() {
 				model.lbInstallationState2.SetText("Reason:\r\nCommand failed: msiexec.exe /I wsl_update_x64.msi")
 				model.SwitchState(installError)
 				model.WaitDialogueComplete()
+				model.ExitApp()
 				return
 			}
 			ex := cmdRun(os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
@@ -112,6 +123,7 @@ func superviseDockerNode() {
 				model.lbInstallationState2.SetText("Reason:\r\nDockerDesktopInstaller failed")
 				model.SwitchState(installError)
 				model.WaitDialogueComplete()
+				model.ExitApp()
 				return
 			}
 
@@ -129,6 +141,7 @@ func superviseDockerNode() {
 				model.SwitchState(installError)
 				model.lbInstallationState2.SetText("Log of from the current session to finish the installation.")
 				model.WaitDialogueComplete()
+				model.ExitApp()
 				return
 			}
 

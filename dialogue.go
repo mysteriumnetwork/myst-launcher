@@ -110,17 +110,9 @@ func createDialogue() {
 		model.mw.SetVisible(false)
 	}
 
-	var err error
-	model.lv, err = NewLogView(model.mw)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.SetOutput(model.lv)
-
 	// prevent closing the app
 	model.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
 		if model.isExiting() {
-			// works only from main thread
 			walk.App().Exit(0)
 		}
 		*canceled = true

@@ -100,6 +100,9 @@ func (m *Model) refreshState() {
 		m.btnCmd.SetEnabled(true)
 		m.btnCmd.SetText("Finish !")
 	case installError:
+		m.mw.Children().At(frameI).SetVisible(true)
+		m.mw.Children().At(frameS).SetVisible(false)
+		m.HideProgress()
 		m.lbInstallationState.SetText("Installation failed")
 		m.btnCmd.SetEnabled(true)
 		m.btnCmd.SetText("Exit installer")
@@ -125,6 +128,12 @@ func (m *Model) PrintProgress(progress int) {
 
 func (m *Model) isExiting() bool {
 	return model.state == installError
+}
+
+func (m *Model) ExitApp() {
+	m.mw.Synchronize(func() {
+		walk.App().Exit(0)
+	})
 }
 
 func (m *Model) openNodeUI() {
