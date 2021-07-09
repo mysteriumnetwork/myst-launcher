@@ -29,11 +29,11 @@ func superviseDockerNode() {
 	dckr := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
 
 	for {
-		ex := cmdRun(model.lv, dckr, "ps")
+		ex := cmdRun(dckr, "ps")
 		switch ex {
 		case 0:
 			model.lbDocker.SetText("Running [OK]")
-			ex := cmdRun(model.lv, dckr, "container", "start", "myst")
+			ex := cmdRun(dckr, "container", "start", "myst")
 
 			switch ex {
 			case 0:
@@ -44,7 +44,7 @@ func superviseDockerNode() {
 				log.Printf("Failed to start cmd: %v", ex)
 				model.lbContainer.SetText("Installing")
 
-				ex := cmdRun(model.lv, dckr, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " ")...)
+				ex := cmdRun(dckr, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " ")...)
 				if ex == 0 {
 					model.lbDocker.SetText("Running [OK]")
 					continue
@@ -107,7 +107,7 @@ func superviseDockerNode() {
 				model.WaitDialogueComplete()
 				return
 			}
-			ex := cmdRun(model.lv, os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
+			ex := cmdRun(os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
 			if ex != 0 {
 				model.lbInstallationState2.SetText("Reason:\r\nDockerDesktopInstaller failed")
 				model.SwitchState(installError)

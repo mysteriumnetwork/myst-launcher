@@ -7,7 +7,6 @@
 package main
 
 import (
-	"fmt"
 	"net"
 	"os/exec"
 
@@ -22,7 +21,6 @@ type Model struct {
 
 	icon *walk.Icon
 	mw   *walk.MainWindow
-	lv   *LogView
 
 	// docker
 	lbDocker    *walk.Label
@@ -121,7 +119,6 @@ func (m *Model) HideProgress() {
 }
 
 func (m *Model) PrintProgress(progress int) {
-	m.lv.AppendText(fmt.Sprintf("Download %d %%\r\n", progress))
 	m.progressBar.SetVisible(true)
 	m.progressBar.SetValue(progress)
 }

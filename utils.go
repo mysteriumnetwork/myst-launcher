@@ -35,8 +35,8 @@ var (
 	switchToThisWindow = user32DLL.NewProc("SwitchToThisWindow")
 )
 
-func cmdRun(lv *LogView, name string, args ...string) int {
-	lv.PostAppendText(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
+func cmdRun(name string, args ...string) int {
+	log.Print(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
 
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{

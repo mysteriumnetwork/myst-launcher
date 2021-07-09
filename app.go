@@ -10,6 +10,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -45,7 +46,7 @@ func main() {
 		}()
 	} else {
 		sadMsg := fmt.Sprintf(`Supported windows products are: %s.Your windows product: %s`, strings.Join(supportedProductName, ", "), productName)
-		model.lv.PostAppendText(sadMsg)
+		log.Println(sadMsg)
 	}
 
 	createNotifyIcon()
