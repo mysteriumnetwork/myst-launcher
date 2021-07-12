@@ -7,14 +7,23 @@
 package main
 
 import (
+	"encoding/json"
+	"log"
 	"net"
+	"os"
 	"os/exec"
 
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
 
+type Config struct {
+	AutoStart bool `json:"auto_start"`
+}
+
 type Model struct {
+	cfg Config
+
 	state         modalState
 	inTray        bool
 	installStage2 bool
@@ -35,6 +44,7 @@ type Model struct {
 	// common
 	btnCmd        *walk.PushButton
 	btnOpenNodeUI *walk.PushButton
+	autoStart     *walk.CheckBox
 
 	dlg chan int
 }
@@ -141,4 +151,31 @@ func (m *Model) openNodeUI() {
 	cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", "http://localhost:4449")
 	if err := cmd.Start(); err != nil {
 	}
+}
+
+func (m *Model) readConfig() {
+	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
+	_, err := os.Stat(f)
+	if os.IsNotExist(err) {
+		return
+	}
+
+	file, err := os.Open(f)
+	if err != nil {
+		return
+	}
+	json.NewDecoder(file).Decode(&model.cfg)
+}
+
+func (m *Model) saveConfig() {
+	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
+	file, err := os.Create(f)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	enc := json.NewEncoder(file)
+	enc.SetIndent("", " ")
+	err = enc.Encode(&model.cfg)
+	log.Println(err)
 }
