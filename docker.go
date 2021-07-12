@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/lxn/walk"
@@ -27,17 +28,6 @@ const (
 func superviseDockerNode() {
 	model.refreshState()
 	dockerCmd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
-
-	productName := windowsProductName()
-	if !productSupported(productName) {
-		sadMsg := fmt.Sprintf(`Supported windows products are: %s.Your windows product: %s`, strings.Join(supportedProductName, ", "), productName)
-		model.lbInstallationState2.SetText(sadMsg)
-		model.SwitchState(installError)
-
-		model.WaitDialogueComplete()
-		model.ExitApp()
-		return
-	}
 
 	for {
 		ex := cmdRun(dockerCmd, "ps")
@@ -77,24 +67,77 @@ func superviseDockerNode() {
 			break
 
 		default:
+			var err error
 			model.SwitchState(installNeeded)
 			model.WaitDialogueComplete()
 			model.SwitchState(installInProgress)
 
 			if !CheckWindowsVersion() {
-				model.lbInstallationState2.SetText("Reason:\r\nYou must be running Windows 10 version 1607 (the Anniversary update) or above.")
+				model.lbInstallationState2.SetText("Reason:\r\nYou must run Windows 10 version 2004 or above.")
 				model.SwitchState(installError)
+
+				if !isWindowsUpdateEnabled() {
+					exe := "reg"
+					cmdArgs := "add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\" /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f"
+					err := _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+					if err != nil {
+						model.lbInstallationState2.SetText("Reason:\r\nCommand failed: failed to enable Windows Updates")
+						model.SwitchState(installError)
+						model.WaitDialogueComplete()
+						model.ExitApp()
+						return
+					}
+				}
+				ret := walk.MsgBox(model.mw, "Installation", "Please update to Windows 10 version 2004 or above. \r\nClick OK to open Update settings", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+				if ret == win.IDOK {
+					cmdRun("rundll32", "url.dll,FileProtocolHandler", "ms-settings:windowsupdate-action")
+				}
 				model.WaitDialogueComplete()
 				model.ExitApp()
 				return
 			}
 
+			if !model.installStage2 {
+				log.Println("enable-feature..")
+				var err error
+				{
+					exe := "dism.exe"
+					cmdArgs := "/online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart"
+					err = _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+					if err != nil {
+						model.lbInstallationState2.SetText("Reason:\r\nCommand failed: failed to enable Microsoft-Windows-Subsystem-Linux")
+						model.SwitchState(installError)
+						model.WaitDialogueComplete()
+						model.ExitApp()
+						return
+					}
+				}
+				if !checkExe() {
+					fullExe, _ := os.Executable()
+					cmdArgs := flagInstall
+					_ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+					CreateAutostartShortcut(flagInstallStage2)
+				}
+
+				if true {
+					ret := walk.MsgBox(model.mw, "Installation", "Reboot is needed to finish installation of WSL\r\nClick OK to reboot", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+					if ret == win.IDOK {
+						_ShellExecuteAndWait(0, "runas", "shutdown", "-r", "", syscall.SW_NORMAL)
+					}
+					model.WaitDialogueComplete()
+					model.ExitApp()
+					return
+				}
+			}
+
+			CreateAutostartShortcut("")
+			log.Println("downloading..")
 			list := []struct{ url, name string }{
 				{"https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe", "DockerDesktopInstaller.exe"},
 				{"https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi", "wsl_update_x64.msi"},
 			}
 			for fi, v := range list {
-				if _, err := os.Stat(os.Getenv("TMP") + v.name); err != nil {
+				if _, err := os.Stat(os.Getenv("TMP") + "\\" + v.name); err != nil {
 
 					model.lbInstallationState2.SetText(fmt.Sprintf("%d of %d: %s", fi+1, len(list), v.name))
 					model.PrintProgress(0)
@@ -109,15 +152,22 @@ func superviseDockerNode() {
 					}
 				}
 			}
+			model.lbInstallationState2.SetText("")
 
-			err := runMeElevated("msiexec.exe", "/I wsl_update_x64.msi /quiet", os.Getenv("TMP"))
+			log.Println("msiexec")
+			exe := "msiexec.exe"
+			cmdArgs := "/i " + os.Getenv("TMP") + "\\wsl_update_x64.msi" //quiet
+			err = _ShellExecuteAndWait(0, "runas", exe, cmdArgs, os.Getenv("TMP"), syscall.SW_NORMAL)
 			if err != nil {
-				model.lbInstallationState2.SetText("Reason:\r\nCommand failed: msiexec.exe /I wsl_update_x64.msi")
+				model.lbInstallationState2.SetText("Reason:\r\nCommand failed: msiexec.exe /i wsl_update_x64.msi")
 				model.SwitchState(installError)
 				model.WaitDialogueComplete()
 				model.ExitApp()
 				return
 			}
+
+			log.Println("DockerDesktopInstaller")
+			model.lbInstallationState2.SetText("DockerDesktopInstaller.exe")
 			ex := cmdRun(os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
 			if ex != 0 {
 				model.lbInstallationState2.SetText("Reason:\r\nDockerDesktopInstaller failed")
@@ -127,11 +177,8 @@ func superviseDockerNode() {
 				return
 			}
 
-			if !checkExe() {
-				installExe()
-			}
 			if !CurrentGroupMembership(group) {
-				// request to logout //
+				// request a logout //
 
 				ret := walk.MsgBox(model.mw, "Installation", "Log of from the current session to finish the installation.", walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
 				if ret == win.IDYES {

@@ -28,10 +28,10 @@ import (
 )
 
 var (
-	modkernel32   = syscall.NewLazyDLL("kernel32.dll")
-	procCopyFileW = modkernel32.NewProc("CopyFileW")
+	modkernel32 = syscall.NewLazyDLL("kernel32.dll")
+	user32DLL   = windows.NewLazyDLL("user32.dll")
 
-	user32DLL          = windows.NewLazyDLL("user32.dll")
+	procCopyFileW      = modkernel32.NewProc("CopyFileW")
 	switchToThisWindow = user32DLL.NewProc("SwitchToThisWindow")
 )
 
@@ -40,12 +40,13 @@ func cmdRun(name string, args ...string) int {
 
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		HideWindow: true,
+		//HideWindow: true,
 		//CreationFlags: 0x08000000, //CREATE_NO_WINDOW
 	}
 
 	//output, _ := cmd.CombinedOutput()
 	//fmt.Println(string(output))
+
 	stdout, err := cmd.StdoutPipe()
 	//cmd.Stderr = cmd.Stdout
 	if err != nil {
@@ -67,8 +68,7 @@ func cmdRun(name string, args ...string) int {
 		}
 		_ = line
 
-		//fmt.Println(string(line))
-		//lv.PostAppendText(string(line)+"\r\n")
+		log.Println(string(line))
 	}
 
 	var exitCode int
@@ -82,8 +82,8 @@ func cmdRun(name string, args ...string) int {
 		} else {
 			log.Printf("Could not get exit code for failed program: %v, %v \r\n", name, args)
 			exitCode = defaultFailedCode
-			log.Printf(">>>> %+v, \r\n", err)
 
+			log.Printf(">>>> %+v, \r\n", err)
 			//if stderr == "" {
 			//	stderr = err.Error()
 			//}
@@ -93,24 +93,8 @@ func cmdRun(name string, args ...string) int {
 		exitCode = ws.ExitStatus()
 	}
 
-	//log.Printf("command exitCode: %v \r\n", exitCode)
+	log.Printf("command exitCode: %v \r\n", exitCode)
 	return exitCode
-}
-
-func runMeElevated(exe string, args string, cwd string) error {
-	verb := "runas"
-	//cwd, _ := os.Getwd()
-	//args := strings.Join(os.Args[1:], " ")
-
-	verbPtr, _ := syscall.UTF16PtrFromString(verb)
-	exePtr, _ := syscall.UTF16PtrFromString(exe)
-	cwdPtr, _ := syscall.UTF16PtrFromString(cwd)
-	argPtr, _ := syscall.UTF16PtrFromString(args)
-
-	var showCmd int32 = 1 //SW_NORMAL
-
-	err := windows.ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd)
-	return err
 }
 
 func SwitchToThisWindow(hwnd win.HWND, f bool) int32 {
@@ -122,7 +106,7 @@ func SwitchToThisWindow(hwnd win.HWND, f bool) int32 {
 	return int32(ret)
 }
 
-func CreateShortcut(dst, target string) error {
+func CreateShortcut(dst, target, args string) error {
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
@@ -141,6 +125,7 @@ func CreateShortcut(dst, target string) error {
 	}
 	idispatch := cs.ToIDispatch()
 	oleutil.PutProperty(idispatch, "TargetPath", target)
+	oleutil.PutProperty(idispatch, "Arguments", args)
 	oleutil.CallMethod(idispatch, "Save")
 	return nil
 }
@@ -184,20 +169,17 @@ func CopyFile(src, dst string, failIfExists bool) error {
 	return nil
 }
 
-func getExeName() (string, string) {
-	fullExe, _ := os.Executable()
+func getExeNameFromFullPath(fullExe string) string {
 	exe := filepath.Clean(fullExe)
-	fmt.Println(exe, filepath.Dir(exe))
-	exe = exe[len(filepath.Dir(exe))+1:]
-	fmt.Println(exe)
-
-	return fullExe, exe
+	return exe[len(filepath.Dir(exe))+1:]
 }
 
 func checkExe() bool {
+	return false
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
 
-	_, exe := getExeName()
+	fullExe, _ := os.Executable()
+	exe := getExeNameFromFullPath(fullExe)
 	_, err := os.Stat(dst + "\\" + exe)
 	if os.IsNotExist(err) {
 		return false
@@ -209,11 +191,18 @@ func installExe() {
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
 	os.Mkdir(dst, os.ModePerm)
 
-	fullExe, exe := getExeName()
+	fullExe, _ := os.Executable()
+	exe := getExeNameFromFullPath(fullExe)
 	CopyFile(fullExe, dst+"\\"+exe, false)
+}
+
+func CreateAutostartShortcut(args string) {
+	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
+	fullExe, _ := os.Executable()
+	exe := getExeNameFromFullPath(fullExe)
 
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "mysterium node launcher.lnk")
-	CreateShortcut(shcDst, dst+"\\"+exe)
+	CreateShortcut(shcDst, dst+"\\"+exe, args)
 }
 
 func CheckWindowsVersion() bool {
@@ -229,9 +218,9 @@ func CheckWindowsVersion() bool {
 	}
 	releaseId, _ := strconv.Atoi(releaseIdStr)
 
+	// https://docs.docker.com/docker-for-windows/install/#wsl-2-backend
 	v := windows.RtlGetVersion()
-	fmt.Println(v.MajorVersion)
-	if v.MajorVersion == 10 && releaseId >= 1906 {
+	if v.MajorVersion == 10 && releaseId >= 2004 {
 		return true
 	} else if v.MajorVersion > 10 {
 		return true
@@ -265,31 +254,16 @@ func isProcessRunning(name string) bool {
 	return false
 }
 
-func windowsProductName() string {
-	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, registry.QUERY_VALUE)
+func isWindowsUpdateEnabled() bool {
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate`, registry.QUERY_VALUE)
 	if err != nil {
-		return "unknown"
+		return false
 	}
 	defer k.Close()
 
-	pn, _, err := k.GetStringValue("ProductName")
+	disableWUfBSafeguards, _, err := k.GetIntegerValue("DisableWUfBSafeguards")
 	if err != nil {
-		return "unknown"
+		return false
 	}
-
-	return pn
-}
-
-var supportedProductName = []string{
-	"Windows 10 Pro",
-	"Windows 10 Enterprise",
-}
-
-func productSupported(productName string) bool {
-	for _, name := range supportedProductName {
-		if productName == name {
-			return true
-		}
-	}
-	return false
+	return disableWUfBSafeguards == 1
 }

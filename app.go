@@ -9,26 +9,26 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"os"
-	"strings"
 
 	"github.com/lxn/walk"
 )
 
 const (
-	flagTray    = "-tray"
-	flagInstall = "-install-binary"
+	flagTray          = "-tray"
+	flagInstall       = "-install-binary"
+	flagInstallStage2 = "-install-stage2"
 )
 
 func main() {
 	if len(os.Args) > 1 {
 		model.inTray = os.Args[1] == flagTray
+		model.installStage2 = os.Args[1] == flagInstallStage2
 
 		if os.Args[1] == flagInstall {
-			fmt.Println(flagInstall, checkExe())
-			installExe()
+			if !checkExe() {
+				installExe()
+			}
 			return
 		}
 	}
@@ -39,15 +39,8 @@ func main() {
 	model.icon, _ = walk.NewIconFromResourceId(2)
 	createDialogue()
 
-	productName := windowsProductName()
-	if productSupported(productName) {
-		go func() {
-			superviseDockerNode()
-		}()
-	} else {
-		sadMsg := fmt.Sprintf(`Supported windows products are: %s.Your windows product: %s`, strings.Join(supportedProductName, ", "), productName)
-		log.Println(sadMsg)
-	}
-
+	go func() {
+		superviseDockerNode()
+	}()
 	createNotifyIcon()
 }
