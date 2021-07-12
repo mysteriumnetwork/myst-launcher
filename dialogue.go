@@ -14,7 +14,26 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
+const (
+	frameI = 1
+	frameS = 2
+)
+
 func createDialogue() {
+	var (
+		// common
+		lbDocker      *walk.Label
+		lbContainer   *walk.Label
+		autoStart     *walk.CheckBox
+		btnOpenNodeUI *walk.PushButton
+
+		// install
+		lbInstallationState  *walk.Label
+		lbInstallationState2 *walk.Label
+		progressBar          *walk.ProgressBar
+		btnCmd               *walk.PushButton
+	)
+
 	if err := (MainWindow{
 		AssignTo: &model.mw,
 		Title:    "Mysterium Exit Node Launcher",
@@ -44,20 +63,20 @@ func createDialogue() {
 					},
 					Label{
 						Text:     "- installation info -",
-						AssignTo: &model.lbInstallationState,
+						AssignTo: &lbInstallationState,
 					},
 					Label{
 						Text:     "-",
-						AssignTo: &model.lbInstallationState2,
+						AssignTo: &lbInstallationState2,
 					},
 					ProgressBar{
-						AssignTo: &model.progressBar,
+						AssignTo: &progressBar,
 						Enabled:  false,
 						Value:    50,
 					},
 					VSpacer{Row: 1},
 					PushButton{
-						AssignTo: &model.btnCmd,
+						AssignTo: &btnCmd,
 						Text:     "-",
 						OnClicked: func() {
 							model.BtnOnClick()
@@ -77,20 +96,20 @@ func createDialogue() {
 					},
 					Label{
 						Text:     "-",
-						AssignTo: &model.lbDocker,
+						AssignTo: &lbDocker,
 					},
 					Label{
 						Text: "Container",
 					},
 					Label{
 						Text:     "-",
-						AssignTo: &model.lbContainer,
+						AssignTo: &lbContainer,
 					},
 					CheckBox{
 						Text:     "Start Node automatically",
-						AssignTo: &model.autoStart,
+						AssignTo: &autoStart,
 						OnCheckedChanged: func() {
-							model.cfg.AutoStart = model.autoStart.Checked()
+							model.cfg.AutoStart = autoStart.Checked()
 							model.saveConfig()
 						},
 					},
@@ -101,7 +120,7 @@ func createDialogue() {
 					},
 					PushButton{
 						Enabled:  false,
-						AssignTo: &model.btnOpenNodeUI,
+						AssignTo: &btnOpenNodeUI,
 						Text:     "Open Node UI",
 						OnClicked: func() {
 							model.openNodeUI()
@@ -120,35 +139,74 @@ func createDialogue() {
 		model.mw.SetVisible(false)
 	}
 	model.readConfig()
-	model.autoStart.SetChecked(model.cfg.AutoStart)
+	autoStart.SetChecked(model.cfg.AutoStart)
+
 	go func() {
 		for {
 			select {
 			case sig := <-model.signal:
 				fmt.Println("received signal", sig)
 
+				switch model.state {
+				case initial:
+					model.mw.Children().At(frameI).SetVisible(false)
+					model.mw.Children().At(frameS).SetVisible(true)
+				case installNeeded:
+					model.mw.Children().At(frameI).SetVisible(true)
+					model.mw.Children().At(frameS).SetVisible(false)
+					//model.HideProgress()
+					progressBar.SetVisible(false)
+
+					btnCmd.SetEnabled(true)
+					btnCmd.SetText("Install")
+					btnCmd.SetFocus()
+					lbInstallationState.SetText("Docker desktop is required to run exit node.")
+					lbInstallationState2.SetText("Press button to begin installation.")
+
+				case installInProgress:
+					//btnCmd.SetEnabled(false)
+					lbInstallationState.SetText("Downloading installation packages.")
+					lbInstallationState2.SetText("-")
+					progressBar.SetVisible(model.progressVisible)
+					progressBar.SetValue(model.progress)
+
+				case installFinished:
+					lbInstallationState.SetText("Installation successfully finished!")
+					btnCmd.SetEnabled(true)
+					btnCmd.SetText("Finish !")
+				case installError:
+					model.mw.Children().At(frameI).SetVisible(true)
+					model.mw.Children().At(frameS).SetVisible(false)
+					//model.HideProgress()
+					progressBar.SetVisible(false)
+
+					lbInstallationState.SetText("Installation failed")
+					btnCmd.SetEnabled(true)
+					btnCmd.SetText("Exit installer")
+				}
+
 				model.mw.Synchronize(func() {
 					switch model.stateDocker {
-					case ST_RUNNING:
-						model.lbDocker.SetText("Running [OK]")
-					case ST_INSTALLING:
-						model.lbDocker.SetText("Installing..")
-					case ST_STARTING:
-						model.lbDocker.SetText("Starting..")
-					case ST_UNKNOWN:
-						model.lbDocker.SetText("-")
+					case stateRunning:
+						lbDocker.SetText("Running [OK]")
+					case stateInstalling:
+						lbDocker.SetText("Installing..")
+					case stateStarting:
+						lbDocker.SetText("Starting..")
+					case stateUnknown:
+						lbDocker.SetText("-")
 					}
 					switch model.stateContainer {
-					case ST_RUNNING:
-						model.lbContainer.SetText("Running [OK]")
-					case ST_INSTALLING:
-						model.lbContainer.SetText("Installing..")
-					case ST_STARTING:
-						model.lbContainer.SetText("Starting..")
-					case ST_UNKNOWN:
-						model.lbContainer.SetText("-")
+					case stateRunning:
+						lbContainer.SetText("Running [OK]")
+					case stateInstalling:
+						lbContainer.SetText("Installing..")
+					case stateStarting:
+						lbContainer.SetText("Starting..")
+					case stateUnknown:
+						lbContainer.SetText("-")
 					}
-					model.btnOpenNodeUI.SetEnabled(model.stateContainer == ST_RUNNING)
+					btnOpenNodeUI.SetEnabled(model.stateContainer == stateRunning)
 				})
 			}
 		}
