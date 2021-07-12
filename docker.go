@@ -33,28 +33,41 @@ func superviseDockerNode() {
 		ex := cmdRun(dockerCmd, "ps")
 		switch ex {
 		case 0:
-			model.lbDocker.SetText("Running [OK]")
+			model.stateDocker = ST_RUNNING
+			model.TriggerUpdate()
+			//model.lbDocker.SetText("Running [OK]")
 			ex := cmdRun(dockerCmd, "container", "start", "myst")
 
 			switch ex {
 			case 0:
-				model.lbContainer.SetText("Running [OK]")
-				model.btnOpenNodeUI.SetEnabled(true)
+				model.stateContainer = ST_RUNNING
+				model.TriggerUpdate()
+
+				//model.lbContainer.SetText("Running [OK]")
+				//model.btnOpenNodeUI.SetEnabled(true)
 
 			default:
 				log.Printf("Failed to start cmd: %v", ex)
-				model.lbContainer.SetText("Installing")
+				//model.lbContainer.SetText("Installing")
+				model.stateContainer = ST_INSTALLING
+				model.TriggerUpdate()
 
 				ex := cmdRun(dockerCmd, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " ")...)
 				if ex == 0 {
-					model.lbDocker.SetText("Running [OK]")
+					//model.lbDocker.SetText("Running [OK]")
+					model.stateContainer = ST_RUNNING
+					model.TriggerUpdate()
+
 					continue
 				}
 			}
 
 		case 1:
-			model.lbDocker.SetText("Starting..")
-			model.lbContainer.SetText("-")
+			//model.lbDocker.SetText("Starting..")
+			//model.lbContainer.SetText("-")
+			model.stateDocker = ST_STARTING
+			model.stateContainer = ST_UNKNOWN
+			model.TriggerUpdate()
 
 			if isProcessRunning("Docker Desktop.exe") {
 				break
@@ -88,7 +101,7 @@ func superviseDockerNode() {
 						return
 					}
 				}
-				ret := walk.MsgBox(model.mw, "Installation", "Please update to Windows 10 version 2004 or above. \r\nClick OK to open Update settings", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+				ret := walk.MsgBox(model.mw, "Installation", "Please signal to Windows 10 version 2004 or above. \r\nClick OK to open Update settings", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 				if ret == win.IDOK {
 					cmdRun("rundll32", "url.dll,FileProtocolHandler", "ms-settings:windowsupdate-action")
 				}

@@ -8,6 +8,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -21,13 +22,25 @@ type Config struct {
 	AutoStart bool `json:"auto_start"`
 }
 
-type Model struct {
-	cfg Config
+const (
+	ST_UNKNOWN    = 0
+	ST_STARTING   = 1
+	ST_RUNNING    = 2
+	ST_INSTALLING = 3
+)
 
-	state         modalState
+type Model struct {
 	inTray        bool
 	installStage2 bool
 	pipeListener  net.Listener
+	cfg           Config
+
+	signal chan int
+	state  modalState
+
+	//state
+	stateDocker    int
+	stateContainer int
 
 	icon *walk.Icon
 	mw   *walk.MainWindow
@@ -64,6 +77,15 @@ var model Model
 
 func init() {
 	model.dlg = make(chan int)
+	model.signal = make(chan int)
+}
+
+func (m *Model) TriggerUpdate() {
+	select {
+	case m.signal <- 0:
+	default:
+		fmt.Println("no message sent")
+	}
 }
 
 func (m *Model) ShowMain() {

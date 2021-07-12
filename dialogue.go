@@ -7,6 +7,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lxn/walk"
@@ -120,6 +121,39 @@ func createDialogue() {
 	}
 	model.readConfig()
 	model.autoStart.SetChecked(model.cfg.AutoStart)
+	go func() {
+		for {
+			select {
+			case sig := <-model.signal:
+				fmt.Println("received signal", sig)
+
+				model.mw.Synchronize(func() {
+					switch model.stateDocker {
+					case ST_RUNNING:
+						model.lbDocker.SetText("Running [OK]")
+					case ST_INSTALLING:
+						model.lbDocker.SetText("Installing..")
+					case ST_STARTING:
+						model.lbDocker.SetText("Starting..")
+					case ST_UNKNOWN:
+						model.lbDocker.SetText("-")
+					}
+					switch model.stateContainer {
+					case ST_RUNNING:
+						model.lbContainer.SetText("Running [OK]")
+					case ST_INSTALLING:
+						model.lbContainer.SetText("Installing..")
+					case ST_STARTING:
+						model.lbContainer.SetText("Starting..")
+					case ST_UNKNOWN:
+						model.lbContainer.SetText("-")
+					}
+					model.btnOpenNodeUI.SetEnabled(model.stateContainer == ST_RUNNING)
+				})
+			}
+		}
+
+	}()
 
 	// prevent closing the app
 	model.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
