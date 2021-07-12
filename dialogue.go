@@ -85,6 +85,15 @@ func createDialogue() {
 						Text:     "-",
 						AssignTo: &model.lbContainer,
 					},
+					CheckBox{
+						Text:     "Start Node automatically",
+						AssignTo: &model.autoStart,
+						OnCheckedChanged: func() {
+							model.cfg.AutoStart = model.autoStart.Checked()
+							model.saveConfig()
+						},
+					},
+
 					VSpacer{
 						ColumnSpan: 2,
 						Size:       8,
@@ -109,6 +118,8 @@ func createDialogue() {
 	if model.inTray {
 		model.mw.SetVisible(false)
 	}
+	model.readConfig()
+	model.autoStart.SetChecked(model.cfg.AutoStart)
 
 	// prevent closing the app
 	model.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
