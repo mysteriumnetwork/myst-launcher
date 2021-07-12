@@ -31,8 +31,9 @@ var (
 	modkernel32 = syscall.NewLazyDLL("kernel32.dll")
 	user32DLL   = windows.NewLazyDLL("user32.dll")
 
-	procCopyFileW      = modkernel32.NewProc("CopyFileW")
-	switchToThisWindow = user32DLL.NewProc("SwitchToThisWindow")
+	procCopyFileW                 = modkernel32.NewProc("CopyFileW")
+	switchToThisWindow            = user32DLL.NewProc("SwitchToThisWindow")
+	procIsProcessorFeaturePresent = modkernel32.NewProc("IsProcessorFeaturePresent")
 )
 
 func cmdRun(name string, args ...string) int {
@@ -175,7 +176,6 @@ func getExeNameFromFullPath(fullExe string) string {
 }
 
 func checkExe() bool {
-	return false
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
 
 	fullExe, _ := os.Executable()
@@ -266,4 +266,13 @@ func isWindowsUpdateEnabled() bool {
 		return false
 	}
 	return disableWUfBSafeguards == 1
+}
+
+func hasVTx() bool {
+	const PF_VIRT_FIRMWARE_ENABLED = 21
+	r1, _, e1 := syscall.Syscall(procIsProcessorFeaturePresent.Addr(), 1, uintptr(PF_VIRT_FIRMWARE_ENABLED), 0, 0)
+	if e1 != 0 {
+		fmt.Printf("Err: %s \n", syscall.Errno(e1))
+	}
+	return r1 != 0
 }

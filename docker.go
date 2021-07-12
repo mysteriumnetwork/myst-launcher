@@ -96,6 +96,13 @@ func superviseDockerNode() {
 				model.ExitApp()
 				return
 			}
+			if !hasVTx() {
+				walk.MsgBox(model.mw, "Installation", "Please Enable virtualization in BIOS", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+
+				model.WaitDialogueComplete()
+				model.ExitApp()
+				return
+			}
 
 			if !model.installStage2 {
 				log.Println("enable-feature..")
