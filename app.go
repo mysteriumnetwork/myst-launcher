@@ -9,24 +9,26 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/lxn/walk"
 )
 
 const (
-	flagTray    = "-tray"
-	flagInstall = "-install-binary"
+	flagTray          = "-tray"
+	flagInstall       = "-install-binary"
+	flagInstallStage2 = "-install-stage2"
 )
 
 func main() {
 	if len(os.Args) > 1 {
 		model.inTray = os.Args[1] == flagTray
+		model.installStage2 = os.Args[1] == flagInstallStage2
 
 		if os.Args[1] == flagInstall {
-			fmt.Println(flagInstall, checkExe())
-			installExe()
+			if !checkExe() {
+				installExe()
+			}
 			return
 		}
 	}

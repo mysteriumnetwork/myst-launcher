@@ -15,9 +15,10 @@ import (
 )
 
 type Model struct {
-	state        modalState
-	inTray       bool
-	pipeListener net.Listener
+	state         modalState
+	inTray        bool
+	installStage2 bool
+	pipeListener  net.Listener
 
 	icon *walk.Icon
 	mw   *walk.MainWindow
