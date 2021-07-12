@@ -3,14 +3,14 @@
         "FileVersion": {
             "Major": 0,
             "Minor": 1,
-            "Patch": 0,
-            "Build": 1
+            "Patch": 2,
+            "Build": 0
         },
         "ProductVersion": {
             "Major": 0,
             "Minor": 1,
-            "Patch": 0,
-            "Build": 1
+            "Patch": 2,
+            "Build": 0
         },
         "FileFlagsMask": "3f",
         "FileFlags ": "00",
@@ -29,7 +29,7 @@
         "OriginalFilename": "",
         "PrivateBuild": "",
         "ProductName": "myst-node-launcher",
-        "ProductVersion": "v0.1.0.1",
+        "ProductVersion": "v0.1.1",
         "SpecialBuild": ""
     },
     "VarFileInfo": {

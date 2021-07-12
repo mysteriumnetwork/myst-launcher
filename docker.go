@@ -156,7 +156,7 @@ func superviseDockerNode() {
 
 			log.Println("msiexec")
 			exe := "msiexec.exe"
-			cmdArgs := "/i " + os.Getenv("TMP") + "\\wsl_update_x64.msi" //quiet
+			cmdArgs := "/i " + os.Getenv("TMP") + "\\wsl_update_x64.msi /quiet"
 			err = _ShellExecuteAndWait(0, "runas", exe, cmdArgs, os.Getenv("TMP"), syscall.SW_NORMAL)
 			if err != nil {
 				model.lbInstallationState2.SetText("Reason:\r\nCommand failed: msiexec.exe /i wsl_update_x64.msi")
