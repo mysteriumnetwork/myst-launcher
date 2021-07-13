@@ -19,7 +19,7 @@
         "FileSubType": "00"
     },
     "StringFileInfo": {
-        "Comments": "Mysterium Network Exit Node Installer / Launcher",
+        "Comments": "Mysterium Network Node Installer / Launcher",
         "CompanyName": "BlockDev AG",
         "FileDescription": "Installer",
         "FileVersion": "v0.1.3",
