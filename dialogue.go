@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	frameI = 1
-	frameS = 2
+	frameW = 1
+	frameI = 2
+	frameS = 3
 )
 
 func createDialogue() {
@@ -28,10 +29,20 @@ func createDialogue() {
 		btnOpenNodeUI *walk.PushButton
 
 		// install
-		lbInstallationState  *walk.Label
-		lbInstallationState2 *walk.Label
-		progressBar          *walk.ProgressBar
-		btnCmd               *walk.PushButton
+		lbInstallationStatus *walk.Label
+		btnBegin             *walk.PushButton
+
+		checkWindowsVersion  *walk.CheckBox
+		checkVTx             *walk.CheckBox
+		enableWSL            *walk.CheckBox
+		installExecutable    *walk.CheckBox
+		rebootAfterWSLEnable *walk.CheckBox
+		downloadFiles        *walk.CheckBox
+		installWSLUpdate     *walk.CheckBox
+		installDocker        *walk.CheckBox
+		checkGroupMembership *walk.CheckBox
+
+		btnFinish *walk.PushButton
 	)
 
 	if err := (MainWindow{
@@ -49,7 +60,7 @@ func createDialogue() {
 
 			GroupBox{
 				Visible: false,
-				Title:   "Installation",
+				Title:   "Installation needed",
 				Layout:  VBox{},
 				Children: []Widget{
 					VSpacer{RowSpan: 1},
@@ -62,22 +73,106 @@ func createDialogue() {
 						},
 					},
 					Label{
-						Text:     "- installation info -",
-						AssignTo: &lbInstallationState,
-					},
-					Label{
-						Text:     "-",
-						AssignTo: &lbInstallationState2,
-					},
-					ProgressBar{
-						AssignTo: &progressBar,
-						Enabled:  false,
-						Value:    50,
+						Text: "This wizard will install missing components to run Mysterium Node.\r\nPress install button to proceed with installation",
 					},
 					VSpacer{Row: 1},
 					PushButton{
-						AssignTo: &btnCmd,
-						Text:     "-",
+						AssignTo: &btnBegin,
+						Text:     "Install",
+						OnClicked: func() {
+							model.BtnOnClick()
+						},
+					},
+				},
+			},
+
+			GroupBox{
+				Visible: false,
+				Title:   "Installation process",
+				//Layout:  VBox{},
+
+				Layout: Grid{Columns: 2},
+				Children: []Widget{
+					VSpacer{ColumnSpan: 2},
+					Label{
+						Text: "check Windows version",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &checkWindowsVersion,
+					},
+
+					Label{
+						Text: "check VT-x",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &checkVTx,
+					},
+					Label{
+						Text: "enable WSL",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &enableWSL,
+					},
+					Label{
+						Text: "install executable",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &installExecutable,
+					},
+					Label{
+						Text: "reboot after WSL enable",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &rebootAfterWSLEnable,
+					},
+					Label{
+						Text: "download files",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &downloadFiles,
+					},
+					Label{
+						Text: "install WSL update",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &installWSLUpdate,
+					},
+					Label{
+						Text: "install Docker",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &installDocker,
+					},
+					Label{
+						Text: "checkGroupMembership",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &checkGroupMembership,
+					},
+
+					VSpacer{
+						ColumnSpan: 2,
+						Size:       8,
+					},
+					Label{
+						ColumnSpan: 2,
+						AssignTo:   &lbInstallationStatus,
+					},
+
+					VSpacer{ColumnSpan: 2},
+					PushButton{
+						AssignTo:   &btnFinish,
+						Text:       "Finish",
+						ColumnSpan: 2,
 						OnClicked: func() {
 							model.BtnOnClick()
 						},
@@ -90,7 +185,7 @@ func createDialogue() {
 				Title:   "Status",
 				Layout:  Grid{Columns: 2},
 				Children: []Widget{
-					VSpacer{ColumnSpan: 2},
+					//VSpacer{ColumnSpan: 2},
 					Label{
 						Text: "Docker",
 					},
@@ -127,7 +222,7 @@ func createDialogue() {
 						},
 						ColumnSpan: 2,
 					},
-					VSpacer{ColumnSpan: 2},
+					//VSpacer{ColumnSpan: 2},
 				},
 			},
 			VSpacer{RowSpan: 1},
@@ -139,7 +234,6 @@ func createDialogue() {
 		model.mw.SetVisible(false)
 	}
 	model.readConfig()
-	autoStart.SetChecked(model.cfg.AutoStart)
 
 	go func() {
 		for {
@@ -147,45 +241,59 @@ func createDialogue() {
 			case sig := <-model.signal:
 				fmt.Println("received signal", sig)
 
-				switch model.state {
-				case initial:
-					model.mw.Children().At(frameI).SetVisible(false)
-					model.mw.Children().At(frameS).SetVisible(true)
-				case installNeeded:
-					model.mw.Children().At(frameI).SetVisible(true)
-					model.mw.Children().At(frameS).SetVisible(false)
-					//model.HideProgress()
-					progressBar.SetVisible(false)
-
-					btnCmd.SetEnabled(true)
-					btnCmd.SetText("Install")
-					btnCmd.SetFocus()
-					lbInstallationState.SetText("Docker desktop is required to run exit node.")
-					lbInstallationState2.SetText("Press button to begin installation.")
-
-				case installInProgress:
-					//btnCmd.SetEnabled(false)
-					lbInstallationState.SetText("Downloading installation packages.")
-					lbInstallationState2.SetText("-")
-					progressBar.SetVisible(model.progressVisible)
-					progressBar.SetValue(model.progress)
-
-				case installFinished:
-					lbInstallationState.SetText("Installation successfully finished!")
-					btnCmd.SetEnabled(true)
-					btnCmd.SetText("Finish !")
-				case installError:
-					model.mw.Children().At(frameI).SetVisible(true)
-					model.mw.Children().At(frameS).SetVisible(false)
-					//model.HideProgress()
-					progressBar.SetVisible(false)
-
-					lbInstallationState.SetText("Installation failed")
-					btnCmd.SetEnabled(true)
-					btnCmd.SetText("Exit installer")
-				}
-
 				model.mw.Synchronize(func() {
+					switch model.state {
+					case initial:
+						model.mw.Children().At(frameW).SetVisible(false)
+						model.mw.Children().At(frameI).SetVisible(false)
+						model.mw.Children().At(frameS).SetVisible(true)
+						autoStart.SetChecked(model.cfg.AutoStart)
+
+					case installNeeded:
+						model.mw.Children().At(frameW).SetVisible(true)
+						model.mw.Children().At(frameI).SetVisible(false)
+						model.mw.Children().At(frameS).SetVisible(false)
+						//model.HideProgress()
+						//progressBar.SetVisible(false)
+
+						btnBegin.SetEnabled(true)
+						//btnCmd.SetText("Install")
+						//btnCmd.SetFocus()
+						//lbInstallationState.SetText("Docker desktop is required to run exit node.")
+						//lbInstallationStatus.SetText("Press button to begin installation.")
+
+					case installInProgress:
+						model.mw.Children().At(frameW).SetVisible(false)
+						model.mw.Children().At(frameI).SetVisible(true)
+						model.mw.Children().At(frameS).SetVisible(false)
+
+						checkWindowsVersion.SetChecked(model.checkWindowsVersion)
+						checkVTx.SetChecked(model.checkVTx)
+						enableWSL.SetChecked(model.enableWSL)
+						installExecutable.SetChecked(model.installExecutable)
+						rebootAfterWSLEnable.SetChecked(model.rebootAfterWSLEnable)
+						downloadFiles.SetChecked(model.downloadFiles)
+						installWSLUpdate.SetChecked(model.installWSLUpdate)
+						installDocker.SetChecked(model.installDocker)
+						checkGroupMembership.SetChecked(model.checkGroupMembership)
+
+						lbInstallationStatus.SetText(model.installationStatus)
+						btnFinish.SetEnabled(false)
+
+					case installFinished:
+						lbInstallationStatus.SetText(model.installationStatus)
+						btnFinish.SetEnabled(true)
+						btnFinish.SetText("Finish")
+
+					case installError:
+						model.mw.Children().At(frameI).SetVisible(true)
+						model.mw.Children().At(frameS).SetVisible(false)
+						lbInstallationStatus.SetText(model.installationStatus)
+
+						btnFinish.SetEnabled(true)
+						btnFinish.SetText("Exit installer")
+					}
+
 					switch model.stateDocker {
 					case stateRunning:
 						lbDocker.SetText("Running [OK]")
@@ -210,7 +318,6 @@ func createDialogue() {
 				})
 			}
 		}
-
 	}()
 
 	// prevent closing the app

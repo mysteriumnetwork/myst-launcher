@@ -36,10 +36,16 @@ type Model struct {
 	stateContainer runnableState
 
 	// inst
-	installationState  string
-	installationState2 string
-	progress           int
-	progressVisible    bool
+	checkWindowsVersion  bool
+	checkVTx             bool
+	enableWSL            bool
+	installExecutable    bool
+	rebootAfterWSLEnable bool
+	downloadFiles        bool
+	installWSLUpdate     bool
+	installDocker        bool
+	checkGroupMembership bool
+	installationStatus   string
 
 	dlg  chan int
 	icon *walk.Icon
@@ -69,15 +75,15 @@ const (
 var model Model
 
 func init() {
-	model.dlg = make(chan int)
-	model.signal = make(chan int)
+	model.dlg = make(chan int, 0)
+	model.signal = make(chan int, 0)
 }
 
 func (m *Model) TriggerUpdate() {
 	select {
 	case m.signal <- 0:
-	default:
-		fmt.Println("no message sent")
+		//default:
+		//	fmt.Println("no message sent")
 	}
 }
 
@@ -97,7 +103,12 @@ func (m *Model) SwitchState(s modalState) {
 }
 
 func (m *Model) BtnOnClick() {
-	m.dlg <- 0
+	//m.dlg <- 0
+	select {
+	case m.dlg <- 0:
+	default:
+		fmt.Println("no message sent > BtnOnClick")
+	}
 }
 
 func (m *Model) WaitDialogueComplete() {
@@ -105,8 +116,8 @@ func (m *Model) WaitDialogueComplete() {
 }
 
 func (m *Model) SetProgress(progress int) {
-	m.progressVisible = true
-	m.progress = progress
+	//m.progressVisible = true
+	//m.progress = progress
 }
 
 func (m *Model) isExiting() bool {
