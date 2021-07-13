@@ -37,7 +37,7 @@ func createNotifyIcon() {
 		if button != walk.LeftButton {
 			return
 		}
-		model.mw.Show()
+		model.ShowMain()
 	})
 	ni.MessageClicked().Attach(func() {})
 
