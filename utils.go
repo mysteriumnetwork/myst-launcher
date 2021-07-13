@@ -41,10 +41,8 @@ func cmdRun(name string, args ...string) int {
 
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		//HideWindow: true,
-		//CreationFlags: 0x08000000, //CREATE_NO_WINDOW
+		HideWindow: true,
 	}
-
 	//output, _ := cmd.CombinedOutput()
 	//fmt.Println(string(output))
 
@@ -268,11 +266,50 @@ func isWindowsUpdateEnabled() bool {
 	return disableWUfBSafeguards == 1
 }
 
-func hasVTx() bool {
+// does not matter in self-virtualized environment
+// see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
+func hasVTx_() bool {
 	const PF_VIRT_FIRMWARE_ENABLED = 21
-	r1, _, e1 := syscall.Syscall(procIsProcessorFeaturePresent.Addr(), 1, uintptr(PF_VIRT_FIRMWARE_ENABLED), 0, 0)
+	r1, r2, e1 := syscall.Syscall(procIsProcessorFeaturePresent.Addr(), 1, uintptr(PF_VIRT_FIRMWARE_ENABLED), 0, 0)
 	if e1 != 0 {
 		fmt.Printf("Err: %s \n", syscall.Errno(e1))
 	}
+	log.Println("hasVTx", r1, r2)
 	return r1 != 0
+}
+
+func hasVTx() bool {
+	ole.CoInitialize(0)
+	defer ole.CoUninitialize()
+
+	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
+	defer unknown.Release()
+
+	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
+	defer wmi.Release()
+
+	// service is a SWbemServices
+	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
+	service := serviceRaw.ToIDispatch()
+	defer service.Release()
+
+	// result is a SWBemObjectSet
+	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_ComputerSystem")
+	result := resultRaw.ToIDispatch()
+	defer result.Release()
+
+	countVar, _ := oleutil.GetProperty(result, "Count")
+	count := int(countVar.Val)
+
+	for i := 0; i < count; i++ {
+		itemRaw, _ := oleutil.CallMethod(result, "ItemIndex", i)
+		item := itemRaw.ToIDispatch()
+		defer item.Release()
+
+		variantHypervisorPresent, err := oleutil.GetProperty(item, "HypervisorPresent")
+		if err == nil {
+			return variantHypervisorPresent.Value().(bool)
+		}
+	}
+	return false
 }

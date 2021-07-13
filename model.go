@@ -8,6 +8,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -22,31 +23,33 @@ type Config struct {
 }
 
 type Model struct {
-	cfg Config
-
-	state         modalState
 	inTray        bool
 	installStage2 bool
 	pipeListener  net.Listener
+	cfg           Config
 
-	icon *walk.Icon
-	mw   *walk.MainWindow
-
-	// docker
-	lbDocker    *walk.Label
-	lbContainer *walk.Label
-
-	// inst
-	lbInstallationState  *walk.Label
-	lbInstallationState2 *walk.Label
-	progressBar          *walk.ProgressBar
+	signal chan int
+	state  modalState
 
 	// common
-	btnCmd        *walk.PushButton
-	btnOpenNodeUI *walk.PushButton
-	autoStart     *walk.CheckBox
+	stateDocker    runnableState
+	stateContainer runnableState
 
-	dlg chan int
+	// inst
+	checkWindowsVersion  bool
+	checkVTx             bool
+	enableWSL            bool
+	installExecutable    bool
+	rebootAfterWSLEnable bool
+	downloadFiles        bool
+	installWSLUpdate     bool
+	installDocker        bool
+	checkGroupMembership bool
+	installationStatus   string
+
+	dlg  chan int
+	icon *walk.Icon
+	mw   *walk.MainWindow
 }
 
 type modalState int
@@ -60,10 +63,28 @@ const (
 	installError      modalState = -4
 )
 
+type runnableState int
+
+const (
+	stateUnknown    runnableState = 0
+	stateStarting   runnableState = 1
+	stateRunning    runnableState = 2
+	stateInstalling runnableState = 3
+)
+
 var model Model
 
 func init() {
-	model.dlg = make(chan int)
+	model.dlg = make(chan int, 0)
+	model.signal = make(chan int, 0)
+}
+
+func (m *Model) TriggerUpdate() {
+	select {
+	case m.signal <- 0:
+		//default:
+		//	fmt.Println("no message sent")
+	}
 }
 
 func (m *Model) ShowMain() {
@@ -78,63 +99,25 @@ func (m *Model) ShowMain() {
 
 func (m *Model) SwitchState(s modalState) {
 	m.state = s
-	m.refreshState()
-}
-
-const frameI = 1
-const frameS = 2
-
-func (m *Model) refreshState() {
-	switch m.state {
-	case initial:
-		m.mw.Children().At(frameI).SetVisible(false)
-		m.mw.Children().At(frameS).SetVisible(true)
-	case installNeeded:
-		m.mw.Children().At(frameI).SetVisible(true)
-		m.mw.Children().At(frameS).SetVisible(false)
-		m.HideProgress()
-
-		m.btnCmd.SetEnabled(true)
-		m.btnCmd.SetText("Install")
-		m.btnCmd.SetFocus()
-
-		m.lbInstallationState.SetText("Docker desktop is required to run exit node.")
-		m.lbInstallationState2.SetText("Press button to begin installation.")
-
-		m.lbDocker.SetText("OK")
-	case installInProgress:
-		m.btnCmd.SetEnabled(false)
-		m.lbInstallationState.SetText("Downloading installation packages.")
-		m.lbInstallationState2.SetText("-")
-	case installFinished:
-		m.lbInstallationState.SetText("Installation successfully finished!")
-		m.btnCmd.SetEnabled(true)
-		m.btnCmd.SetText("Finish !")
-	case installError:
-		m.mw.Children().At(frameI).SetVisible(true)
-		m.mw.Children().At(frameS).SetVisible(false)
-		m.HideProgress()
-		m.lbInstallationState.SetText("Installation failed")
-		m.btnCmd.SetEnabled(true)
-		m.btnCmd.SetText("Exit installer")
-	}
+	m.TriggerUpdate()
 }
 
 func (m *Model) BtnOnClick() {
-	m.dlg <- 0
+	//m.dlg <- 0
+	select {
+	case m.dlg <- 0:
+	default:
+		fmt.Println("no message sent > BtnOnClick")
+	}
 }
 
 func (m *Model) WaitDialogueComplete() {
 	<-m.dlg
 }
 
-func (m *Model) HideProgress() {
-	m.progressBar.SetVisible(false)
-}
-
-func (m *Model) PrintProgress(progress int) {
-	m.progressBar.SetVisible(true)
-	m.progressBar.SetValue(progress)
+func (m *Model) SetProgress(progress int) {
+	//m.progressVisible = true
+	//m.progress = progress
 }
 
 func (m *Model) isExiting() bool {

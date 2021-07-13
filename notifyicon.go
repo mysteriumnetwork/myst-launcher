@@ -48,9 +48,6 @@ func createNotifyIcon() {
 	exitAction.Triggered().Attach(func() {
 		walk.App().Exit(0)
 	})
-	if err := ni.ContextMenu().Actions().Add(exitAction); err != nil {
-		log.Fatal(err)
-	}
 
 	openUIAction := walk.NewAction()
 	if err := openUIAction.SetText("Open &UI"); err != nil {
@@ -59,7 +56,11 @@ func createNotifyIcon() {
 	openUIAction.Triggered().Attach(func() {
 		model.openNodeUI()
 	})
+
 	if err := ni.ContextMenu().Actions().Add(openUIAction); err != nil {
+		log.Fatal(err)
+	}
+	if err := ni.ContextMenu().Actions().Add(exitAction); err != nil {
 		log.Fatal(err)
 	}
 
