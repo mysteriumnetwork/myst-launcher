@@ -29,7 +29,7 @@ func createDialogue() {
 		btnOpenNodeUI *walk.PushButton
 
 		// install
-		lbInstallationStatus *walk.Label
+		lbInstallationStatus *walk.TextEdit
 		btnBegin             *walk.PushButton
 
 		checkWindowsVersion  *walk.CheckBox
@@ -43,7 +43,12 @@ func createDialogue() {
 		checkGroupMembership *walk.CheckBox
 
 		btnFinish *walk.PushButton
+
+		iv  *walk.ImageView
+		iv2 *walk.ImageView
+		iv3 *walk.ImageView
 	)
+	model.readConfig()
 
 	if err := (MainWindow{
 		AssignTo: &model.mw,
@@ -52,129 +57,164 @@ func createDialogue() {
 		Size:     Size{400, 600},
 		Icon:     model.icon,
 
-		Layout: VBox{
-			//MarginsZero: true,
-		},
+		Layout: VBox{},
 		Children: []Widget{
 			VSpacer{RowSpan: 1},
 
-			GroupBox{
+			Composite{
 				Visible: false,
-				Title:   "Installation needed",
-				Layout:  VBox{},
+				Layout: VBox{
+					MarginsZero: true,
+				},
+
 				Children: []Widget{
-					VSpacer{RowSpan: 1},
-					Label{
-						Text: "Status:",
-						Font: Font{
-							Family:    "Arial",
-							PointSize: 9,
-							Bold:      true,
-						},
-					},
-					Label{
-						Text: "This wizard will install missing components to run Mysterium Node.\r\nPress install button to proceed with installation",
-					},
-					VSpacer{Row: 1},
-					PushButton{
-						AssignTo: &btnBegin,
-						Text:     "Install",
-						OnClicked: func() {
-							model.BtnOnClick()
+					GroupBox{
+						Title:  "Installation",
+						Layout: VBox{},
+						Children: []Widget{
+							ImageView{
+								AssignTo:  &iv3,
+								Alignment: AlignHNearVFar,
+							},
+							HSpacer{ColumnSpan: 1},
+							VSpacer{RowSpan: 1},
+							Label{
+								Text: "Installation status:",
+							},
+							TextEdit{
+								Text: "This wizard will help with installation of missing components to run Mysterium Node.\r\n\r\n" +
+									"Please press Install button to proceed with installation.",
+								ReadOnly: true,
+								MaxSize: Size{
+									Height: 120,
+								},
+							},
+							VSpacer{Row: 1},
+							PushButton{
+								AssignTo: &btnBegin,
+								Text:     "Install",
+								OnClicked: func() {
+									model.BtnOnClick()
+								},
+							},
 						},
 					},
 				},
 			},
 
-			GroupBox{
+			Composite{
 				Visible: false,
-				Title:   "Installation process",
-				//Layout:  VBox{},
+				Layout: VBox{
+					MarginsZero: true,
+				},
 
-				Layout: Grid{Columns: 2},
 				Children: []Widget{
-					VSpacer{ColumnSpan: 2},
-					Label{
-						Text: "check Windows version",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &checkWindowsVersion,
-					},
+					GroupBox{
+						Title:  "Installation process",
+						Layout: Grid{Columns: 2},
+						Children: []Widget{
+							ImageView{
+								AssignTo:   &iv2,
+								Alignment:  AlignHNearVFar,
+								ColumnSpan: 2,
+							},
+							VSpacer{RowSpan: 1, ColumnSpan: 2},
 
-					Label{
-						Text: "check VT-x",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &checkVTx,
-					},
-					Label{
-						Text: "enable WSL",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &enableWSL,
-					},
-					Label{
-						Text: "install executable",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &installExecutable,
-					},
-					Label{
-						Text: "reboot after WSL enable",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &rebootAfterWSLEnable,
-					},
-					Label{
-						Text: "download files",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &downloadFiles,
-					},
-					Label{
-						Text: "install WSL update",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &installWSLUpdate,
-					},
-					Label{
-						Text: "install Docker",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &installDocker,
-					},
-					Label{
-						Text: "checkGroupMembership",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &checkGroupMembership,
-					},
+							Label{
+								Text: "Check Windows version",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &checkWindowsVersion,
+							},
 
-					VSpacer{
-						ColumnSpan: 2,
-						Size:       8,
-					},
-					Label{
-						ColumnSpan: 2,
-						AssignTo:   &lbInstallationStatus,
-					},
+							Label{
+								Text: "Check VT-x",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &checkVTx,
+							},
+							Label{
+								Text: "Enable WSL",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &enableWSL,
+							},
+							Label{
+								Text: "Install executable",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &installExecutable,
+							},
+							Label{
+								Text: "Reboot after WSL enable",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &rebootAfterWSLEnable,
+							},
+							Label{
+								Text: "Download files",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &downloadFiles,
+							},
+							Label{
+								Text: "Install WSL update",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &installWSLUpdate,
+							},
+							Label{
+								Text: "Install Docker",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &installDocker,
+							},
+							Label{
+								Text: "Check group membership (docker-users)",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &checkGroupMembership,
+							},
 
-					VSpacer{ColumnSpan: 2},
-					PushButton{
-						AssignTo:   &btnFinish,
-						Text:       "Finish",
-						ColumnSpan: 2,
-						OnClicked: func() {
-							model.BtnOnClick()
+							VSpacer{
+								ColumnSpan: 2,
+								MinSize: Size{
+									Height: 24,
+								},
+							},
+							Label{
+								Text:       "Installation status:",
+								ColumnSpan: 2,
+							},
+							TextEdit{
+								ColumnSpan: 2,
+								RowSpan:    1,
+								AssignTo:   &lbInstallationStatus,
+								ReadOnly:   true,
+								MaxSize: Size{
+									Height: 120,
+								},
+							},
+
+							VSpacer{ColumnSpan: 2, Row: 1},
+							PushButton{
+								ColumnSpan: 2,
+								//RowSpan:   1,
+								AssignTo: &btnFinish,
+								Text:     "Finish",
+								OnClicked: func() {
+									model.BtnOnClick()
+								},
+							},
 						},
 					},
 				},
@@ -185,7 +225,10 @@ func createDialogue() {
 				Title:   "Status",
 				Layout:  Grid{Columns: 2},
 				Children: []Widget{
-					//VSpacer{ColumnSpan: 2},
+					ImageView{
+						AssignTo: &iv,
+					},
+					VSpacer{ColumnSpan: 2},
 					Label{
 						Text: "Docker",
 					},
@@ -208,11 +251,6 @@ func createDialogue() {
 							model.saveConfig()
 						},
 					},
-
-					VSpacer{
-						ColumnSpan: 2,
-						Size:       8,
-					},
 					PushButton{
 						Enabled:  false,
 						AssignTo: &btnOpenNodeUI,
@@ -222,7 +260,7 @@ func createDialogue() {
 						},
 						ColumnSpan: 2,
 					},
-					//VSpacer{ColumnSpan: 2},
+					VSpacer{ColumnSpan: 2},
 				},
 			},
 			VSpacer{RowSpan: 1},
@@ -230,10 +268,22 @@ func createDialogue() {
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
+	icon, err := walk.NewIconFromResourceIdWithSize(2, walk.Size{
+		Width:  64,
+		Height: 64,
+	})
+	if err == nil {
+		i, err := walk.ImageFrom(icon)
+		if err == nil {
+			iv.SetImage(i)
+			iv2.SetImage(i)
+			iv3.SetImage(i)
+		}
+	}
+
 	if model.inTray {
 		model.mw.SetVisible(false)
 	}
-	model.readConfig()
 
 	go func() {
 		for {
@@ -253,14 +303,7 @@ func createDialogue() {
 						model.mw.Children().At(frameW).SetVisible(true)
 						model.mw.Children().At(frameI).SetVisible(false)
 						model.mw.Children().At(frameS).SetVisible(false)
-						//model.HideProgress()
-						//progressBar.SetVisible(false)
-
 						btnBegin.SetEnabled(true)
-						//btnCmd.SetText("Install")
-						//btnCmd.SetFocus()
-						//lbInstallationState.SetText("Docker desktop is required to run exit node.")
-						//lbInstallationStatus.SetText("Press button to begin installation.")
 
 					case installInProgress:
 						model.mw.Children().At(frameW).SetVisible(false)

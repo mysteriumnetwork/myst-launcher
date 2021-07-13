@@ -169,7 +169,7 @@ func superviseDockerNode() {
 			}
 
 			CreateAutostartShortcut("")
-			log.Println("downloading..")
+			log.Println("downloading files..")
 			list := []struct{ url, name string }{
 				{"https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe", "DockerDesktopInstaller.exe"},
 				{"https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi", "wsl_update_x64.msi"},
@@ -177,13 +177,13 @@ func superviseDockerNode() {
 			for fi, v := range list {
 				if _, err := os.Stat(os.Getenv("TMP") + "\\" + v.name); err != nil {
 
-					model.installationStatus = fmt.Sprintf("%d of %d: %s", fi+1, len(list), v.name)
+					model.installationStatus = fmt.Sprintf("Downloading %d of %d: %s", fi+1, len(list), v.name)
 					model.TriggerUpdate()
 					model.SetProgress(0)
 
 					err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, model.SetProgress)
 					if err != nil {
-						model.installationStatus = "Reason:\r\nDownload failed"
+						model.installationStatus = "Download failed"
 						model.SwitchState(installError)
 
 						model.WaitDialogueComplete()
