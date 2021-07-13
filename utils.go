@@ -41,10 +41,8 @@ func cmdRun(name string, args ...string) int {
 
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		//HideWindow: true,
-		//CreationFlags: 0x08000000, //CREATE_NO_WINDOW
+		HideWindow: true,
 	}
-
 	//output, _ := cmd.CombinedOutput()
 	//fmt.Println(string(output))
 

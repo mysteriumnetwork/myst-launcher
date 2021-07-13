@@ -26,7 +26,8 @@ func main() {
 		model.installStage2 = os.Args[1] == flagInstallStage2
 
 		if os.Args[1] == flagInstall {
-			if !checkExe() {
+			//if !checkExe()
+			{
 				installExe()
 			}
 			return

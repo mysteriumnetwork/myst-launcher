@@ -87,7 +87,6 @@ func superviseDockerNode() {
 					cmdArgs := "add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\" /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f"
 					err := _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
 					if err != nil {
-
 						model.installationStatus = "Reason:\r\nCommand failed: failed to enable Windows Updates"
 						model.SwitchState(installError)
 
