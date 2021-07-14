@@ -203,14 +203,14 @@ func createDialogue() {
 								MaxSize: Size{
 									Height: 120,
 								},
+								VScroll: true,
 							},
 
 							VSpacer{ColumnSpan: 2, Row: 1},
 							PushButton{
 								ColumnSpan: 2,
-								//RowSpan:   1,
-								AssignTo: &btnFinish,
-								Text:     "Finish",
+								AssignTo:   &btnFinish,
+								Text:       "Finish",
 								OnClicked: func() {
 									model.BtnOnClick()
 								},
@@ -288,6 +288,13 @@ func createDialogue() {
 	go func() {
 		for {
 			select {
+			case txt := <-model.log:
+				fmt.Println("received log", txt)
+				model.mw.Synchronize(func() {
+					lbInstallationStatus.AppendText(txt)
+					lbInstallationStatus.AppendText("\r\n")
+				})
+
 			case sig := <-model.signal:
 				fmt.Println("received signal", sig)
 
@@ -299,10 +306,34 @@ func createDialogue() {
 						model.mw.Children().At(frameS).SetVisible(true)
 						autoStart.SetChecked(model.cfg.AutoStart)
 
+						switch model.stateDocker {
+						case stateRunning:
+							lbDocker.SetText("Running [OK]")
+						case stateInstalling:
+							lbDocker.SetText("Installing..")
+						case stateStarting:
+							lbDocker.SetText("Starting..")
+						case stateUnknown:
+							lbDocker.SetText("-")
+						}
+						switch model.stateContainer {
+						case stateRunning:
+							lbContainer.SetText("Running [OK]")
+						case stateInstalling:
+							lbContainer.SetText("Installing..")
+						case stateStarting:
+							lbContainer.SetText("Starting..")
+						case stateUnknown:
+							lbContainer.SetText("-")
+						}
+						btnOpenNodeUI.SetEnabled(model.stateContainer == stateRunning)
+
 					case installNeeded:
 						model.mw.Children().At(frameW).SetVisible(true)
 						model.mw.Children().At(frameI).SetVisible(false)
 						model.mw.Children().At(frameS).SetVisible(false)
+						//lbInstallationStatus.SetText(model.installationStatus)
+						//log.Println(model.installationStatus)
 						btnBegin.SetEnabled(true)
 
 					case installInProgress:
@@ -320,44 +351,26 @@ func createDialogue() {
 						installDocker.SetChecked(model.installDocker)
 						checkGroupMembership.SetChecked(model.checkGroupMembership)
 
-						lbInstallationStatus.SetText(model.installationStatus)
-						btnFinish.SetEnabled(false)
+						//lbInstallationStatus.SetText(model.installationStatus)
+						//log.Println(model.installationStatus)
+						//btnFinish.SetEnabled(false)
 
 					case installFinished:
-						lbInstallationStatus.SetText(model.installationStatus)
+						//lbInstallationStatus.SetText(model.installationStatus)
+						//log.Println(model.installationStatus)
+
 						btnFinish.SetEnabled(true)
 						btnFinish.SetText("Finish")
 
 					case installError:
 						model.mw.Children().At(frameI).SetVisible(true)
 						model.mw.Children().At(frameS).SetVisible(false)
-						lbInstallationStatus.SetText(model.installationStatus)
+						//lbInstallationStatus.SetText(model.installationStatus)
+						//log.Println(model.installationStatus)
 
 						btnFinish.SetEnabled(true)
 						btnFinish.SetText("Exit installer")
 					}
-
-					switch model.stateDocker {
-					case stateRunning:
-						lbDocker.SetText("Running [OK]")
-					case stateInstalling:
-						lbDocker.SetText("Installing..")
-					case stateStarting:
-						lbDocker.SetText("Starting..")
-					case stateUnknown:
-						lbDocker.SetText("-")
-					}
-					switch model.stateContainer {
-					case stateRunning:
-						lbContainer.SetText("Running [OK]")
-					case stateInstalling:
-						lbContainer.SetText("Installing..")
-					case stateStarting:
-						lbContainer.SetText("Starting..")
-					case stateUnknown:
-						lbContainer.SetText("-")
-					}
-					btnOpenNodeUI.SetEnabled(model.stateContainer == stateRunning)
 				})
 			}
 		}

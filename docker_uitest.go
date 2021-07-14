@@ -17,25 +17,24 @@ func uiTest() {
 	model.checkWindowsVersion = true
 	model.TriggerUpdate()
 
-	model.installationStatus = fmt.Sprintf("Downloading 1 of 2: abc")
-	model.TriggerUpdate()
+	log.Println(fmt.Sprintf("Downloading 1 of 2: abc"))
 	model.SwitchState(installInProgress)
 	model.WaitDialogueComplete()
 
-	model.installationStatus = fmt.Sprintf("Downloading 2 of 2: abc")
-	model.TriggerUpdate()
+	log.Println(fmt.Sprintf("Downloading 2 of 2: abc"))
 	model.SwitchState(installInProgress)
 	model.WaitDialogueComplete()
 
-	model.installationStatus = "Reason:\r\nCommand failed: failed to enable Microsoft-Windows-Subsystem-Linux"
+	//model.installationStatus = "Reason:\r\nCommand failed: failed to enable Microsoft-Windows-Subsystem-Linux"
+	log.Println("Reason:\r\nCommand failed: failed to enable Microsoft-Windows-Subsystem-Linux")
 	model.SwitchState(installError)
 	model.WaitDialogueComplete()
 
-	model.installationStatus = "Installation successfully finished!"
+	//model.installationStatus = "Installation successfully finished!"
+	log.Println("Installation successfully finished!")
 	model.SwitchState(installFinished)
 	model.WaitDialogueComplete()
 	model.SwitchState(initial)
-
 	model.SwitchState(installInProgress)
 
 	log.Println("msiexec")
@@ -43,13 +42,12 @@ func uiTest() {
 	cmdArgs := "/i " + os.Getenv("TMP") + "\\wsl_update_x64.msi /quiet"
 	err := _ShellExecuteAndWait(0, "runas", exe, cmdArgs, os.Getenv("TMP"), syscall.SW_NORMAL)
 	if err != nil {
-		model.installationStatus = "Error:\r\nCommand failed: msiexec.exe /i wsl_update_x64.msi /quiet"
-		model.TriggerUpdate()
-		model.SwitchState(installError)
+		log.Println("Error:\r\nCommand failed: msiexec.exe /i wsl_update_x64.msi /quiet")
 
+		model.SwitchState(installError)
 		model.WaitDialogueComplete()
-		model.ExitApp()
-		return
+		//model.ExitApp()
+		//return
 	}
 	model.SwitchState(installFinished)
 	model.WaitDialogueComplete()

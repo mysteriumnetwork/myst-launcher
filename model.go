@@ -47,7 +47,9 @@ type Model struct {
 	checkGroupMembership bool
 	installationStatus   string
 
-	dlg  chan int
+	log chan string
+	dlg chan int
+
 	icon *walk.Icon
 	mw   *walk.MainWindow
 }
@@ -77,6 +79,16 @@ var model Model
 func init() {
 	model.dlg = make(chan int, 0)
 	model.signal = make(chan int, 0)
+	model.log = make(chan string, 0)
+}
+
+func (m *Model) Write(p []byte) (int, error) {
+	select {
+	case m.log <- string(p):
+	default:
+		fmt.Println("no log sent")
+	}
+	return len(p), nil
 }
 
 func (m *Model) TriggerUpdate() {

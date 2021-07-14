@@ -9,6 +9,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/lxn/walk"
@@ -32,11 +33,16 @@ func main() {
 			}
 			return
 		}
+
+		//fmt.Println(os.Args[1])
+		//walk.MsgBox(nil, "", os.Args[1], walk.MsgBoxOK)
+		//return
 	}
 
-	if !isAnotherInstanceRunning() {
-		return
-	}
+	//if !isAnotherInstanceRunning() {
+	//	return
+	//}
+	log.SetOutput(&model)
 	model.icon, _ = walk.NewIconFromResourceId(2)
 	createDialogue()
 
