@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package main
+package app
 
 import (
 	"bufio"
@@ -185,7 +185,7 @@ func checkExe() bool {
 	return true
 }
 
-func installExe() {
+func InstallExe() {
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
 	os.Mkdir(dst, os.ModePerm)
 

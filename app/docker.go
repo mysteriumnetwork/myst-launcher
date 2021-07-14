@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package main
+package app
 
 import (
 	"fmt"
@@ -25,39 +25,39 @@ const (
 	group  = "docker-users"
 )
 
-func superviseDockerNode() {
+func SuperviseDockerNode() {
 	dockerCmd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
 	for {
 		ex := cmdRun(dockerCmd, "ps")
 		switch ex {
 		case 0:
-			model.stateDocker = stateRunning
-			model.TriggerUpdate()
+			SModel.stateDocker = stateRunning
+			SModel.TriggerUpdate()
 
 			ex := cmdRun(dockerCmd, "container", "start", "myst")
 			switch ex {
 			case 0:
-				model.stateContainer = stateRunning
-				model.TriggerUpdate()
+				SModel.stateContainer = stateRunning
+				SModel.TriggerUpdate()
 
 			default:
 				log.Printf("Failed to start cmd: %v", ex)
-				model.stateContainer = stateInstalling
-				model.TriggerUpdate()
+				SModel.stateContainer = stateInstalling
+				SModel.TriggerUpdate()
 
 				ex := cmdRun(dockerCmd, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " ")...)
 				if ex == 0 {
-					model.stateContainer = stateRunning
-					model.TriggerUpdate()
+					SModel.stateContainer = stateRunning
+					SModel.TriggerUpdate()
 
 					continue
 				}
 			}
 
 		case 1:
-			model.stateDocker = stateStarting
-			model.stateContainer = stateUnknown
-			model.TriggerUpdate()
+			SModel.stateDocker = stateStarting
+			SModel.stateContainer = stateUnknown
+			SModel.TriggerUpdate()
 
 			if isProcessRunning("Docker Desktop.exe") {
 				break
@@ -71,17 +71,17 @@ func superviseDockerNode() {
 
 		default:
 			var err error
-			if !model.installStage2 {
-				model.SwitchState(installNeeded)
-				model.WaitDialogueComplete()
+			if !SModel.InstallStage2 {
+				SModel.SwitchState(installNeeded)
+				SModel.WaitDialogueComplete()
 			}
-			model.SwitchState(installInProgress)
+			SModel.SwitchState(installInProgress)
 
 			log.Println("Checking Windows version")
-			model.TriggerUpdate()
+			SModel.TriggerUpdate()
 			if !CheckWindowsVersion() {
 				log.Println("You must run Windows 10 version 2004 or above.")
-				model.SwitchState(installError)
+				SModel.SwitchState(installError)
 
 				if !isWindowsUpdateEnabled() {
 					exe := "reg"
@@ -89,36 +89,36 @@ func superviseDockerNode() {
 					err := _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
 					if err != nil {
 						log.Println("Command failed: failed to enable Windows Updates")
-						model.SwitchState(installError)
+						SModel.SwitchState(installError)
 
-						model.WaitDialogueComplete()
-						model.ExitApp()
+						SModel.WaitDialogueComplete()
+						SModel.ExitApp()
 						return
 					}
 				}
-				ret := walk.MsgBox(model.mw, "Installation", "Please signal to Windows 10 version 2004 or above. \r\nClick OK to open Update settings", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+				ret := walk.MsgBox(SModel.mw, "Installation", "Please signal to Windows 10 version 2004 or above. \r\nClick OK to open Update settings", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 				if ret == win.IDOK {
 					cmdRun("rundll32", "url.dll,FileProtocolHandler", "ms-settings:windowsupdate-action")
 				}
-				model.WaitDialogueComplete()
-				model.ExitApp()
+				SModel.WaitDialogueComplete()
+				SModel.ExitApp()
 				return
 			}
-			model.checkWindowsVersion = true
-			model.TriggerUpdate()
+			SModel.checkWindowsVersion = true
+			SModel.TriggerUpdate()
 
 			log.Println("Checking VT-x")
 			if !hasVTx() {
-				walk.MsgBox(model.mw, "Installation", "Please Enable virtualization in BIOS", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+				walk.MsgBox(SModel.mw, "Installation", "Please Enable virtualization in BIOS", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 
-				model.WaitDialogueComplete()
-				model.ExitApp()
+				SModel.WaitDialogueComplete()
+				SModel.ExitApp()
 				return
 			}
-			model.checkVTx = true
-			model.TriggerUpdate()
+			SModel.checkVTx = true
+			SModel.TriggerUpdate()
 
-			if !model.installStage2 {
+			if !SModel.InstallStage2 {
 
 				log.Println("Enable WSL..")
 				exe := "dism.exe"
@@ -126,47 +126,46 @@ func superviseDockerNode() {
 				err = _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
 				if err != nil {
 					log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
-					model.SwitchState(installError)
+					SModel.SwitchState(installError)
 
-					model.WaitDialogueComplete()
-					model.ExitApp()
+					SModel.WaitDialogueComplete()
+					SModel.ExitApp()
 					return
 				}
-				model.enableWSL = true
-				model.TriggerUpdate()
+				SModel.enableWSL = true
+				SModel.TriggerUpdate()
 
 				log.Println("Install executable")
 				fullExe, _ := os.Executable()
-				cmdArgs = flagInstall
+				cmdArgs = FlagInstall
 				err = _ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
 				if err != nil {
 					log.Println("Failed to install executable")
-					model.SwitchState(installError)
+					SModel.SwitchState(installError)
 
-					model.WaitDialogueComplete()
-					model.ExitApp()
+					SModel.WaitDialogueComplete()
+					SModel.ExitApp()
 					return
 				}
-				CreateAutostartShortcut(flagInstallStage2)
-
-				model.installExecutable = true
-				model.TriggerUpdate()
+				CreateAutostartShortcut(FlagInstallStage2)
+				SModel.installExecutable = true
+				SModel.TriggerUpdate()
 
 				if true {
-					ret := walk.MsgBox(model.mw, "Installation", "Reboot is needed to finish installation of WSL\r\nClick OK to reboot", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+					ret := walk.MsgBox(SModel.mw, "Installation", "Reboot is needed to finish installation of WSL\r\nClick OK to reboot", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 					if ret == win.IDOK {
 						_ShellExecuteAndWait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
 					}
-					model.WaitDialogueComplete()
-					model.ExitApp()
+					SModel.WaitDialogueComplete()
+					SModel.ExitApp()
 					return
 				}
 			} else {
 				// proceeding install after reboot
-				model.enableWSL = true
-				model.installExecutable = true
-				model.rebootAfterWSLEnable = true
-				model.TriggerUpdate()
+				SModel.enableWSL = true
+				SModel.installExecutable = true
+				SModel.rebootAfterWSLEnable = true
+				SModel.TriggerUpdate()
 			}
 
 			CreateAutostartShortcut("")
@@ -178,20 +177,20 @@ func superviseDockerNode() {
 			for fi, v := range list {
 				log.Println(fmt.Sprintf("Downloading %d of %d: %s", fi+1, len(list), v.name))
 				if _, err := os.Stat(os.Getenv("TMP") + "\\" + v.name); err != nil {
-					model.SetProgress(0)
+					SModel.SetProgress(0)
 
-					err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, model.SetProgress)
+					err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, SModel.SetProgress)
 					if err != nil {
 						log.Println("Download failed")
-						model.SwitchState(installError)
+						SModel.SwitchState(installError)
 
-						model.WaitDialogueComplete()
-						model.ExitApp()
+						SModel.WaitDialogueComplete()
+						SModel.ExitApp()
 						return
 					}
 				}
 			}
-			model.downloadFiles = true
+			SModel.downloadFiles = true
 
 			log.Println("Installing wsl_update_x64.msi")
 			exe := "msiexec.exe"
@@ -199,54 +198,54 @@ func superviseDockerNode() {
 			err = _ShellExecuteAndWait(0, "runas", exe, cmdArgs, os.Getenv("TMP"), syscall.SW_NORMAL)
 			if err != nil {
 				log.Println("Command failed: msiexec.exe /i wsl_update_x64.msi /quiet")
-				model.SwitchState(installError)
+				SModel.SwitchState(installError)
 
-				model.WaitDialogueComplete()
-				model.ExitApp()
+				SModel.WaitDialogueComplete()
+				SModel.ExitApp()
 				return
 			}
-			model.installWSLUpdate = true
-			model.TriggerUpdate()
+			SModel.installWSLUpdate = true
+			SModel.TriggerUpdate()
 
 			log.Println("installing docker desktop")
 			ex := cmdRun(os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
 			if ex != 0 {
 				log.Println("DockerDesktopInstaller failed")
-				model.SwitchState(installError)
+				SModel.SwitchState(installError)
 
-				model.WaitDialogueComplete()
-				model.ExitApp()
+				SModel.WaitDialogueComplete()
+				SModel.ExitApp()
 				return
 			}
-			model.installDocker = true
-			model.TriggerUpdate()
+			SModel.installDocker = true
+			SModel.TriggerUpdate()
 
 			log.Println("Checking current group membership")
 			if !CurrentGroupMembership(group) {
 				// request a logout //
 
-				ret := walk.MsgBox(model.mw, "Installation", "Log of from the current session to finish the installation.", walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
+				ret := walk.MsgBox(SModel.mw, "Installation", "Log of from the current session to finish the installation.", walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
 				if ret == win.IDYES {
 					windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
 					return
 				}
 				log.Println("Log of from the current session to finish the installation.")
-				model.SwitchState(installError)
+				SModel.SwitchState(installError)
 
-				model.WaitDialogueComplete()
-				model.ExitApp()
+				SModel.WaitDialogueComplete()
+				SModel.ExitApp()
 				return
 			}
-			model.readConfig()
-			model.cfg.AutoStart = true
-			model.saveConfig()
+			SModel.readConfig()
+			SModel.cfg.AutoStart = true
+			SModel.saveConfig()
 
-			model.checkGroupMembership = true
-			model.TriggerUpdate()
+			SModel.checkGroupMembership = true
+			SModel.TriggerUpdate()
 
-			model.SwitchState(installFinished)
-			model.WaitDialogueComplete()
-			model.SwitchState(initial)
+			SModel.SwitchState(installFinished)
+			SModel.WaitDialogueComplete()
+			SModel.SwitchState(initial)
 			continue
 		}
 
