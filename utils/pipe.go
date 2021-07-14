@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"github.com/Microsoft/go-winio"
-	"github.com/mysteriumnetwork/myst-launcher/app"
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"golang.org/x/sys/windows"
 	"log"
 )
@@ -16,7 +16,7 @@ func IsAlreadyRunning() bool {
 	return !errors.Is(err, windows.ERROR_FILE_NOT_FOUND)
 }
 
-func CreatePipeAndListen(model *app.Model) {
+func CreatePipeAndListen(model *gui.Model) {
 	l, err := winio.ListenPipe(LauncherPipeName, nil)
 	if err != nil {
 		log.Fatal(err)

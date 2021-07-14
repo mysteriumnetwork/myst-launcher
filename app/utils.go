@@ -22,17 +22,13 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
-	"github.com/lxn/win"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
 
 var (
-	modkernel32 = syscall.NewLazyDLL("kernel32.dll")
-	user32DLL   = windows.NewLazyDLL("user32.dll")
-
+	modkernel32                   = syscall.NewLazyDLL("kernel32.dll")
 	procCopyFileW                 = modkernel32.NewProc("CopyFileW")
-	switchToThisWindow            = user32DLL.NewProc("SwitchToThisWindow")
 	procIsProcessorFeaturePresent = modkernel32.NewProc("IsProcessorFeaturePresent")
 )
 
@@ -94,15 +90,6 @@ func cmdRun(name string, args ...string) int {
 
 	log.Printf("command exitCode: %v \r\n", exitCode)
 	return exitCode
-}
-
-func SwitchToThisWindow(hwnd win.HWND, f bool) int32 {
-	ret, _, _ := syscall.Syscall(switchToThisWindow.Addr(), 2,
-		uintptr(hwnd),
-		uintptr(win.BoolToBOOL(f)),
-		0,
-	)
-	return int32(ret)
 }
 
 func CreateShortcut(dst, target, args string) error {

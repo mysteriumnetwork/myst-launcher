@@ -4,10 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package app
+package gui
 
 import (
 	"encoding/json"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 	"log"
 	"net"
 	"os"
@@ -26,9 +27,9 @@ type Model struct {
 	InTray        bool
 	InstallStage2 bool
 	pipeListener  net.Listener
-	cfg           Config
+	CFG           Config
 
-	bus       EventBus.Bus
+	Bus       EventBus.Bus
 	waitClick chan int
 	Icon      *walk.Icon
 	mw        *walk.MainWindow
@@ -36,63 +37,43 @@ type Model struct {
 	state modalState
 
 	// common
-	stateDocker    runnableState
-	stateContainer runnableState
+	StateDocker    runnableState
+	StateContainer runnableState
 
 	// inst
-	checkWindowsVersion  bool
-	checkVTx             bool
-	enableWSL            bool
-	installExecutable    bool
-	rebootAfterWSLEnable bool
-	downloadFiles        bool
-	installWSLUpdate     bool
-	installDocker        bool
-	checkGroupMembership bool
+	CheckWindowsVersion  bool
+	CheckVTx             bool
+	EnableWSL            bool
+	InstallExecutable    bool
+	RebootAfterWSLEnable bool
+	DownloadFiles        bool
+	InstallWSLUpdate     bool
+	InstallDocker        bool
+	CheckGroupMembership bool
 	installationStatus   string
 }
-
-type modalState int
-
-const (
-	// state
-	initial           modalState = 0
-	installNeeded     modalState = -1
-	installInProgress modalState = -2
-	installFinished   modalState = -3
-	installError      modalState = -4
-)
-
-type runnableState int
-
-const (
-	stateUnknown    runnableState = 0
-	stateStarting   runnableState = 1
-	stateRunning    runnableState = 2
-	stateInstalling runnableState = 3
-)
 
 var SModel Model
 
 func init() {
-	SModel.bus = EventBus.New()
+	SModel.Bus = EventBus.New()
 	SModel.waitClick = make(chan int, 0)
 }
 
 func (m *Model) Write(p []byte) (int, error) {
-	SModel.bus.Publish("log", p)
+	SModel.Bus.Publish("log", p)
 	return len(p), nil
 }
 
 func (m *Model) TriggerUpdate() {
-	SModel.bus.Publish("state-change")
+	SModel.Bus.Publish("state-change")
 }
 
 func (m *Model) ShowMain() {
 	win.ShowWindow(m.mw.Handle(), win.SW_SHOW)
 	win.ShowWindow(m.mw.Handle(), win.SW_SHOWNORMAL)
 
-	SwitchToThisWindow(m.mw.Handle(), false)
+	native.SwitchToThisWindow(m.mw.Handle(), false)
 	win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 	win.SetWindowPos(m.mw.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 	win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
@@ -119,24 +100,24 @@ func (m *Model) SetProgress(progress int) {
 }
 
 func (m *Model) isExiting() bool {
-	return SModel.state == installError
+	return SModel.state == ModalStateInstallError
 }
 
 func (m *Model) ExitApp() {
-	m.bus.Publish("exit")
+	m.Bus.Publish("exit")
 
 	m.mw.Synchronize(func() {
 		walk.App().Exit(0)
 	})
 }
 
-func (m *Model) openNodeUI() {
+func (m *Model) OpenNodeUI() {
 	exe := "rundll32"
 	cmdArgs := "url.dll,FileProtocolHandler http://localhost:4449/"
-	_ShellExecuteAndWait(0, "", exe, cmdArgs, "", syscall.SW_NORMAL)
+	native.ShellExecuteAndWait(0, "", exe, cmdArgs, "", syscall.SW_NORMAL)
 }
 
-func (m *Model) readConfig() {
+func (m *Model) ReadConfig() {
 	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
 	_, err := os.Stat(f)
 	if os.IsNotExist(err) {
@@ -147,10 +128,10 @@ func (m *Model) readConfig() {
 	if err != nil {
 		return
 	}
-	json.NewDecoder(file).Decode(&SModel.cfg)
+	json.NewDecoder(file).Decode(&SModel.CFG)
 }
 
-func (m *Model) saveConfig() {
+func (m *Model) SaveConfig() {
 	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
 	file, err := os.Create(f)
 	if err != nil {
@@ -159,6 +140,10 @@ func (m *Model) saveConfig() {
 	}
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", " ")
-	err = enc.Encode(&SModel.cfg)
+	err = enc.Encode(&SModel.CFG)
 	log.Println(err)
+}
+
+func (m *Model) ConfirmModal(title, message string) int {
+	return walk.MsgBox(m.mw, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 }
