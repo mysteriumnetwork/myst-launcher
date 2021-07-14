@@ -8,6 +8,7 @@
 package app
 
 import (
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"log"
 
 	"github.com/lxn/walk"
@@ -23,11 +24,11 @@ func CreateNotifyIcon() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	SModel.bus.Subscribe("exit", func() {
+	gui.SModel.Bus.Subscribe("exit", func() {
 		ni.Dispose()
 	})
 
-	if err := ni.SetIcon(SModel.Icon); err != nil {
+	if err := ni.SetIcon(gui.SModel.Icon); err != nil {
 		log.Fatal(err)
 	}
 	if err := ni.SetToolTip("Mysterium Network - Node Launcher"); err != nil {
@@ -39,7 +40,7 @@ func CreateNotifyIcon() {
 		if button != walk.LeftButton {
 			return
 		}
-		SModel.ShowMain()
+		gui.SModel.ShowMain()
 	})
 	ni.MessageClicked().Attach(func() {})
 
@@ -56,7 +57,7 @@ func CreateNotifyIcon() {
 		log.Fatal(err)
 	}
 	openUIAction.Triggered().Attach(func() {
-		SModel.openNodeUI()
+		gui.SModel.OpenNodeUI()
 	})
 
 	if err := ni.ContextMenu().Actions().Add(openUIAction); err != nil {

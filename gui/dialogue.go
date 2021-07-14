@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package app
+package gui
 
 import (
 	"log"
@@ -47,7 +47,7 @@ func CreateDialogue() {
 		iv2 *walk.ImageView
 		iv3 *walk.ImageView
 	)
-	SModel.readConfig()
+	SModel.ReadConfig()
 
 	if err := (MainWindow{
 		AssignTo: &SModel.mw,
@@ -246,8 +246,8 @@ func CreateDialogue() {
 						Text:     "Start Node automatically",
 						AssignTo: &autoStart,
 						OnCheckedChanged: func() {
-							SModel.cfg.AutoStart = autoStart.Checked()
-							SModel.saveConfig()
+							SModel.CFG.AutoStart = autoStart.Checked()
+							SModel.SaveConfig()
 						},
 					},
 					PushButton{
@@ -255,7 +255,7 @@ func CreateDialogue() {
 						AssignTo: &btnOpenNodeUI,
 						Text:     "Open Node UI",
 						OnClicked: func() {
-							SModel.openNodeUI()
+							SModel.OpenNodeUI()
 						},
 						ColumnSpan: 2,
 					},
@@ -284,73 +284,73 @@ func CreateDialogue() {
 		SModel.mw.SetVisible(false)
 	}
 
-	SModel.bus.Subscribe("log", func(p []byte) {
+	SModel.Bus.Subscribe("log", func(p []byte) {
 		switch SModel.state {
-		case installInProgress, installError, installFinished:
+		case ModalStateInstallInProgress, ModalStateInstallError, ModalStateInstallFinished:
 			SModel.mw.Synchronize(func() {
 				lbInstallationStatus.AppendText(string(p))
 				lbInstallationStatus.AppendText("\r\n")
 			})
 		}
 	})
-	SModel.bus.Subscribe("state-change", func() {
+	SModel.Bus.Subscribe("state-change", func() {
 		SModel.mw.Synchronize(func() {
 			switch SModel.state {
-			case initial:
+			case ModalStateInitial:
 				SModel.mw.Children().At(frameW).SetVisible(false)
 				SModel.mw.Children().At(frameI).SetVisible(false)
 				SModel.mw.Children().At(frameS).SetVisible(true)
-				autoStart.SetChecked(SModel.cfg.AutoStart)
+				autoStart.SetChecked(SModel.CFG.AutoStart)
 
-				switch SModel.stateDocker {
-				case stateRunning:
+				switch SModel.StateDocker {
+				case RunnableStateRunning:
 					lbDocker.SetText("Running [OK]")
-				case stateInstalling:
+				case RunnableStateInstalling:
 					lbDocker.SetText("Installing..")
-				case stateStarting:
+				case RunnableStateStarting:
 					lbDocker.SetText("Starting..")
-				case stateUnknown:
+				case RunnableStateUnknown:
 					lbDocker.SetText("-")
 				}
-				switch SModel.stateContainer {
-				case stateRunning:
+				switch SModel.StateContainer {
+				case RunnableStateRunning:
 					lbContainer.SetText("Running [OK]")
-				case stateInstalling:
+				case RunnableStateInstalling:
 					lbContainer.SetText("Installing..")
-				case stateStarting:
+				case RunnableStateStarting:
 					lbContainer.SetText("Starting..")
-				case stateUnknown:
+				case RunnableStateUnknown:
 					lbContainer.SetText("-")
 				}
-				btnOpenNodeUI.SetEnabled(SModel.stateContainer == stateRunning)
+				btnOpenNodeUI.SetEnabled(SModel.StateContainer == RunnableStateRunning)
 
-			case installNeeded:
+			case ModalStateInstallNeeded:
 				SModel.mw.Children().At(frameW).SetVisible(true)
 				SModel.mw.Children().At(frameI).SetVisible(false)
 				SModel.mw.Children().At(frameS).SetVisible(false)
 				btnBegin.SetEnabled(true)
 
-			case installInProgress:
+			case ModalStateInstallInProgress:
 				SModel.mw.Children().At(frameW).SetVisible(false)
 				SModel.mw.Children().At(frameI).SetVisible(true)
 				SModel.mw.Children().At(frameS).SetVisible(false)
 
-				checkWindowsVersion.SetChecked(SModel.checkWindowsVersion)
-				checkVTx.SetChecked(SModel.checkVTx)
-				enableWSL.SetChecked(SModel.enableWSL)
-				installExecutable.SetChecked(SModel.installExecutable)
-				rebootAfterWSLEnable.SetChecked(SModel.rebootAfterWSLEnable)
-				downloadFiles.SetChecked(SModel.downloadFiles)
-				installWSLUpdate.SetChecked(SModel.installWSLUpdate)
-				installDocker.SetChecked(SModel.installDocker)
-				checkGroupMembership.SetChecked(SModel.checkGroupMembership)
+				checkWindowsVersion.SetChecked(SModel.CheckWindowsVersion)
+				checkVTx.SetChecked(SModel.CheckVTx)
+				enableWSL.SetChecked(SModel.EnableWSL)
+				installExecutable.SetChecked(SModel.InstallExecutable)
+				rebootAfterWSLEnable.SetChecked(SModel.RebootAfterWSLEnable)
+				downloadFiles.SetChecked(SModel.DownloadFiles)
+				installWSLUpdate.SetChecked(SModel.InstallWSLUpdate)
+				installDocker.SetChecked(SModel.InstallDocker)
+				checkGroupMembership.SetChecked(SModel.CheckGroupMembership)
 				btnFinish.SetEnabled(false)
 
-			case installFinished:
+			case ModalStateInstallFinished:
 				btnFinish.SetEnabled(true)
 				btnFinish.SetText("Finish")
 
-			case installError:
+			case ModalStateInstallError:
 				SModel.mw.Children().At(frameI).SetVisible(true)
 				SModel.mw.Children().At(frameS).SetVisible(false)
 				btnFinish.SetEnabled(true)

@@ -8,6 +8,8 @@ package app
 
 import (
 	"fmt"
+	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 	"log"
 	"os"
 	"os/exec"
@@ -15,7 +17,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lxn/walk"
 	"github.com/lxn/win"
 	"golang.org/x/sys/windows"
 )
@@ -31,33 +32,33 @@ func SuperviseDockerNode() {
 		ex := cmdRun(dockerCmd, "ps")
 		switch ex {
 		case 0:
-			SModel.stateDocker = stateRunning
-			SModel.TriggerUpdate()
+			gui.SModel.StateDocker = gui.RunnableStateRunning
+			gui.SModel.TriggerUpdate()
 
 			ex := cmdRun(dockerCmd, "container", "start", "myst")
 			switch ex {
 			case 0:
-				SModel.stateContainer = stateRunning
-				SModel.TriggerUpdate()
+				gui.SModel.StateContainer = gui.RunnableStateRunning
+				gui.SModel.TriggerUpdate()
 
 			default:
 				log.Printf("Failed to start cmd: %v", ex)
-				SModel.stateContainer = stateInstalling
-				SModel.TriggerUpdate()
+				gui.SModel.StateContainer = gui.RunnableStateInstalling
+				gui.SModel.TriggerUpdate()
 
 				ex := cmdRun(dockerCmd, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " ")...)
 				if ex == 0 {
-					SModel.stateContainer = stateRunning
-					SModel.TriggerUpdate()
+					gui.SModel.StateContainer = gui.RunnableStateRunning
+					gui.SModel.TriggerUpdate()
 
 					continue
 				}
 			}
 
 		case 1:
-			SModel.stateDocker = stateStarting
-			SModel.stateContainer = stateUnknown
-			SModel.TriggerUpdate()
+			gui.SModel.StateDocker = gui.RunnableStateStarting
+			gui.SModel.StateContainer = gui.RunnableStateUnknown
+			gui.SModel.TriggerUpdate()
 
 			if isProcessRunning("Docker Desktop.exe") {
 				break
@@ -71,101 +72,101 @@ func SuperviseDockerNode() {
 
 		default:
 			var err error
-			if !SModel.InstallStage2 {
-				SModel.SwitchState(installNeeded)
-				SModel.WaitDialogueComplete()
+			if !gui.SModel.InstallStage2 {
+				gui.SModel.SwitchState(gui.ModalStateInstallNeeded)
+				gui.SModel.WaitDialogueComplete()
 			}
-			SModel.SwitchState(installInProgress)
+			gui.SModel.SwitchState(gui.ModalStateInstallInProgress)
 
 			log.Println("Checking Windows version")
-			SModel.TriggerUpdate()
+			gui.SModel.TriggerUpdate()
 			if !CheckWindowsVersion() {
 				log.Println("You must run Windows 10 version 2004 or above.")
-				SModel.SwitchState(installError)
+				gui.SModel.SwitchState(gui.ModalStateInstallError)
 
 				if !isWindowsUpdateEnabled() {
 					exe := "reg"
 					cmdArgs := "add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\" /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f"
-					err := _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+					err := native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
 					if err != nil {
 						log.Println("Command failed: failed to enable Windows Updates")
-						SModel.SwitchState(installError)
+						gui.SModel.SwitchState(gui.ModalStateInstallError)
 
-						SModel.WaitDialogueComplete()
-						SModel.ExitApp()
+						gui.SModel.WaitDialogueComplete()
+						gui.SModel.ExitApp()
 						return
 					}
 				}
-				ret := walk.MsgBox(SModel.mw, "Installation", "Please signal to Windows 10 version 2004 or above. \r\nClick OK to open Update settings", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+				ret := gui.SModel.ConfirmModal("Installation", "Please signal to Windows 10 version 2004 or above. \r\nClick OK to open Update settings")
 				if ret == win.IDOK {
 					cmdRun("rundll32", "url.dll,FileProtocolHandler", "ms-settings:windowsupdate-action")
 				}
-				SModel.WaitDialogueComplete()
-				SModel.ExitApp()
+				gui.SModel.WaitDialogueComplete()
+				gui.SModel.ExitApp()
 				return
 			}
-			SModel.checkWindowsVersion = true
-			SModel.TriggerUpdate()
+			gui.SModel.CheckWindowsVersion = true
+			gui.SModel.TriggerUpdate()
 
 			log.Println("Checking VT-x")
 			if !hasVTx() {
-				walk.MsgBox(SModel.mw, "Installation", "Please Enable virtualization in BIOS", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+				gui.SModel.ConfirmModal("Installation", "Please Enable virtualization in BIOS")
 
-				SModel.WaitDialogueComplete()
-				SModel.ExitApp()
+				gui.SModel.WaitDialogueComplete()
+				gui.SModel.ExitApp()
 				return
 			}
-			SModel.checkVTx = true
-			SModel.TriggerUpdate()
+			gui.SModel.CheckVTx = true
+			gui.SModel.TriggerUpdate()
 
-			if !SModel.InstallStage2 {
+			if !gui.SModel.InstallStage2 {
 
 				log.Println("Enable WSL..")
 				exe := "dism.exe"
 				cmdArgs := "/online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart"
-				err = _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+				err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
 				if err != nil {
 					log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
-					SModel.SwitchState(installError)
+					gui.SModel.SwitchState(gui.ModalStateInstallError)
 
-					SModel.WaitDialogueComplete()
-					SModel.ExitApp()
+					gui.SModel.WaitDialogueComplete()
+					gui.SModel.ExitApp()
 					return
 				}
-				SModel.enableWSL = true
-				SModel.TriggerUpdate()
+				gui.SModel.EnableWSL = true
+				gui.SModel.TriggerUpdate()
 
 				log.Println("Install executable")
 				fullExe, _ := os.Executable()
 				cmdArgs = FlagInstall
-				err = _ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+				err = native.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
 				if err != nil {
 					log.Println("Failed to install executable")
-					SModel.SwitchState(installError)
+					gui.SModel.SwitchState(gui.ModalStateInstallError)
 
-					SModel.WaitDialogueComplete()
-					SModel.ExitApp()
+					gui.SModel.WaitDialogueComplete()
+					gui.SModel.ExitApp()
 					return
 				}
 				CreateAutostartShortcut(FlagInstallStage2)
-				SModel.installExecutable = true
-				SModel.TriggerUpdate()
+				gui.SModel.InstallExecutable = true
+				gui.SModel.TriggerUpdate()
 
 				if true {
-					ret := walk.MsgBox(SModel.mw, "Installation", "Reboot is needed to finish installation of WSL\r\nClick OK to reboot", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+					ret := gui.SModel.ConfirmModal("Installation", "Reboot is needed to finish installation of WSL\r\nClick OK to reboot")
 					if ret == win.IDOK {
-						_ShellExecuteAndWait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
+						native.ShellExecuteAndWait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
 					}
-					SModel.WaitDialogueComplete()
-					SModel.ExitApp()
+					gui.SModel.WaitDialogueComplete()
+					gui.SModel.ExitApp()
 					return
 				}
 			} else {
 				// proceeding install after reboot
-				SModel.enableWSL = true
-				SModel.installExecutable = true
-				SModel.rebootAfterWSLEnable = true
-				SModel.TriggerUpdate()
+				gui.SModel.EnableWSL = true
+				gui.SModel.InstallExecutable = true
+				gui.SModel.RebootAfterWSLEnable = true
+				gui.SModel.TriggerUpdate()
 			}
 
 			CreateAutostartShortcut("")
@@ -177,75 +178,75 @@ func SuperviseDockerNode() {
 			for fi, v := range list {
 				log.Println(fmt.Sprintf("Downloading %d of %d: %s", fi+1, len(list), v.name))
 				if _, err := os.Stat(os.Getenv("TMP") + "\\" + v.name); err != nil {
-					SModel.SetProgress(0)
+					gui.SModel.SetProgress(0)
 
-					err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, SModel.SetProgress)
+					err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, gui.SModel.SetProgress)
 					if err != nil {
 						log.Println("Download failed")
-						SModel.SwitchState(installError)
+						gui.SModel.SwitchState(gui.ModalStateInstallError)
 
-						SModel.WaitDialogueComplete()
-						SModel.ExitApp()
+						gui.SModel.WaitDialogueComplete()
+						gui.SModel.ExitApp()
 						return
 					}
 				}
 			}
-			SModel.downloadFiles = true
+			gui.SModel.DownloadFiles = true
 
 			log.Println("Installing wsl_update_x64.msi")
 			exe := "msiexec.exe"
 			cmdArgs := "/i " + os.Getenv("TMP") + "\\wsl_update_x64.msi /quiet"
-			err = _ShellExecuteAndWait(0, "runas", exe, cmdArgs, os.Getenv("TMP"), syscall.SW_NORMAL)
+			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, os.Getenv("TMP"), syscall.SW_NORMAL)
 			if err != nil {
 				log.Println("Command failed: msiexec.exe /i wsl_update_x64.msi /quiet")
-				SModel.SwitchState(installError)
+				gui.SModel.SwitchState(gui.ModalStateInstallError)
 
-				SModel.WaitDialogueComplete()
-				SModel.ExitApp()
+				gui.SModel.WaitDialogueComplete()
+				gui.SModel.ExitApp()
 				return
 			}
-			SModel.installWSLUpdate = true
-			SModel.TriggerUpdate()
+			gui.SModel.InstallWSLUpdate = true
+			gui.SModel.TriggerUpdate()
 
 			log.Println("installing docker desktop")
 			ex := cmdRun(os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
 			if ex != 0 {
 				log.Println("DockerDesktopInstaller failed")
-				SModel.SwitchState(installError)
+				gui.SModel.SwitchState(gui.ModalStateInstallError)
 
-				SModel.WaitDialogueComplete()
-				SModel.ExitApp()
+				gui.SModel.WaitDialogueComplete()
+				gui.SModel.ExitApp()
 				return
 			}
-			SModel.installDocker = true
-			SModel.TriggerUpdate()
+			gui.SModel.InstallDocker = true
+			gui.SModel.TriggerUpdate()
 
 			log.Println("Checking current group membership")
 			if !CurrentGroupMembership(group) {
 				// request a logout //
 
-				ret := walk.MsgBox(SModel.mw, "Installation", "Log of from the current session to finish the installation.", walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
+				ret := gui.SModel.ConfirmModal("Installation", "Log of from the current session to finish the installation.")
 				if ret == win.IDYES {
 					windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
 					return
 				}
 				log.Println("Log of from the current session to finish the installation.")
-				SModel.SwitchState(installError)
+				gui.SModel.SwitchState(gui.ModalStateInstallError)
 
-				SModel.WaitDialogueComplete()
-				SModel.ExitApp()
+				gui.SModel.WaitDialogueComplete()
+				gui.SModel.ExitApp()
 				return
 			}
-			SModel.readConfig()
-			SModel.cfg.AutoStart = true
-			SModel.saveConfig()
+			gui.SModel.ReadConfig()
+			gui.SModel.CFG.AutoStart = true
+			gui.SModel.SaveConfig()
 
-			SModel.checkGroupMembership = true
-			SModel.TriggerUpdate()
+			gui.SModel.CheckGroupMembership = true
+			gui.SModel.TriggerUpdate()
 
-			SModel.SwitchState(installFinished)
-			SModel.WaitDialogueComplete()
-			SModel.SwitchState(initial)
+			gui.SModel.SwitchState(gui.ModalStateInstallFinished)
+			gui.SModel.WaitDialogueComplete()
+			gui.SModel.SwitchState(gui.ModalStateInitial)
 			continue
 		}
 
