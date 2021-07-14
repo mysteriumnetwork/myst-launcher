@@ -25,12 +25,10 @@ func uiTest() {
 	model.SwitchState(installInProgress)
 	model.WaitDialogueComplete()
 
-	//model.installationStatus = "Reason:\r\nCommand failed: failed to enable Microsoft-Windows-Subsystem-Linux"
 	log.Println("Reason:\r\nCommand failed: failed to enable Microsoft-Windows-Subsystem-Linux")
 	model.SwitchState(installError)
 	model.WaitDialogueComplete()
 
-	//model.installationStatus = "Installation successfully finished!"
 	log.Println("Installation successfully finished!")
 	model.SwitchState(installFinished)
 	model.WaitDialogueComplete()
@@ -46,8 +44,8 @@ func uiTest() {
 
 		model.SwitchState(installError)
 		model.WaitDialogueComplete()
-		//model.ExitApp()
-		//return
+		model.ExitApp()
+		return
 	}
 	model.SwitchState(installFinished)
 	model.WaitDialogueComplete()

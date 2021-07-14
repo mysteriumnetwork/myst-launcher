@@ -27,16 +27,9 @@ func main() {
 		model.installStage2 = os.Args[1] == flagInstallStage2
 
 		if os.Args[1] == flagInstall {
-			//if !checkExe()
-			{
-				installExe()
-			}
+			installExe()
 			return
 		}
-
-		//fmt.Println(os.Args[1])
-		//walk.MsgBox(nil, "", os.Args[1], walk.MsgBoxOK)
-		//return
 	}
 
 	if !isAnotherInstanceRunning() {

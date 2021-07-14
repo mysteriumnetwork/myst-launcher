@@ -136,21 +136,19 @@ func superviseDockerNode() {
 				model.TriggerUpdate()
 
 				log.Println("Install executable")
-				//if !checkExe()
-				{
-					fullExe, _ := os.Executable()
-					cmdArgs := flagInstall
-					err = _ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
-					if err != nil {
-						log.Println("Failed to install executable")
-						model.SwitchState(installError)
+				fullExe, _ := os.Executable()
+				cmdArgs = flagInstall
+				err = _ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+				if err != nil {
+					log.Println("Failed to install executable")
+					model.SwitchState(installError)
 
-						model.WaitDialogueComplete()
-						model.ExitApp()
-						return
-					}
-					CreateAutostartShortcut(flagInstallStage2)
+					model.WaitDialogueComplete()
+					model.ExitApp()
+					return
 				}
+				CreateAutostartShortcut(flagInstallStage2)
+
 				model.installExecutable = true
 				model.TriggerUpdate()
 

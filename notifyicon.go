@@ -70,11 +70,6 @@ func createNotifyIcon() {
 		log.Fatal(err)
 	}
 
-	// Now that the icon is visible, we can bring up an info balloon.
-	//if err := ni.ShowInfo("Walk NotifyIcon Example", "Click the icon to show again."); err != nil {
-	//	log.Fatal(err)
-	//}
-
 	// Run the message loop.
 	mw.Run()
 }
