@@ -120,24 +120,27 @@ func SuperviseDockerNode() {
 
 			if !SModel.InstallStage2 {
 
-				log.Println("Enable WSL..")
-				exe := "dism.exe"
-				cmdArgs := "/online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart"
-				err = _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
-				if err != nil {
-					log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
-					SModel.SwitchState(installError)
+				isWLSEnabled := isWLSEnabled()
+				if !isWLSEnabled {
+					log.Println("Enable WSL..")
+					exe := "dism.exe"
+					cmdArgs := "/online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart"
+					err = _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+					if err != nil {
+						log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
+						SModel.SwitchState(installError)
 
-					SModel.WaitDialogueComplete()
-					SModel.ExitApp()
-					return
+						SModel.WaitDialogueComplete()
+						SModel.ExitApp()
+						return
+					}
 				}
 				SModel.enableWSL = true
 				SModel.TriggerUpdate()
 
 				log.Println("Install executable")
 				fullExe, _ := os.Executable()
-				cmdArgs = FlagInstall
+				cmdArgs := FlagInstall
 				err = _ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
 				if err != nil {
 					log.Println("Failed to install executable")
@@ -151,7 +154,7 @@ func SuperviseDockerNode() {
 				SModel.installExecutable = true
 				SModel.TriggerUpdate()
 
-				if true {
+				if !isWLSEnabled {
 					ret := walk.MsgBox(SModel.mw, "Installation", "Reboot is needed to finish installation of WSL\r\nClick OK to reboot", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 					if ret == win.IDOK {
 						_ShellExecuteAndWait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
@@ -169,7 +172,6 @@ func SuperviseDockerNode() {
 			}
 
 			CreateAutostartShortcut("")
-
 			list := []struct{ url, name string }{
 				{"https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe", "DockerDesktopInstaller.exe"},
 				{"https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi", "wsl_update_x64.msi"},

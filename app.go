@@ -9,10 +9,11 @@
 package main
 
 import (
-	"github.com/mysteriumnetwork/myst-launcher/app"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 	"log"
 	"os"
+
+	"github.com/mysteriumnetwork/myst-launcher/app"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/lxn/walk"
 )
@@ -23,7 +24,7 @@ func main() {
 		app.SModel.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
 		if os.Args[1] == app.FlagInstall {
-				app.InstallExe()
+			app.InstallExe()
 			return
 		}
 	}
