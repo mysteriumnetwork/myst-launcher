@@ -24,11 +24,11 @@ func CreateNotifyIcon() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	gui.SModel.Bus.Subscribe("exit", func() {
+	gui.UI.Bus.Subscribe("exit", func() {
 		ni.Dispose()
 	})
 
-	if err := ni.SetIcon(gui.SModel.Icon); err != nil {
+	if err := ni.SetIcon(gui.UI.Icon); err != nil {
 		log.Fatal(err)
 	}
 	if err := ni.SetToolTip("Mysterium Network - Node Launcher"); err != nil {
@@ -40,7 +40,7 @@ func CreateNotifyIcon() {
 		if button != walk.LeftButton {
 			return
 		}
-		gui.SModel.ShowMain()
+		gui.UI.ShowMain()
 	})
 	ni.MessageClicked().Attach(func() {})
 
@@ -57,7 +57,7 @@ func CreateNotifyIcon() {
 		log.Fatal(err)
 	}
 	openUIAction.Triggered().Attach(func() {
-		gui.SModel.OpenNodeUI()
+		gui.UI.OpenNodeUI()
 	})
 
 	if err := ni.ContextMenu().Actions().Add(openUIAction); err != nil {

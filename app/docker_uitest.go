@@ -10,32 +10,32 @@ import (
 )
 
 func uiTest() {
-	gui.SModel.SwitchState(gui.ModalStateInstallNeeded)
-	gui.SModel.WaitDialogueComplete()
+	gui.UI.SwitchState(gui.ModalStateInstallNeeded)
+	gui.UI.WaitDialogueComplete()
 
-	gui.SModel.SwitchState(gui.ModalStateInstallInProgress)
-	gui.SModel.WaitDialogueComplete()
+	gui.UI.SwitchState(gui.ModalStateInstallInProgress)
+	gui.UI.WaitDialogueComplete()
 
-	gui.SModel.CheckWindowsVersion = true
-	gui.SModel.TriggerUpdate()
+	gui.UI.CheckWindowsVersion = true
+	gui.UI.Update()
 
 	log.Println(fmt.Sprintf("Downloading 1 of 2: abc"))
-	gui.SModel.SwitchState(gui.ModalStateInstallInProgress)
-	gui.SModel.WaitDialogueComplete()
+	gui.UI.SwitchState(gui.ModalStateInstallInProgress)
+	gui.UI.WaitDialogueComplete()
 
 	log.Println(fmt.Sprintf("Downloading 2 of 2: abc"))
-	gui.SModel.SwitchState(gui.ModalStateInstallInProgress)
-	gui.SModel.WaitDialogueComplete()
+	gui.UI.SwitchState(gui.ModalStateInstallInProgress)
+	gui.UI.WaitDialogueComplete()
 
 	log.Println("Reason:\r\nCommand failed: failed to enable Microsoft-Windows-Subsystem-Linux")
-	gui.SModel.SwitchState(gui.ModalStateInstallError)
-	gui.SModel.WaitDialogueComplete()
+	gui.UI.SwitchState(gui.ModalStateInstallError)
+	gui.UI.WaitDialogueComplete()
 
 	log.Println("Installation successfully finished!")
-	gui.SModel.SwitchState(gui.ModalStateInstallFinished)
-	gui.SModel.WaitDialogueComplete()
-	gui.SModel.SwitchState(gui.ModalStateInitial)
-	gui.SModel.SwitchState(gui.ModalStateInstallInProgress)
+	gui.UI.SwitchState(gui.ModalStateInstallFinished)
+	gui.UI.WaitDialogueComplete()
+	gui.UI.SwitchState(gui.ModalStateInitial)
+	gui.UI.SwitchState(gui.ModalStateInstallInProgress)
 
 	log.Println("msiexec")
 	exe := "msiexec.exe"
@@ -44,11 +44,11 @@ func uiTest() {
 	if err != nil {
 		log.Println("Error:\r\nCommand failed: msiexec.exe /i wsl_update_x64.msi /quiet")
 
-		gui.SModel.SwitchState(gui.ModalStateInstallError)
-		gui.SModel.WaitDialogueComplete()
+		gui.UI.SwitchState(gui.ModalStateInstallError)
+		gui.UI.WaitDialogueComplete()
 	}
-	gui.SModel.SwitchState(gui.ModalStateInstallFinished)
-	gui.SModel.WaitDialogueComplete()
-	gui.SModel.SwitchState(gui.ModalStateInitial)
+	gui.UI.SwitchState(gui.ModalStateInstallFinished)
+	gui.UI.WaitDialogueComplete()
+	gui.UI.SwitchState(gui.ModalStateInitial)
 	return
 }

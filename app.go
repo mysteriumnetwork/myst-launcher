@@ -20,8 +20,8 @@ import (
 
 func main() {
 	if len(os.Args) > 1 {
-		gui.SModel.InTray = os.Args[1] == app.FlagTray
-		gui.SModel.InstallStage2 = os.Args[1] == app.FlagInstallStage2
+		gui.UI.InTray = os.Args[1] == app.FlagTray
+		gui.UI.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
 		if os.Args[1] == app.FlagInstall {
 			app.InstallExe()
@@ -32,10 +32,10 @@ func main() {
 	if utils.IsAlreadyRunning() {
 		return
 	}
-	utils.CreatePipeAndListen(&gui.SModel)
+	utils.CreatePipeAndListen(&gui.UI)
 
-	log.SetOutput(&gui.SModel)
-	gui.SModel.Icon, _ = walk.NewIconFromResourceId(2)
+	log.SetOutput(&gui.UI)
+	gui.UI.Icon, _ = walk.NewIconFromResourceId(2)
 	gui.CreateDialogue()
 
 	go func() {
