@@ -16,7 +16,7 @@ func IsAlreadyRunning() bool {
 	return !errors.Is(err, windows.ERROR_FILE_NOT_FOUND)
 }
 
-func CreatePipeAndListen(model *gui.Model) {
+func CreatePipeAndListen(model *gui.UIModel) {
 	l, err := winio.ListenPipe(LauncherPipeName, nil)
 	if err != nil {
 		log.Fatal(err)
