@@ -39,9 +39,9 @@ func main() {
 		//return
 	}
 
-	//if !isAnotherInstanceRunning() {
-	//	return
-	//}
+	if !isAnotherInstanceRunning() {
+		return
+	}
 	log.SetOutput(&model)
 	model.icon, _ = walk.NewIconFromResourceId(2)
 	createDialogue()

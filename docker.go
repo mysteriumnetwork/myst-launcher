@@ -28,8 +28,8 @@ const (
 func superviseDockerNode() {
 	dockerCmd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
 	for {
-		//uiTest()
-		//continue
+		uiTest()
+		continue
 
 		ex := cmdRun(dockerCmd, "ps")
 		switch ex {

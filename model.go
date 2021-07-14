@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/asaskevich/EventBus"
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
@@ -28,8 +29,12 @@ type Model struct {
 	pipeListener  net.Listener
 	cfg           Config
 
-	signal chan int
-	state  modalState
+	bus       EventBus.Bus
+	waitClick chan int
+	icon      *walk.Icon
+	mw        *walk.MainWindow
+
+	state modalState
 
 	// common
 	stateDocker    runnableState
@@ -46,12 +51,6 @@ type Model struct {
 	installDocker        bool
 	checkGroupMembership bool
 	installationStatus   string
-
-	log chan string
-	dlg chan int
-
-	icon *walk.Icon
-	mw   *walk.MainWindow
 }
 
 type modalState int
@@ -77,26 +76,17 @@ const (
 var model Model
 
 func init() {
-	model.dlg = make(chan int, 0)
-	model.signal = make(chan int, 0)
-	model.log = make(chan string, 0)
+	model.bus = EventBus.New()
+	model.waitClick = make(chan int, 0)
 }
 
 func (m *Model) Write(p []byte) (int, error) {
-	select {
-	case m.log <- string(p):
-	default:
-		fmt.Println("no log sent")
-	}
+	model.bus.Publish("log", p)
 	return len(p), nil
 }
 
 func (m *Model) TriggerUpdate() {
-	select {
-	case m.signal <- 0:
-		//default:
-		//	fmt.Println("no message sent")
-	}
+	model.bus.Publish("state-change")
 }
 
 func (m *Model) ShowMain() {
@@ -115,21 +105,18 @@ func (m *Model) SwitchState(s modalState) {
 }
 
 func (m *Model) BtnOnClick() {
-	//m.dlg <- 0
 	select {
-	case m.dlg <- 0:
+	case m.waitClick <- 0:
 	default:
 		fmt.Println("no message sent > BtnOnClick")
 	}
 }
 
 func (m *Model) WaitDialogueComplete() {
-	<-m.dlg
+	<-m.waitClick
 }
 
 func (m *Model) SetProgress(progress int) {
-	//m.progressVisible = true
-	//m.progress = progress
 }
 
 func (m *Model) isExiting() bool {

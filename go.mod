@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/Microsoft/go-winio v0.4.17
+	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef // indirect
 	github.com/go-ole/go-ole v1.2.5
 	github.com/josephspurrier/goversioninfo v1.2.0 // indirect
 	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
