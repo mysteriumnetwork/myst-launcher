@@ -8,11 +8,10 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"os"
-	"os/exec"
+	"syscall"
 
 	"github.com/asaskevich/EventBus"
 	"github.com/lxn/walk"
@@ -108,7 +107,7 @@ func (m *Model) BtnOnClick() {
 	select {
 	case m.waitClick <- 0:
 	default:
-		fmt.Println("no message sent > BtnOnClick")
+		//fmt.Println("no message sent > BtnOnClick")
 	}
 }
 
@@ -124,15 +123,17 @@ func (m *Model) isExiting() bool {
 }
 
 func (m *Model) ExitApp() {
+	m.bus.Publish("exit")
+
 	m.mw.Synchronize(func() {
 		walk.App().Exit(0)
 	})
 }
 
 func (m *Model) openNodeUI() {
-	cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", "http://localhost:4449")
-	if err := cmd.Start(); err != nil {
-	}
+	exe := "rundll32"
+	cmdArgs := "url.dll,FileProtocolHandler http://localhost:4449/"
+	_ShellExecuteAndWait(0, "", exe, cmdArgs, "", syscall.SW_NORMAL)
 }
 
 func (m *Model) readConfig() {

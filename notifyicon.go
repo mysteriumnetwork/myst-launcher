@@ -23,7 +23,9 @@ func createNotifyIcon() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer ni.Dispose()
+	model.bus.Subscribe("exit", func() {
+		ni.Dispose()
+	})
 
 	if err := ni.SetIcon(model.icon); err != nil {
 		log.Fatal(err)
