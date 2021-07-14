@@ -9,21 +9,44 @@
 package main
 
 import (
-	"github.com/mysteriumnetwork/myst-launcher/app"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
+	"fmt"
 	"log"
 	"os"
+
+	"github.com/mysteriumnetwork/go-fileversion"
+	"github.com/mysteriumnetwork/myst-launcher/app"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/lxn/walk"
 )
 
 func main() {
+	fmt.Println(0)
 	if len(os.Args) > 1 {
 		app.SModel.InTray = os.Args[1] == app.FlagTray
 		app.SModel.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
 		if os.Args[1] == app.FlagInstall {
-				app.InstallExe()
+			app.InstallExe()
+			//return
+		}
+		if os.Args[1] == "probe" {
+			fullExe_, _ := os.Executable()
+			fmt.Println(fullExe_)
+			f, err := fileversion.New(fullExe_)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("ProductName:", f.ProductName())
+			fmt.Println("LegalCopyright:", f.LegalCopyright())
+			fmt.Println("Version:", f.FixedInfo().ProductVersion.Major)
+			fmt.Println("Version:", f.FixedInfo().ProductVersion.Minor)
+			fmt.Println("Version:", f.FixedInfo().ProductVersion.Patch)
+			fmt.Println("Version:", f.FixedInfo().ProductVersion.Build)
+
+			//fullExe, _ := os.Executable()
+			//cmdArgs := app.FlagInstall
+			//app.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
 			return
 		}
 	}

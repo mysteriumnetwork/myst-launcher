@@ -185,13 +185,31 @@ func checkExe() bool {
 	return true
 }
 
-func InstallExe() {
+func InstallExe() error {
+	fmt.Println("Install")
+	return nil
+
+	//k, _, err := registry.CreateKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`, registry.ALL_ACCESS)
+	//if err != nil {
+	//	return err
+	//}
+	//defer k.Close()
+	//
+	//k.SetStringValue("DisplayIcon", "C:\\Program Files\\MystNodeLauncher\\myst-launcher.exe")
+	//k.SetStringValue("DisplayName", "MystNodeLauncher")
+	//k.SetStringValue("InstallLocation", "C:\\Program Files\\MystNodeLauncher\\")
+	//k.SetStringValue("UninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-node-launcher.exe\" -uninstall")
+	//k.SetStringValue("QuietUninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-node-launcher.exe\" -uninstall-silent")
+	//k.SetStringValue("Publisher", "Mysterium Network")
+	//return nil
+
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
 	os.Mkdir(dst, os.ModePerm)
 
 	fullExe, _ := os.Executable()
 	exe := getExeNameFromFullPath(fullExe)
 	CopyFile(fullExe, dst+"\\"+exe, false)
+	return nil
 }
 
 func CreateAutostartShortcut(args string) {

@@ -10,6 +10,8 @@ import (
 	"unsafe"
 )
 
+var ShellExecuteAndWait = _ShellExecuteAndWait
+
 var (
 	modshell32         = syscall.NewLazyDLL("shell32.dll")
 	procShellExecuteEx = modshell32.NewProc("ShellExecuteExW")
