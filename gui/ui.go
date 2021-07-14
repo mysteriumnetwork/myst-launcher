@@ -23,7 +23,7 @@ type Config struct {
 	AutoStart bool `json:"auto_start"`
 }
 
-type Model struct {
+type UIModel struct {
 	InTray        bool
 	InstallStage2 bool
 	pipeListener  net.Listener
@@ -53,23 +53,23 @@ type Model struct {
 	installationStatus   string
 }
 
-var UI Model
+var UI UIModel
 
 func init() {
 	UI.Bus = EventBus.New()
 	UI.waitClick = make(chan int, 0)
 }
 
-func (m *Model) Write(p []byte) (int, error) {
+func (m *UIModel) Write(p []byte) (int, error) {
 	UI.Bus.Publish("log", p)
 	return len(p), nil
 }
 
-func (m *Model) Update() {
+func (m *UIModel) Update() {
 	UI.Bus.Publish("state-change")
 }
 
-func (m *Model) ShowMain() {
+func (m *UIModel) ShowMain() {
 	win.ShowWindow(m.mw.Handle(), win.SW_SHOW)
 	win.ShowWindow(m.mw.Handle(), win.SW_SHOWNORMAL)
 
@@ -79,12 +79,12 @@ func (m *Model) ShowMain() {
 	win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 }
 
-func (m *Model) SwitchState(s modalState) {
+func (m *UIModel) SwitchState(s modalState) {
 	m.state = s
 	m.Update()
 }
 
-func (m *Model) BtnOnClick() {
+func (m *UIModel) BtnOnClick() {
 	select {
 	case m.waitClick <- 0:
 	default:
@@ -92,15 +92,15 @@ func (m *Model) BtnOnClick() {
 	}
 }
 
-func (m *Model) WaitDialogueComplete() {
+func (m *UIModel) WaitDialogueComplete() {
 	<-m.waitClick
 }
 
-func (m *Model) isExiting() bool {
+func (m *UIModel) isExiting() bool {
 	return UI.state == ModalStateInstallError
 }
 
-func (m *Model) ExitApp() {
+func (m *UIModel) ExitApp() {
 	m.Bus.Publish("exit")
 
 	m.mw.Synchronize(func() {
@@ -108,7 +108,7 @@ func (m *Model) ExitApp() {
 	})
 }
 
-func (m *Model) OpenNodeUI() {
+func (m *UIModel) OpenNodeUI() {
 	native.ShellExecuteAndWait(
 		0,
 		"",
@@ -118,7 +118,7 @@ func (m *Model) OpenNodeUI() {
 		syscall.SW_NORMAL)
 }
 
-func (m *Model) ReadConfig() {
+func (m *UIModel) ReadConfig() {
 	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
 	_, err := os.Stat(f)
 	if os.IsNotExist(err) {
@@ -132,7 +132,7 @@ func (m *Model) ReadConfig() {
 	json.NewDecoder(file).Decode(&UI.CFG)
 }
 
-func (m *Model) SaveConfig() {
+func (m *UIModel) SaveConfig() {
 	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
 	file, err := os.Create(f)
 	if err != nil {
@@ -145,6 +145,6 @@ func (m *Model) SaveConfig() {
 	log.Println(err)
 }
 
-func (m *Model) ConfirmModal(title, message string) int {
+func (m *UIModel) ConfirmModal(title, message string) int {
 	return walk.MsgBox(m.mw, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 }
