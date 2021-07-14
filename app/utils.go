@@ -184,7 +184,7 @@ func CreateAutostartShortcut(args string) {
 	CreateShortcut(shcDst, dst+"\\"+exe, args)
 }
 
-func CheckWindowsVersion() bool {
+func IsWindowsVersionCompatible() bool {
 	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, registry.QUERY_VALUE)
 	if err != nil {
 		log.Fatal(err)

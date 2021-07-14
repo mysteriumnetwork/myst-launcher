@@ -80,7 +80,7 @@ func SuperviseDockerNode() {
 
 			log.Println("Checking Windows version")
 			gui.UI.Update()
-			if !CheckWindowsVersion() {
+			if !IsWindowsVersionCompatible() {
 				log.Println("You must run Windows 10 version 2004 or above.")
 				gui.UI.SwitchState(gui.ModalStateInstallError)
 
