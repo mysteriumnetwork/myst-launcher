@@ -1,6 +1,6 @@
 // +build windows
 // Original: https://github.com/mattn/sudo/
-package main
+package app
 
 import (
 	"errors"

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package main
+package app
 
 import (
 	"log"
@@ -13,7 +13,7 @@ import (
 	"github.com/lxn/walk"
 )
 
-func createNotifyIcon() {
+func CreateNotifyIcon() {
 	mw, err := walk.NewMainWindow()
 	if err != nil {
 		log.Fatal(err)
@@ -23,11 +23,11 @@ func createNotifyIcon() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	model.bus.Subscribe("exit", func() {
+	SModel.bus.Subscribe("exit", func() {
 		ni.Dispose()
 	})
 
-	if err := ni.SetIcon(model.icon); err != nil {
+	if err := ni.SetIcon(SModel.Icon); err != nil {
 		log.Fatal(err)
 	}
 	if err := ni.SetToolTip("Mysterium Network - Node Launcher"); err != nil {
@@ -39,7 +39,7 @@ func createNotifyIcon() {
 		if button != walk.LeftButton {
 			return
 		}
-		model.ShowMain()
+		SModel.ShowMain()
 	})
 	ni.MessageClicked().Attach(func() {})
 
@@ -56,7 +56,7 @@ func createNotifyIcon() {
 		log.Fatal(err)
 	}
 	openUIAction.Triggered().Attach(func() {
-		model.openNodeUI()
+		SModel.openNodeUI()
 	})
 
 	if err := ni.ContextMenu().Actions().Add(openUIAction); err != nil {

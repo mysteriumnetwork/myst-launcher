@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package main
+package app
 
 import (
 	"log"
@@ -19,7 +19,7 @@ const (
 	frameS = 3
 )
 
-func createDialogue() {
+func CreateDialogue() {
 	var (
 		// common
 		lbDocker      *walk.Label
@@ -47,14 +47,14 @@ func createDialogue() {
 		iv2 *walk.ImageView
 		iv3 *walk.ImageView
 	)
-	model.readConfig()
+	SModel.readConfig()
 
 	if err := (MainWindow{
-		AssignTo: &model.mw,
+		AssignTo: &SModel.mw,
 		Title:    "Mysterium Exit Node Launcher",
 		MinSize:  Size{320, 240},
 		Size:     Size{400, 600},
-		Icon:     model.icon,
+		Icon:     SModel.Icon,
 
 		Layout: VBox{},
 		Children: []Widget{
@@ -93,7 +93,7 @@ func createDialogue() {
 								AssignTo: &btnBegin,
 								Text:     "Install",
 								OnClicked: func() {
-									model.BtnOnClick()
+									SModel.BtnOnClick()
 								},
 							},
 						},
@@ -211,7 +211,7 @@ func createDialogue() {
 								AssignTo:   &btnFinish,
 								Text:       "Finish",
 								OnClicked: func() {
-									model.BtnOnClick()
+									SModel.BtnOnClick()
 								},
 							},
 						},
@@ -246,8 +246,8 @@ func createDialogue() {
 						Text:     "Start Node automatically",
 						AssignTo: &autoStart,
 						OnCheckedChanged: func() {
-							model.cfg.AutoStart = autoStart.Checked()
-							model.saveConfig()
+							SModel.cfg.AutoStart = autoStart.Checked()
+							SModel.saveConfig()
 						},
 					},
 					PushButton{
@@ -255,7 +255,7 @@ func createDialogue() {
 						AssignTo: &btnOpenNodeUI,
 						Text:     "Open Node UI",
 						OnClicked: func() {
-							model.openNodeUI()
+							SModel.openNodeUI()
 						},
 						ColumnSpan: 2,
 					},
@@ -280,29 +280,29 @@ func createDialogue() {
 		}
 	}
 
-	if model.inTray {
-		model.mw.SetVisible(false)
+	if SModel.InTray {
+		SModel.mw.SetVisible(false)
 	}
 
-	model.bus.Subscribe("log", func(p []byte) {
-		switch model.state {
+	SModel.bus.Subscribe("log", func(p []byte) {
+		switch SModel.state {
 		case installInProgress, installError, installFinished:
-			model.mw.Synchronize(func() {
+			SModel.mw.Synchronize(func() {
 				lbInstallationStatus.AppendText(string(p))
 				lbInstallationStatus.AppendText("\r\n")
 			})
 		}
 	})
-	model.bus.Subscribe("state-change", func() {
-		model.mw.Synchronize(func() {
-			switch model.state {
+	SModel.bus.Subscribe("state-change", func() {
+		SModel.mw.Synchronize(func() {
+			switch SModel.state {
 			case initial:
-				model.mw.Children().At(frameW).SetVisible(false)
-				model.mw.Children().At(frameI).SetVisible(false)
-				model.mw.Children().At(frameS).SetVisible(true)
-				autoStart.SetChecked(model.cfg.AutoStart)
+				SModel.mw.Children().At(frameW).SetVisible(false)
+				SModel.mw.Children().At(frameI).SetVisible(false)
+				SModel.mw.Children().At(frameS).SetVisible(true)
+				autoStart.SetChecked(SModel.cfg.AutoStart)
 
-				switch model.stateDocker {
+				switch SModel.stateDocker {
 				case stateRunning:
 					lbDocker.SetText("Running [OK]")
 				case stateInstalling:
@@ -312,7 +312,7 @@ func createDialogue() {
 				case stateUnknown:
 					lbDocker.SetText("-")
 				}
-				switch model.stateContainer {
+				switch SModel.stateContainer {
 				case stateRunning:
 					lbContainer.SetText("Running [OK]")
 				case stateInstalling:
@@ -322,28 +322,28 @@ func createDialogue() {
 				case stateUnknown:
 					lbContainer.SetText("-")
 				}
-				btnOpenNodeUI.SetEnabled(model.stateContainer == stateRunning)
+				btnOpenNodeUI.SetEnabled(SModel.stateContainer == stateRunning)
 
 			case installNeeded:
-				model.mw.Children().At(frameW).SetVisible(true)
-				model.mw.Children().At(frameI).SetVisible(false)
-				model.mw.Children().At(frameS).SetVisible(false)
+				SModel.mw.Children().At(frameW).SetVisible(true)
+				SModel.mw.Children().At(frameI).SetVisible(false)
+				SModel.mw.Children().At(frameS).SetVisible(false)
 				btnBegin.SetEnabled(true)
 
 			case installInProgress:
-				model.mw.Children().At(frameW).SetVisible(false)
-				model.mw.Children().At(frameI).SetVisible(true)
-				model.mw.Children().At(frameS).SetVisible(false)
+				SModel.mw.Children().At(frameW).SetVisible(false)
+				SModel.mw.Children().At(frameI).SetVisible(true)
+				SModel.mw.Children().At(frameS).SetVisible(false)
 
-				checkWindowsVersion.SetChecked(model.checkWindowsVersion)
-				checkVTx.SetChecked(model.checkVTx)
-				enableWSL.SetChecked(model.enableWSL)
-				installExecutable.SetChecked(model.installExecutable)
-				rebootAfterWSLEnable.SetChecked(model.rebootAfterWSLEnable)
-				downloadFiles.SetChecked(model.downloadFiles)
-				installWSLUpdate.SetChecked(model.installWSLUpdate)
-				installDocker.SetChecked(model.installDocker)
-				checkGroupMembership.SetChecked(model.checkGroupMembership)
+				checkWindowsVersion.SetChecked(SModel.checkWindowsVersion)
+				checkVTx.SetChecked(SModel.checkVTx)
+				enableWSL.SetChecked(SModel.enableWSL)
+				installExecutable.SetChecked(SModel.installExecutable)
+				rebootAfterWSLEnable.SetChecked(SModel.rebootAfterWSLEnable)
+				downloadFiles.SetChecked(SModel.downloadFiles)
+				installWSLUpdate.SetChecked(SModel.installWSLUpdate)
+				installDocker.SetChecked(SModel.installDocker)
+				checkGroupMembership.SetChecked(SModel.checkGroupMembership)
 				btnFinish.SetEnabled(false)
 
 			case installFinished:
@@ -351,8 +351,8 @@ func createDialogue() {
 				btnFinish.SetText("Finish")
 
 			case installError:
-				model.mw.Children().At(frameI).SetVisible(true)
-				model.mw.Children().At(frameS).SetVisible(false)
+				SModel.mw.Children().At(frameI).SetVisible(true)
+				SModel.mw.Children().At(frameS).SetVisible(false)
 				btnFinish.SetEnabled(true)
 				btnFinish.SetText("Exit installer")
 			}
@@ -360,11 +360,11 @@ func createDialogue() {
 	})
 
 	// prevent closing the app
-	model.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		if model.isExiting() {
+	SModel.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
+		if SModel.isExiting() {
 			walk.App().Exit(0)
 		}
 		*canceled = true
-		model.mw.Hide()
+		SModel.mw.Hide()
 	})
 }

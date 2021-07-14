@@ -9,38 +9,36 @@
 package main
 
 import (
+	"github.com/mysteriumnetwork/myst-launcher/app"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 	"log"
 	"os"
 
 	"github.com/lxn/walk"
 )
 
-const (
-	flagTray          = "-tray"
-	flagInstall       = "-install-binary"
-	flagInstallStage2 = "-install-stage2"
-)
-
 func main() {
 	if len(os.Args) > 1 {
-		model.inTray = os.Args[1] == flagTray
-		model.installStage2 = os.Args[1] == flagInstallStage2
+		app.SModel.InTray = os.Args[1] == app.FlagTray
+		app.SModel.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
-		if os.Args[1] == flagInstall {
-			installExe()
+		if os.Args[1] == app.FlagInstall {
+				app.InstallExe()
 			return
 		}
 	}
 
-	if !isAnotherInstanceRunning() {
+	if utils.IsAlreadyRunning() {
 		return
 	}
-	log.SetOutput(&model)
-	model.icon, _ = walk.NewIconFromResourceId(2)
-	createDialogue()
+	utils.CreatePipeAndListen(&app.SModel)
+
+	log.SetOutput(&app.SModel)
+	app.SModel.Icon, _ = walk.NewIconFromResourceId(2)
+	app.CreateDialogue()
 
 	go func() {
-		superviseDockerNode()
+		app.SuperviseDockerNode()
 	}()
-	createNotifyIcon()
+	app.CreateNotifyIcon()
 }

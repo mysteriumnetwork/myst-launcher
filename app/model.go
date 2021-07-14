@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package main
+package app
 
 import (
 	"encoding/json"
@@ -23,14 +23,14 @@ type Config struct {
 }
 
 type Model struct {
-	inTray        bool
-	installStage2 bool
+	InTray        bool
+	InstallStage2 bool
 	pipeListener  net.Listener
 	cfg           Config
 
 	bus       EventBus.Bus
 	waitClick chan int
-	icon      *walk.Icon
+	Icon      *walk.Icon
 	mw        *walk.MainWindow
 
 	state modalState
@@ -72,20 +72,20 @@ const (
 	stateInstalling runnableState = 3
 )
 
-var model Model
+var SModel Model
 
 func init() {
-	model.bus = EventBus.New()
-	model.waitClick = make(chan int, 0)
+	SModel.bus = EventBus.New()
+	SModel.waitClick = make(chan int, 0)
 }
 
 func (m *Model) Write(p []byte) (int, error) {
-	model.bus.Publish("log", p)
+	SModel.bus.Publish("log", p)
 	return len(p), nil
 }
 
 func (m *Model) TriggerUpdate() {
-	model.bus.Publish("state-change")
+	SModel.bus.Publish("state-change")
 }
 
 func (m *Model) ShowMain() {
@@ -119,7 +119,7 @@ func (m *Model) SetProgress(progress int) {
 }
 
 func (m *Model) isExiting() bool {
-	return model.state == installError
+	return SModel.state == installError
 }
 
 func (m *Model) ExitApp() {
@@ -147,7 +147,7 @@ func (m *Model) readConfig() {
 	if err != nil {
 		return
 	}
-	json.NewDecoder(file).Decode(&model.cfg)
+	json.NewDecoder(file).Decode(&SModel.cfg)
 }
 
 func (m *Model) saveConfig() {
@@ -159,6 +159,6 @@ func (m *Model) saveConfig() {
 	}
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", " ")
-	err = enc.Encode(&model.cfg)
+	err = enc.Encode(&SModel.cfg)
 	log.Println(err)
 }
