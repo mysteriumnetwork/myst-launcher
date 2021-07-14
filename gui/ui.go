@@ -53,20 +53,20 @@ type Model struct {
 	installationStatus   string
 }
 
-var SModel Model
+var UI Model
 
 func init() {
-	SModel.Bus = EventBus.New()
-	SModel.waitClick = make(chan int, 0)
+	UI.Bus = EventBus.New()
+	UI.waitClick = make(chan int, 0)
 }
 
 func (m *Model) Write(p []byte) (int, error) {
-	SModel.Bus.Publish("log", p)
+	UI.Bus.Publish("log", p)
 	return len(p), nil
 }
 
-func (m *Model) TriggerUpdate() {
-	SModel.Bus.Publish("state-change")
+func (m *Model) Update() {
+	UI.Bus.Publish("state-change")
 }
 
 func (m *Model) ShowMain() {
@@ -81,7 +81,7 @@ func (m *Model) ShowMain() {
 
 func (m *Model) SwitchState(s modalState) {
 	m.state = s
-	m.TriggerUpdate()
+	m.Update()
 }
 
 func (m *Model) BtnOnClick() {
@@ -96,11 +96,8 @@ func (m *Model) WaitDialogueComplete() {
 	<-m.waitClick
 }
 
-func (m *Model) SetProgress(progress int) {
-}
-
 func (m *Model) isExiting() bool {
-	return SModel.state == ModalStateInstallError
+	return UI.state == ModalStateInstallError
 }
 
 func (m *Model) ExitApp() {
@@ -128,7 +125,7 @@ func (m *Model) ReadConfig() {
 	if err != nil {
 		return
 	}
-	json.NewDecoder(file).Decode(&SModel.CFG)
+	json.NewDecoder(file).Decode(&UI.CFG)
 }
 
 func (m *Model) SaveConfig() {
@@ -140,7 +137,7 @@ func (m *Model) SaveConfig() {
 	}
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", " ")
-	err = enc.Encode(&SModel.CFG)
+	err = enc.Encode(&UI.CFG)
 	log.Println(err)
 }
 
