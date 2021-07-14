@@ -7,7 +7,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/lxn/walk"
@@ -203,14 +202,14 @@ func createDialogue() {
 								MaxSize: Size{
 									Height: 120,
 								},
+								VScroll: true,
 							},
 
 							VSpacer{ColumnSpan: 2, Row: 1},
 							PushButton{
 								ColumnSpan: 2,
-								//RowSpan:   1,
-								AssignTo: &btnFinish,
-								Text:     "Finish",
+								AssignTo:   &btnFinish,
+								Text:       "Finish",
 								OnClicked: func() {
 									model.BtnOnClick()
 								},
@@ -285,83 +284,80 @@ func createDialogue() {
 		model.mw.SetVisible(false)
 	}
 
-	go func() {
-		for {
-			select {
-			case sig := <-model.signal:
-				fmt.Println("received signal", sig)
-
-				model.mw.Synchronize(func() {
-					switch model.state {
-					case initial:
-						model.mw.Children().At(frameW).SetVisible(false)
-						model.mw.Children().At(frameI).SetVisible(false)
-						model.mw.Children().At(frameS).SetVisible(true)
-						autoStart.SetChecked(model.cfg.AutoStart)
-
-					case installNeeded:
-						model.mw.Children().At(frameW).SetVisible(true)
-						model.mw.Children().At(frameI).SetVisible(false)
-						model.mw.Children().At(frameS).SetVisible(false)
-						btnBegin.SetEnabled(true)
-
-					case installInProgress:
-						model.mw.Children().At(frameW).SetVisible(false)
-						model.mw.Children().At(frameI).SetVisible(true)
-						model.mw.Children().At(frameS).SetVisible(false)
-
-						checkWindowsVersion.SetChecked(model.checkWindowsVersion)
-						checkVTx.SetChecked(model.checkVTx)
-						enableWSL.SetChecked(model.enableWSL)
-						installExecutable.SetChecked(model.installExecutable)
-						rebootAfterWSLEnable.SetChecked(model.rebootAfterWSLEnable)
-						downloadFiles.SetChecked(model.downloadFiles)
-						installWSLUpdate.SetChecked(model.installWSLUpdate)
-						installDocker.SetChecked(model.installDocker)
-						checkGroupMembership.SetChecked(model.checkGroupMembership)
-
-						lbInstallationStatus.SetText(model.installationStatus)
-						btnFinish.SetEnabled(false)
-
-					case installFinished:
-						lbInstallationStatus.SetText(model.installationStatus)
-						btnFinish.SetEnabled(true)
-						btnFinish.SetText("Finish")
-
-					case installError:
-						model.mw.Children().At(frameI).SetVisible(true)
-						model.mw.Children().At(frameS).SetVisible(false)
-						lbInstallationStatus.SetText(model.installationStatus)
-
-						btnFinish.SetEnabled(true)
-						btnFinish.SetText("Exit installer")
-					}
-
-					switch model.stateDocker {
-					case stateRunning:
-						lbDocker.SetText("Running [OK]")
-					case stateInstalling:
-						lbDocker.SetText("Installing..")
-					case stateStarting:
-						lbDocker.SetText("Starting..")
-					case stateUnknown:
-						lbDocker.SetText("-")
-					}
-					switch model.stateContainer {
-					case stateRunning:
-						lbContainer.SetText("Running [OK]")
-					case stateInstalling:
-						lbContainer.SetText("Installing..")
-					case stateStarting:
-						lbContainer.SetText("Starting..")
-					case stateUnknown:
-						lbContainer.SetText("-")
-					}
-					btnOpenNodeUI.SetEnabled(model.stateContainer == stateRunning)
-				})
-			}
+	model.bus.Subscribe("log", func(p []byte) {
+		switch model.state {
+		case installInProgress, installError, installFinished:
+			model.mw.Synchronize(func() {
+				lbInstallationStatus.AppendText(string(p))
+				lbInstallationStatus.AppendText("\r\n")
+			})
 		}
-	}()
+	})
+	model.bus.Subscribe("state-change", func() {
+		model.mw.Synchronize(func() {
+			switch model.state {
+			case initial:
+				model.mw.Children().At(frameW).SetVisible(false)
+				model.mw.Children().At(frameI).SetVisible(false)
+				model.mw.Children().At(frameS).SetVisible(true)
+				autoStart.SetChecked(model.cfg.AutoStart)
+
+				switch model.stateDocker {
+				case stateRunning:
+					lbDocker.SetText("Running [OK]")
+				case stateInstalling:
+					lbDocker.SetText("Installing..")
+				case stateStarting:
+					lbDocker.SetText("Starting..")
+				case stateUnknown:
+					lbDocker.SetText("-")
+				}
+				switch model.stateContainer {
+				case stateRunning:
+					lbContainer.SetText("Running [OK]")
+				case stateInstalling:
+					lbContainer.SetText("Installing..")
+				case stateStarting:
+					lbContainer.SetText("Starting..")
+				case stateUnknown:
+					lbContainer.SetText("-")
+				}
+				btnOpenNodeUI.SetEnabled(model.stateContainer == stateRunning)
+
+			case installNeeded:
+				model.mw.Children().At(frameW).SetVisible(true)
+				model.mw.Children().At(frameI).SetVisible(false)
+				model.mw.Children().At(frameS).SetVisible(false)
+				btnBegin.SetEnabled(true)
+
+			case installInProgress:
+				model.mw.Children().At(frameW).SetVisible(false)
+				model.mw.Children().At(frameI).SetVisible(true)
+				model.mw.Children().At(frameS).SetVisible(false)
+
+				checkWindowsVersion.SetChecked(model.checkWindowsVersion)
+				checkVTx.SetChecked(model.checkVTx)
+				enableWSL.SetChecked(model.enableWSL)
+				installExecutable.SetChecked(model.installExecutable)
+				rebootAfterWSLEnable.SetChecked(model.rebootAfterWSLEnable)
+				downloadFiles.SetChecked(model.downloadFiles)
+				installWSLUpdate.SetChecked(model.installWSLUpdate)
+				installDocker.SetChecked(model.installDocker)
+				checkGroupMembership.SetChecked(model.checkGroupMembership)
+				btnFinish.SetEnabled(false)
+
+			case installFinished:
+				btnFinish.SetEnabled(true)
+				btnFinish.SetText("Finish")
+
+			case installError:
+				model.mw.Children().At(frameI).SetVisible(true)
+				model.mw.Children().At(frameS).SetVisible(false)
+				btnFinish.SetEnabled(true)
+				btnFinish.SetText("Exit installer")
+			}
+		})
+	})
 
 	// prevent closing the app
 	model.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {

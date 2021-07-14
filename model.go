@@ -8,12 +8,12 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"os"
-	"os/exec"
+	"syscall"
 
+	"github.com/asaskevich/EventBus"
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
@@ -28,8 +28,12 @@ type Model struct {
 	pipeListener  net.Listener
 	cfg           Config
 
-	signal chan int
-	state  modalState
+	bus       EventBus.Bus
+	waitClick chan int
+	icon      *walk.Icon
+	mw        *walk.MainWindow
+
+	state modalState
 
 	// common
 	stateDocker    runnableState
@@ -46,10 +50,6 @@ type Model struct {
 	installDocker        bool
 	checkGroupMembership bool
 	installationStatus   string
-
-	dlg  chan int
-	icon *walk.Icon
-	mw   *walk.MainWindow
 }
 
 type modalState int
@@ -75,16 +75,17 @@ const (
 var model Model
 
 func init() {
-	model.dlg = make(chan int, 0)
-	model.signal = make(chan int, 0)
+	model.bus = EventBus.New()
+	model.waitClick = make(chan int, 0)
+}
+
+func (m *Model) Write(p []byte) (int, error) {
+	model.bus.Publish("log", p)
+	return len(p), nil
 }
 
 func (m *Model) TriggerUpdate() {
-	select {
-	case m.signal <- 0:
-		//default:
-		//	fmt.Println("no message sent")
-	}
+	model.bus.Publish("state-change")
 }
 
 func (m *Model) ShowMain() {
@@ -103,21 +104,18 @@ func (m *Model) SwitchState(s modalState) {
 }
 
 func (m *Model) BtnOnClick() {
-	//m.dlg <- 0
 	select {
-	case m.dlg <- 0:
+	case m.waitClick <- 0:
 	default:
-		fmt.Println("no message sent > BtnOnClick")
+		//fmt.Println("no message sent > BtnOnClick")
 	}
 }
 
 func (m *Model) WaitDialogueComplete() {
-	<-m.dlg
+	<-m.waitClick
 }
 
 func (m *Model) SetProgress(progress int) {
-	//m.progressVisible = true
-	//m.progress = progress
 }
 
 func (m *Model) isExiting() bool {
@@ -125,15 +123,17 @@ func (m *Model) isExiting() bool {
 }
 
 func (m *Model) ExitApp() {
+	m.bus.Publish("exit")
+
 	m.mw.Synchronize(func() {
 		walk.App().Exit(0)
 	})
 }
 
 func (m *Model) openNodeUI() {
-	cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", "http://localhost:4449")
-	if err := cmd.Start(); err != nil {
-	}
+	exe := "rundll32"
+	cmdArgs := "url.dll,FileProtocolHandler http://localhost:4449/"
+	_ShellExecuteAndWait(0, "", exe, cmdArgs, "", syscall.SW_NORMAL)
 }
 
 func (m *Model) readConfig() {
