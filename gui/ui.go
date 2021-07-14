@@ -109,9 +109,13 @@ func (m *Model) ExitApp() {
 }
 
 func (m *Model) OpenNodeUI() {
-	exe := "rundll32"
-	cmdArgs := "url.dll,FileProtocolHandler http://localhost:4449/"
-	native.ShellExecuteAndWait(0, "", exe, cmdArgs, "", syscall.SW_NORMAL)
+	native.ShellExecuteAndWait(
+		0,
+		"",
+		"rundll32",
+		"url.dll,FileProtocolHandler http://localhost:4449/",
+		"",
+		syscall.SW_NORMAL)
 }
 
 func (m *Model) ReadConfig() {
