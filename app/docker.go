@@ -80,26 +80,11 @@ func SuperviseDockerNode() {
 			log.Println("Checking Windows version")
 			SModel.TriggerUpdate()
 			if !CheckWindowsVersion() {
-				log.Println("You must run Windows 10 version 2004 or above.")
 				SModel.SwitchState(installError)
 
-				if !isWindowsUpdateEnabled() {
-					exe := "reg"
-					cmdArgs := "add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\" /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f"
-					err := _ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
-					if err != nil {
-						log.Println("Command failed: failed to enable Windows Updates")
-						SModel.SwitchState(installError)
+				log.Println("You must run Windows 10 version 2004 or above.")
+				walk.MsgBox(SModel.mw, "Installation", "Please update your system to Windows 10 version 2004 or above.", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 
-						SModel.WaitDialogueComplete()
-						SModel.ExitApp()
-						return
-					}
-				}
-				ret := walk.MsgBox(SModel.mw, "Installation", "Please signal to Windows 10 version 2004 or above. \r\nClick OK to open Update settings", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
-				if ret == win.IDOK {
-					cmdRun("rundll32", "url.dll,FileProtocolHandler", "ms-settings:windowsupdate-action")
-				}
 				SModel.WaitDialogueComplete()
 				SModel.ExitApp()
 				return
