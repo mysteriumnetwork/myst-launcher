@@ -210,9 +210,11 @@ func SuperviseDockerNode() {
 			SModel.TriggerUpdate()
 
 			log.Println("installing docker desktop")
-			ex := cmdRun(os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
-			if ex != 0 {
-				log.Println("DockerDesktopInstaller failed")
+
+			exe = os.Getenv("TMP") + "\\DockerDesktopInstaller.exe"
+			err = _ShellExecuteAndWait(0, "runas", exe, "install --quiet", os.Getenv("TMP"), syscall.SW_NORMAL)
+			if err != nil {
+				log.Println("DockerDesktopInstaller failed:", err)
 				SModel.SwitchState(installError)
 
 				SModel.WaitDialogueComplete()
