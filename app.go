@@ -11,6 +11,9 @@ package main
 import (
 	"log"
 	"os"
+	"syscall"
+
+	"github.com/mysteriumnetwork/myst-launcher/native"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
@@ -30,11 +33,11 @@ func main() {
 		}
 
 		if os.Args[1] == "probe" {
-			app.InstallExe()
+			//app.InstallExe()
 
-			//fullExe, _ := os.Executable()
-			//cmdArgs := app.FlagInstall
-			//app.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+			fullExe, _ := os.Executable()
+			cmdArgs := app.FlagInstall
+			native.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
 			return
 		}
 

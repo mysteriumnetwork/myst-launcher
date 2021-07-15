@@ -187,8 +187,8 @@ func InstallExe() error {
 	k.SetStringValue("DisplayName", f.ProductName()+" "+f.ProductVersion())
 	k.SetStringValue("DisplayVersion", f.ProductVersion())
 	k.SetStringValue("InstallLocation", "C:\\Program Files\\MystNodeLauncher\\")
-	k.SetStringValue("UninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-node-launcher.exe\" -uninstall")
-	k.SetStringValue("QuietUninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-node-launcher.exe\" -uninstall-silent")
+	k.SetStringValue("UninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-launcher.exe\" -uninstall")
+	k.SetStringValue("QuietUninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-launcher.exe\" -uninstall-silent")
 	k.SetStringValue("Publisher", f.CompanyName())
 	return nil
 
