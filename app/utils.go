@@ -294,3 +294,28 @@ func hasVTx() bool {
 	}
 	return false
 }
+
+func isWLSEnabled() bool {
+	ole.CoInitialize(0)
+	defer ole.CoUninitialize()
+
+	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
+	defer unknown.Release()
+
+	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
+	defer wmi.Release()
+
+	// service is a SWbemServices
+	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
+	service := serviceRaw.ToIDispatch()
+	defer service.Release()
+
+	// result is a SWBemObjectSet
+	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_OptionalFeature Where Name='Microsoft-Windows-Subsystem-Linux' and InstallState=1")
+	result := resultRaw.ToIDispatch()
+	defer result.Release()
+
+	countVar, _ := oleutil.GetProperty(result, "Count")
+	count := int(countVar.Val)
+	return count > 0
+}

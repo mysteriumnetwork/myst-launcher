@@ -9,11 +9,12 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-	"log"
-	"os"
 
 	"github.com/lxn/walk"
 )
