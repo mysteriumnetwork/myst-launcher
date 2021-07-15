@@ -8,11 +8,12 @@ package gui
 
 import (
 	"encoding/json"
-	"github.com/mysteriumnetwork/myst-launcher/native"
 	"log"
 	"net"
 	"os"
 	"syscall"
+
+	"github.com/mysteriumnetwork/myst-launcher/native"
 
 	"github.com/asaskevich/EventBus"
 	"github.com/lxn/walk"
@@ -60,9 +61,14 @@ func init() {
 	UI.waitClick = make(chan int, 0)
 }
 
-func (m *UIModel) Write(p []byte) (int, error) {
-	UI.Bus.Publish("log", p)
-	return len(p), nil
+func (m *UIModel) Write(b []byte) (int, error) {
+	// copy to avoid data corruption
+	// see https://stackoverflow.com/a/20688698/4413696
+	bCopy := make([]byte, len(b))
+	copy(bCopy, b)
+
+	UI.Bus.Publish("log", bCopy)
+	return len(bCopy), nil
 }
 
 func (m *UIModel) Update() {
@@ -141,8 +147,7 @@ func (m *UIModel) SaveConfig() {
 	}
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", " ")
-	err = enc.Encode(&UI.CFG)
-	log.Println(err)
+	enc.Encode(&UI.CFG)
 }
 
 func (m *UIModel) ConfirmModal(title, message string) int {
