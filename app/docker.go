@@ -241,12 +241,12 @@ func tryInstall(isWLSEnabled bool) {
 		gui.UI.ExitApp()
 		return
 	}
+	gui.UI.CheckGroupMembership = true
+	gui.UI.Update()
+
 	gui.UI.ReadConfig()
 	gui.UI.CFG.AutoStart = true
 	gui.UI.SaveConfig()
-
-	gui.UI.CheckGroupMembership = true
-	gui.UI.Update()
 
 	gui.UI.SwitchState(gui.ModalStateInstallFinished)
 	gui.UI.WaitDialogueComplete()

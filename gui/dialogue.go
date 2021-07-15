@@ -288,8 +288,7 @@ func CreateDialogue() {
 		switch UI.state {
 		case ModalStateInstallInProgress, ModalStateInstallError, ModalStateInstallFinished:
 			UI.mw.Synchronize(func() {
-				lbInstallationStatus.AppendText(string(p))
-				lbInstallationStatus.AppendText("\r\n")
+				lbInstallationStatus.AppendText(string(p) + "\r\n")
 			})
 		}
 	})
@@ -334,16 +333,6 @@ func CreateDialogue() {
 				UI.mw.Children().At(frameW).SetVisible(false)
 				UI.mw.Children().At(frameI).SetVisible(true)
 				UI.mw.Children().At(frameS).SetVisible(false)
-
-				checkWindowsVersion.SetChecked(UI.CheckWindowsVersion)
-				checkVTx.SetChecked(UI.CheckVTx)
-				enableWSL.SetChecked(UI.EnableWSL)
-				installExecutable.SetChecked(UI.InstallExecutable)
-				rebootAfterWSLEnable.SetChecked(UI.RebootAfterWSLEnable)
-				downloadFiles.SetChecked(UI.DownloadFiles)
-				installWSLUpdate.SetChecked(UI.InstallWSLUpdate)
-				installDocker.SetChecked(UI.InstallDocker)
-				checkGroupMembership.SetChecked(UI.CheckGroupMembership)
 				btnFinish.SetEnabled(false)
 
 			case ModalStateInstallFinished:
@@ -355,6 +344,19 @@ func CreateDialogue() {
 				UI.mw.Children().At(frameS).SetVisible(false)
 				btnFinish.SetEnabled(true)
 				btnFinish.SetText("Exit installer")
+			}
+
+			switch UI.state {
+			case ModalStateInstallInProgress, ModalStateInstallFinished, ModalStateInstallError:
+				checkWindowsVersion.SetChecked(UI.CheckWindowsVersion)
+				checkVTx.SetChecked(UI.CheckVTx)
+				enableWSL.SetChecked(UI.EnableWSL)
+				installExecutable.SetChecked(UI.InstallExecutable)
+				rebootAfterWSLEnable.SetChecked(UI.RebootAfterWSLEnable)
+				downloadFiles.SetChecked(UI.DownloadFiles)
+				installWSLUpdate.SetChecked(UI.InstallWSLUpdate)
+				installDocker.SetChecked(UI.InstallDocker)
+				checkGroupMembership.SetChecked(UI.CheckGroupMembership)
 			}
 		})
 	})
