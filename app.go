@@ -11,9 +11,6 @@ package main
 import (
 	"log"
 	"os"
-	"syscall"
-
-	"github.com/mysteriumnetwork/myst-launcher/native"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
@@ -27,20 +24,15 @@ func main() {
 		gui.UI.InTray = os.Args[1] == app.FlagTray
 		gui.UI.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
-		if os.Args[1] == app.FlagInstall {
+		switch os.Args[1] {
+		case app.FlagInstall:
 			app.InstallExe()
 			return
-		}
 
-		if os.Args[1] == "probe" {
-			//app.InstallExe()
-
-			fullExe, _ := os.Executable()
-			cmdArgs := app.FlagInstall
-			native.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+		case app.FlagUninstall:
+			app.UninstallExe()
 			return
 		}
-
 	}
 
 	if utils.IsAlreadyRunning() {

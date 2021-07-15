@@ -172,6 +172,8 @@ func tryInstall(isWLSEnabled bool) {
 		gui.UI.Update()
 	}
 	CreateAutostartShortcut("")
+	CreateDesktopShortcut("")
+	CreateStartMenuShortcut("")
 
 	list := []struct{ url, name string }{
 		{"https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe", "DockerDesktopInstaller.exe"},
