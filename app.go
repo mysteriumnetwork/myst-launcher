@@ -24,8 +24,13 @@ func main() {
 		gui.UI.InTray = os.Args[1] == app.FlagTray
 		gui.UI.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
-		if os.Args[1] == app.FlagInstall {
+		switch os.Args[1] {
+		case app.FlagInstall:
 			app.InstallExe()
+			return
+
+		case app.FlagUninstall:
+			app.UninstallExe()
 			return
 		}
 	}

@@ -20,6 +20,8 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/mysteriumnetwork/go-fileversion"
+
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 	"golang.org/x/sys/windows"
@@ -166,22 +168,73 @@ func checkExe() bool {
 	return true
 }
 
-func InstallExe() {
-	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	os.Mkdir(dst, os.ModePerm)
+func InstallExe() error {
+	fullExe_, _ := os.Executable()
+	f, err := fileversion.New(fullExe_)
+	if err != nil {
+		return err
+	}
+	k, _, err := registry.CreateKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`, registry.ALL_ACCESS)
+	if err != nil {
+		return err
+	}
+	defer k.Close()
 
+	dstPath := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
+	exeName := "\\myst-launcher.exe"
+
+	k.SetStringValue("DisplayIcon", dstPath+exeName)
+	k.SetStringValue("DisplayName", f.ProductName()+" "+f.ProductVersion())
+	k.SetStringValue("DisplayVersion", f.ProductVersion())
+	k.SetStringValue("InstallLocation", dstPath)
+	k.SetStringValue("UninstallString", fmt.Sprintf(`"%s%s" -uninstall`, dstPath, exeName))
+	k.SetStringValue("Publisher", f.CompanyName())
+
+	os.Mkdir(dstPath, os.ModePerm)
 	fullExe, _ := os.Executable()
 	exe := getExeNameFromFullPath(fullExe)
-	CopyFile(fullExe, dst+"\\"+exe, false)
+	CopyFile(fullExe, dstPath+`\`+exe, false)
+	return nil
+}
+
+func UninstallExe() error {
+	registry.DeleteKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`)
+
+	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "mysterium node launcher.lnk")
+	_ = os.Remove(shcDst)
+
+	shcDst = path.Join(os.Getenv("USERPROFILE"), "Desktop", "mysterium node launcher.lnk")
+	_ = os.Remove(shcDst)
+
+	dir := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Mysterium Network")
+	os.Mkdir(dir, os.ModePerm)
+	shcDst = path.Join(dir, "mysterium node launcher.lnk")
+	_ = os.Remove(shcDst)
+	return nil
+}
+
+func MystNodeLauncherExePath() string {
+	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
+	fullExe, _ := os.Executable()
+	exe := getExeNameFromFullPath(fullExe)
+	return dst + "\\" + exe
 }
 
 func CreateAutostartShortcut(args string) {
-	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	fullExe, _ := os.Executable()
-	exe := getExeNameFromFullPath(fullExe)
-
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "mysterium node launcher.lnk")
-	CreateShortcut(shcDst, dst+"\\"+exe, args)
+	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+}
+
+func CreateDesktopShortcut(args string) {
+	shcDst := path.Join(os.Getenv("USERPROFILE"), "Desktop", "mysterium node launcher.lnk")
+	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+}
+
+func CreateStartMenuShortcut(args string) {
+	dir := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Mysterium Network")
+	os.Mkdir(dir, os.ModePerm)
+	shcDst := path.Join(dir, "mysterium node launcher.lnk")
+	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
 func IsWindowsVersionCompatible() bool {
