@@ -20,6 +20,8 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/mysteriumnetwork/go-fileversion"
+
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 	"github.com/lxn/win"
@@ -187,21 +189,27 @@ func checkExe() bool {
 
 func InstallExe() error {
 	fmt.Println("Install")
-	return nil
 
-	//k, _, err := registry.CreateKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`, registry.ALL_ACCESS)
-	//if err != nil {
-	//	return err
-	//}
-	//defer k.Close()
-	//
-	//k.SetStringValue("DisplayIcon", "C:\\Program Files\\MystNodeLauncher\\myst-launcher.exe")
-	//k.SetStringValue("DisplayName", "MystNodeLauncher")
-	//k.SetStringValue("InstallLocation", "C:\\Program Files\\MystNodeLauncher\\")
-	//k.SetStringValue("UninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-node-launcher.exe\" -uninstall")
-	//k.SetStringValue("QuietUninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-node-launcher.exe\" -uninstall-silent")
-	//k.SetStringValue("Publisher", "Mysterium Network")
-	//return nil
+	fullExe_, _ := os.Executable()
+	fmt.Println(fullExe_)
+	f, err := fileversion.New(fullExe_)
+	if err != nil {
+		return err
+	}
+	k, _, err := registry.CreateKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`, registry.ALL_ACCESS)
+	if err != nil {
+		return err
+	}
+	defer k.Close()
+
+	k.SetStringValue("DisplayIcon", "C:\\Program Files\\MystNodeLauncher\\myst-launcher.exe")
+	k.SetStringValue("DisplayName", f.ProductName()+" "+f.ProductVersion())
+	k.SetStringValue("DisplayVersion", f.ProductVersion())
+	k.SetStringValue("InstallLocation", "C:\\Program Files\\MystNodeLauncher\\")
+	k.SetStringValue("UninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-node-launcher.exe\" -uninstall")
+	k.SetStringValue("QuietUninstallString", "\"C:\\Program Files\\MystNodeLauncher\\myst-node-launcher.exe\" -uninstall-silent")
+	k.SetStringValue("Publisher", f.CompanyName())
+	return nil
 
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
 	os.Mkdir(dst, os.ModePerm)

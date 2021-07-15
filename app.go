@@ -13,7 +13,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/mysteriumnetwork/go-fileversion"
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 
@@ -31,18 +30,6 @@ func main() {
 			//return
 		}
 		if os.Args[1] == "probe" {
-			fullExe_, _ := os.Executable()
-			fmt.Println(fullExe_)
-			f, err := fileversion.New(fullExe_)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Println("ProductName:", f.ProductName())
-			fmt.Println("LegalCopyright:", f.LegalCopyright())
-			fmt.Println("Version:", f.FixedInfo().ProductVersion.Major)
-			fmt.Println("Version:", f.FixedInfo().ProductVersion.Minor)
-			fmt.Println("Version:", f.FixedInfo().ProductVersion.Patch)
-			fmt.Println("Version:", f.FixedInfo().ProductVersion.Build)
 
 			//fullExe, _ := os.Executable()
 			//cmdArgs := app.FlagInstall
