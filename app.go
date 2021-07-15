@@ -9,31 +9,23 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/lxn/walk"
 )
 
 func main() {
-	fmt.Println(0)
 	if len(os.Args) > 1 {
-		app.SModel.InTray = os.Args[1] == app.FlagTray
-		app.SModel.InstallStage2 = os.Args[1] == app.FlagInstallStage2
+		gui.UI.InTray = os.Args[1] == app.FlagTray
+		gui.UI.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
 		if os.Args[1] == app.FlagInstall {
 			app.InstallExe()
-			//return
-		}
-		if os.Args[1] == "probe" {
-
-			//fullExe, _ := os.Executable()
-			//cmdArgs := app.FlagInstall
-			//app.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
 			return
 		}
 	}
@@ -41,11 +33,11 @@ func main() {
 	if utils.IsAlreadyRunning() {
 		return
 	}
-	utils.CreatePipeAndListen(&app.SModel)
+	utils.CreatePipeAndListen(&gui.UI)
 
-	log.SetOutput(&app.SModel)
-	app.SModel.Icon, _ = walk.NewIconFromResourceId(2)
-	app.CreateDialogue()
+	log.SetOutput(&gui.UI)
+	gui.UI.Icon, _ = walk.NewIconFromResourceId(2)
+	gui.CreateDialogue()
 
 	go func() {
 		app.SuperviseDockerNode()

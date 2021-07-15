@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package app
+package gui
 
 import (
 	"log"
@@ -47,14 +47,14 @@ func CreateDialogue() {
 		iv2 *walk.ImageView
 		iv3 *walk.ImageView
 	)
-	SModel.readConfig()
+	UI.ReadConfig()
 
 	if err := (MainWindow{
-		AssignTo: &SModel.mw,
+		AssignTo: &UI.mw,
 		Title:    "Mysterium Exit Node Launcher",
 		MinSize:  Size{320, 240},
 		Size:     Size{400, 600},
-		Icon:     SModel.Icon,
+		Icon:     UI.Icon,
 
 		Layout: VBox{},
 		Children: []Widget{
@@ -93,7 +93,7 @@ func CreateDialogue() {
 								AssignTo: &btnBegin,
 								Text:     "Install",
 								OnClicked: func() {
-									SModel.BtnOnClick()
+									UI.BtnOnClick()
 								},
 							},
 						},
@@ -211,7 +211,7 @@ func CreateDialogue() {
 								AssignTo:   &btnFinish,
 								Text:       "Finish",
 								OnClicked: func() {
-									SModel.BtnOnClick()
+									UI.BtnOnClick()
 								},
 							},
 						},
@@ -246,8 +246,8 @@ func CreateDialogue() {
 						Text:     "Start Node automatically",
 						AssignTo: &autoStart,
 						OnCheckedChanged: func() {
-							SModel.cfg.AutoStart = autoStart.Checked()
-							SModel.saveConfig()
+							UI.CFG.AutoStart = autoStart.Checked()
+							UI.SaveConfig()
 						},
 					},
 					PushButton{
@@ -255,7 +255,7 @@ func CreateDialogue() {
 						AssignTo: &btnOpenNodeUI,
 						Text:     "Open Node UI",
 						OnClicked: func() {
-							SModel.openNodeUI()
+							UI.OpenNodeUI()
 						},
 						ColumnSpan: 2,
 					},
@@ -280,79 +280,79 @@ func CreateDialogue() {
 		}
 	}
 
-	if SModel.InTray {
-		SModel.mw.SetVisible(false)
+	if UI.InTray {
+		UI.mw.SetVisible(false)
 	}
 
-	SModel.bus.Subscribe("log", func(p []byte) {
-		switch SModel.state {
-		case installInProgress, installError, installFinished:
-			SModel.mw.Synchronize(func() {
+	UI.Bus.Subscribe("log", func(p []byte) {
+		switch UI.state {
+		case ModalStateInstallInProgress, ModalStateInstallError, ModalStateInstallFinished:
+			UI.mw.Synchronize(func() {
 				lbInstallationStatus.AppendText(string(p))
 				lbInstallationStatus.AppendText("\r\n")
 			})
 		}
 	})
-	SModel.bus.Subscribe("state-change", func() {
-		SModel.mw.Synchronize(func() {
-			switch SModel.state {
-			case initial:
-				SModel.mw.Children().At(frameW).SetVisible(false)
-				SModel.mw.Children().At(frameI).SetVisible(false)
-				SModel.mw.Children().At(frameS).SetVisible(true)
-				autoStart.SetChecked(SModel.cfg.AutoStart)
+	UI.Bus.Subscribe("state-change", func() {
+		UI.mw.Synchronize(func() {
+			switch UI.state {
+			case ModalStateInitial:
+				UI.mw.Children().At(frameW).SetVisible(false)
+				UI.mw.Children().At(frameI).SetVisible(false)
+				UI.mw.Children().At(frameS).SetVisible(true)
+				autoStart.SetChecked(UI.CFG.AutoStart)
 
-				switch SModel.stateDocker {
-				case stateRunning:
+				switch UI.StateDocker {
+				case RunnableStateRunning:
 					lbDocker.SetText("Running [OK]")
-				case stateInstalling:
+				case RunnableStateInstalling:
 					lbDocker.SetText("Installing..")
-				case stateStarting:
+				case RunnableStateStarting:
 					lbDocker.SetText("Starting..")
-				case stateUnknown:
+				case RunnableStateUnknown:
 					lbDocker.SetText("-")
 				}
-				switch SModel.stateContainer {
-				case stateRunning:
+				switch UI.StateContainer {
+				case RunnableStateRunning:
 					lbContainer.SetText("Running [OK]")
-				case stateInstalling:
+				case RunnableStateInstalling:
 					lbContainer.SetText("Installing..")
-				case stateStarting:
+				case RunnableStateStarting:
 					lbContainer.SetText("Starting..")
-				case stateUnknown:
+				case RunnableStateUnknown:
 					lbContainer.SetText("-")
 				}
-				btnOpenNodeUI.SetEnabled(SModel.stateContainer == stateRunning)
+				btnOpenNodeUI.SetEnabled(UI.StateContainer == RunnableStateRunning)
 
-			case installNeeded:
-				SModel.mw.Children().At(frameW).SetVisible(true)
-				SModel.mw.Children().At(frameI).SetVisible(false)
-				SModel.mw.Children().At(frameS).SetVisible(false)
+			case ModalStateInstallNeeded:
+				UI.mw.Children().At(frameW).SetVisible(true)
+				UI.mw.Children().At(frameI).SetVisible(false)
+				UI.mw.Children().At(frameS).SetVisible(false)
 				btnBegin.SetEnabled(true)
 
-			case installInProgress:
-				SModel.mw.Children().At(frameW).SetVisible(false)
-				SModel.mw.Children().At(frameI).SetVisible(true)
-				SModel.mw.Children().At(frameS).SetVisible(false)
+			case ModalStateInstallInProgress:
+				UI.mw.Children().At(frameW).SetVisible(false)
+				UI.mw.Children().At(frameI).SetVisible(true)
+				UI.mw.Children().At(frameS).SetVisible(false)
 
-				checkWindowsVersion.SetChecked(SModel.checkWindowsVersion)
-				checkVTx.SetChecked(SModel.checkVTx)
-				enableWSL.SetChecked(SModel.enableWSL)
-				installExecutable.SetChecked(SModel.installExecutable)
-				rebootAfterWSLEnable.SetChecked(SModel.rebootAfterWSLEnable)
-				downloadFiles.SetChecked(SModel.downloadFiles)
-				installWSLUpdate.SetChecked(SModel.installWSLUpdate)
-				installDocker.SetChecked(SModel.installDocker)
-				checkGroupMembership.SetChecked(SModel.checkGroupMembership)
+				checkWindowsVersion.SetChecked(UI.CheckWindowsVersion)
+				checkVTx.SetChecked(UI.CheckVTx)
+				enableWSL.SetChecked(UI.EnableWSL)
+				installExecutable.SetChecked(UI.InstallExecutable)
+				rebootAfterWSLEnable.SetChecked(UI.RebootAfterWSLEnable)
+				downloadFiles.SetChecked(UI.DownloadFiles)
+				installWSLUpdate.SetChecked(UI.InstallWSLUpdate)
+				installDocker.SetChecked(UI.InstallDocker)
+				checkGroupMembership.SetChecked(UI.CheckGroupMembership)
 				btnFinish.SetEnabled(false)
 
-			case installFinished:
+			case ModalStateInstallFinished:
 				btnFinish.SetEnabled(true)
 				btnFinish.SetText("Finish")
 
-			case installError:
-				SModel.mw.Children().At(frameI).SetVisible(true)
-				SModel.mw.Children().At(frameS).SetVisible(false)
+			case ModalStateInstallError:
+				UI.mw.Children().At(frameI).SetVisible(true)
+				UI.mw.Children().At(frameS).SetVisible(false)
 				btnFinish.SetEnabled(true)
 				btnFinish.SetText("Exit installer")
 			}
@@ -360,11 +360,11 @@ func CreateDialogue() {
 	})
 
 	// prevent closing the app
-	SModel.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		if SModel.isExiting() {
+	UI.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
+		if UI.isExiting() {
 			walk.App().Exit(0)
 		}
 		*canceled = true
-		SModel.mw.Hide()
+		UI.mw.Hide()
 	})
 }
