@@ -155,7 +155,7 @@ func tryInstall(isWLSEnabled bool) {
 		gui.UI.InstallExecutable = true
 		gui.UI.Update()
 
-		if true {
+		if !isWLSEnabled {
 			ret := gui.UI.ConfirmModal("Installation", "Reboot is needed to finish installation of WSL\r\nClick OK to reboot")
 			if ret == win.IDOK {
 				native.ShellExecuteAndWait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
@@ -211,10 +211,11 @@ func tryInstall(isWLSEnabled bool) {
 	gui.UI.InstallWSLUpdate = true
 	gui.UI.Update()
 
-	log.Println("installing docker desktop")
-	ex := cmdRun(os.Getenv("TMP")+"\\DockerDesktopInstaller.exe", "install", "--quiet")
-	if ex != 0 {
-		log.Println("DockerDesktopInstaller failed")
+	log.Println("Installing docker desktop")
+	exe = os.Getenv("TMP") + "\\DockerDesktopInstaller.exe"
+	err = native.ShellExecuteAndWait(0, "runas", exe, "install --quiet", os.Getenv("TMP"), syscall.SW_NORMAL)
+	if err != nil {
+		log.Println("DockerDesktopInstaller failed:", err)
 		gui.UI.SwitchState(gui.ModalStateInstallError)
 
 		gui.UI.WaitDialogueComplete()
