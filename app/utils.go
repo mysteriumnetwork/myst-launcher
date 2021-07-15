@@ -22,17 +22,13 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
-	"github.com/lxn/win"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
 
 var (
-	modkernel32 = syscall.NewLazyDLL("kernel32.dll")
-	user32DLL   = windows.NewLazyDLL("user32.dll")
-
+	modkernel32                   = syscall.NewLazyDLL("kernel32.dll")
 	procCopyFileW                 = modkernel32.NewProc("CopyFileW")
-	switchToThisWindow            = user32DLL.NewProc("SwitchToThisWindow")
 	procIsProcessorFeaturePresent = modkernel32.NewProc("IsProcessorFeaturePresent")
 )
 
@@ -43,11 +39,8 @@ func cmdRun(name string, args ...string) int {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		HideWindow: true,
 	}
-	//output, _ := cmd.CombinedOutput()
-	//fmt.Println(string(output))
 
 	stdout, err := cmd.StdoutPipe()
-	//cmd.Stderr = cmd.Stdout
 	if err != nil {
 		log.Println(err)
 		return -1
@@ -83,9 +76,6 @@ func cmdRun(name string, args ...string) int {
 			exitCode = defaultFailedCode
 
 			log.Printf(">>>> %+v, \r\n", err)
-			//if stderr == "" {
-			//	stderr = err.Error()
-			//}
 		}
 	} else {
 		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
@@ -94,15 +84,6 @@ func cmdRun(name string, args ...string) int {
 
 	log.Printf("command exitCode: %v \r\n", exitCode)
 	return exitCode
-}
-
-func SwitchToThisWindow(hwnd win.HWND, f bool) int32 {
-	ret, _, _ := syscall.Syscall(switchToThisWindow.Addr(), 2,
-		uintptr(hwnd),
-		uintptr(win.BoolToBOOL(f)),
-		0,
-	)
-	return int32(ret)
 }
 
 func CreateShortcut(dst, target, args string) error {
@@ -203,7 +184,7 @@ func CreateAutostartShortcut(args string) {
 	CreateShortcut(shcDst, dst+"\\"+exe, args)
 }
 
-func CheckWindowsVersion() bool {
+func IsWindowsVersionCompatible() bool {
 	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, registry.QUERY_VALUE)
 	if err != nil {
 		log.Fatal(err)

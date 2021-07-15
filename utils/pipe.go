@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/Microsoft/go-winio"
-	"github.com/mysteriumnetwork/myst-launcher/app"
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 )
 
 var LauncherPipeName = `\\.\pipe\mysterium_node_launcher`
@@ -19,7 +19,7 @@ func IsAlreadyRunning() bool {
 	return false
 }
 
-func CreatePipeAndListen(model *app.Model) {
+func CreatePipeAndListen(model *gui.UIModel) {
 	l, err := winio.ListenPipe(LauncherPipeName, nil)
 	if err != nil {
 		log.Fatal(err)

@@ -1,6 +1,6 @@
 // +build windows
 // Original: https://github.com/mattn/sudo/
-package app
+package native
 
 import (
 	"errors"
@@ -87,8 +87,8 @@ type _SHELLEXECUTEINFO struct {
 	hProcess       syscall.Handle
 }
 
-// _ShellExecuteAndWait is version of ShellExecuteEx which want process
-func _ShellExecuteAndWait(hwnd hwnd, lpOperation, lpFile, lpParameters, lpDirectory string, nShowCmd int) error {
+// ShellExecuteAndWait is version of ShellExecuteEx which want process
+func ShellExecuteAndWait(hwnd hwnd, lpOperation, lpFile, lpParameters, lpDirectory string, nShowCmd int) error {
 	var lpctstrVerb, lpctstrParameters, lpctstrDirectory lpctstr
 	if len(lpOperation) != 0 {
 		lpctstrVerb = lpctstr(unsafe.Pointer(syscall.StringToUTF16Ptr(lpOperation)))
