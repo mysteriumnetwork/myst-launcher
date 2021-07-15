@@ -28,6 +28,16 @@ func main() {
 			app.InstallExe()
 			return
 		}
+
+		if os.Args[1] == "probe" {
+			app.InstallExe()
+
+			//fullExe, _ := os.Executable()
+			//cmdArgs := app.FlagInstall
+			//app.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+			return
+		}
+
 	}
 
 	if utils.IsAlreadyRunning() {
