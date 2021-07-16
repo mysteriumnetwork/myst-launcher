@@ -53,7 +53,8 @@ func SuperviseDockerNode() {
 				gui.UI.StateContainer = gui.RunnableStateInstalling
 				gui.UI.Update()
 
-				ex := cmdRun(dockerCmd, strings.Split("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v myst-data:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", " ")...)
+				cmdArgs := fmt.Sprintf("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v %s/.mysterium:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", os.Getenv("USERPROFILE"))
+				ex := cmdRun(dockerCmd, strings.Split(cmdArgs, " ")...)
 				if ex == 0 {
 					gui.UI.StateContainer = gui.RunnableStateRunning
 					gui.UI.Update()
@@ -249,6 +250,7 @@ func tryInstall(isWLSEnabled bool) {
 	gui.UI.ReadConfig()
 	gui.UI.CFG.AutoStart = true
 	gui.UI.SaveConfig()
+	log.Println("Installation succeeded")
 
 	gui.UI.SwitchState(gui.ModalStateInstallFinished)
 	gui.UI.WaitDialogueComplete()

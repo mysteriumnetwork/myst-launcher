@@ -16,7 +16,10 @@ jobs:
         go-version: 1.16
 
     - name: Build
-      run: go build -v -o build/myst-launcher-amd64.exe .
+      run: |
+        go get github.com/josephspurrier/goversioninfo@v1.2.0
+        go generate
+        go build -ldflags="-s -w -H windowsgui" -v -o  build/myst-launcher-amd64.exe .
       env:
         GOARCH: amd64
         GOOS: windows
