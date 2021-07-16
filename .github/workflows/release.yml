@@ -16,7 +16,15 @@ jobs:
         go-version: 1.16
 
     - name: Build
-      run: go build -v -o myst-launcher.exe .
+      run: go build -v -o myst-launcher-amd64.exe .
       env:
         GOARCH: amd64
         GOOS: windows
+
+    - name: Upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: myst-launcher-amd64.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
