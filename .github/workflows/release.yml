@@ -6,8 +6,8 @@ on:
 
 jobs:
 
-  build:
-    runs-on: ubuntu-latest
+  release:
+    runs-on: windows-2019
     steps:
     - uses: actions/checkout@v2
 
