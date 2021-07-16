@@ -249,6 +249,7 @@ func tryInstall(isWLSEnabled bool) {
 	gui.UI.ReadConfig()
 	gui.UI.CFG.AutoStart = true
 	gui.UI.SaveConfig()
+	log.Println("Installation succeeded")
 
 	gui.UI.SwitchState(gui.ModalStateInstallFinished)
 	gui.UI.WaitDialogueComplete()
