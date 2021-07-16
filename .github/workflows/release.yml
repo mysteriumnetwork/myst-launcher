@@ -5,17 +5,14 @@ on:
     tags: ["*"]
 
 jobs:
-
-  release:
+  release-windows-amd64:
     runs-on: windows-2019
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.16
-
-    - name: Build
-      run: go build -v .
-
+      - uses: actions/checkout@master
+      - name: compile and release
+        uses: ngs/go-release.action@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOARCH: amd64
+          GOOS: windows
+          EXTRA_FILES: "LICENSE"
