@@ -181,7 +181,7 @@ func InstallExe() error {
 	defer k.Close()
 
 	dstPath := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	exeName := "\\myst-launcher.exe"
+	exeName := "\\myst-launcher-amd64.exe"
 
 	k.SetStringValue("DisplayIcon", dstPath+exeName)
 	k.SetStringValue("DisplayName", f.ProductName()+" "+f.ProductVersion())
@@ -221,19 +221,19 @@ func MystNodeLauncherExePath() string {
 }
 
 func CreateAutostartShortcut(args string) {
-	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "mysterium node launcher.lnk")
+	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "Mysterium node launcher.lnk")
 	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
 func CreateDesktopShortcut(args string) {
-	shcDst := path.Join(os.Getenv("USERPROFILE"), "Desktop", "mysterium node launcher.lnk")
+	shcDst := path.Join(os.Getenv("USERPROFILE"), "Desktop", "Mysterium node launcher.lnk")
 	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
 func CreateStartMenuShortcut(args string) {
 	dir := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Mysterium Network")
 	os.Mkdir(dir, os.ModePerm)
-	shcDst := path.Join(dir, "mysterium node launcher.lnk")
+	shcDst := path.Join(dir, "Mysterium node launcher.lnk")
 	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
