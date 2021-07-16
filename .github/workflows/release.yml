@@ -16,15 +16,25 @@ jobs:
         go-version: 1.16
 
     - name: Build
-      run: go build -v -o myst-launcher-amd64.exe .
+      run: go build -v -o build/myst-launcher-amd64.exe .
       env:
         GOARCH: amd64
         GOOS: windows
+
+    - name: Sign
+      uses: DanaBear/code-sign-action@v4
+      with:
+        certificate: '${{ secrets.WINDOWS_CERTS }}'
+        password: '${{ secrets.WINDOWS_CERTS_PASSWORD }}'
+        certificatesha1: '${{ secrets.WINDOWS_CERTS_THUMBPRINT }}'
+        certificatename: '${{ secrets.WINDOWS_CERTS_NAME }}'
+        folder: 'build'
+        recursive: true
 
     - name: Upload
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: myst-launcher-amd64.exe
+        files: build/myst-launcher-amd64.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
