@@ -135,10 +135,6 @@ func (m *Manager) Update() error {
 		return err
 	}
 
-	err = m.Start()
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
