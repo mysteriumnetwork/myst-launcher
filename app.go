@@ -6,6 +6,7 @@
  */
 
 //go:generate goversioninfo -icon=ico/icon_512x512.ico -manifest=launcher.exe.manifest
+
 package main
 
 import (

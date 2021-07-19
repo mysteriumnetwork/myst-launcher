@@ -8,10 +8,10 @@ package app
 
 import (
 	"fmt"
+	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 	"syscall"
 	"time"
 
@@ -23,12 +23,15 @@ import (
 )
 
 const (
-	docker = "docker"
-	group  = "docker-users"
+	group = "docker-users"
 )
 
 func SuperviseDockerNode() {
-	dockerCmd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\resources\\bin\\" + docker
+	mystManager, err := myst.NewManagerWithDefaults()
+	if err != nil {
+		panic(err) // TODO handle gracefully
+	}
+
 	for {
 		isWLSEnabled := isWLSEnabled()
 		if !isWLSEnabled {
@@ -36,49 +39,19 @@ func SuperviseDockerNode() {
 			continue
 		}
 
-		ex := cmdRun(dockerCmd, "ps")
-		switch ex {
-		case 0:
+		canPingDocker := mystManager.CanPingDocker()
+		if canPingDocker {
 			gui.UI.StateDocker = gui.RunnableStateRunning
 			gui.UI.Update()
 
-			ex := cmdRun(dockerCmd, "container", "start", "myst")
-			switch ex {
-			case 0:
-				gui.UI.StateContainer = gui.RunnableStateRunning
-				gui.UI.Update()
-
-			default:
-				log.Printf("Failed to start cmd: %v", ex)
-				gui.UI.StateContainer = gui.RunnableStateInstalling
-				gui.UI.Update()
-
-				cmdArgs := fmt.Sprintf("run --cap-add NET_ADMIN -d -p 4449:4449 --name myst -v %s/.mysterium:/var/lib/mysterium-node mysteriumnetwork/myst:latest service --agreed-terms-and-conditions", os.Getenv("USERPROFILE"))
-				ex := cmdRun(dockerCmd, strings.Split(cmdArgs, " ")...)
-				if ex == 0 {
-					gui.UI.StateContainer = gui.RunnableStateRunning
-					gui.UI.Update()
-
-					continue
-				}
+			err := mystManager.Start()
+			if err != nil {
+				// TODO display what is wrong in ui
+				continue
 			}
-
-		case 1:
-			gui.UI.StateDocker = gui.RunnableStateStarting
-			gui.UI.StateContainer = gui.RunnableStateUnknown
+			gui.UI.StateContainer = gui.RunnableStateRunning
 			gui.UI.Update()
-
-			if isProcessRunning("Docker Desktop.exe") {
-				break
-			}
-			dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
-			cmd := exec.Command(dd, "-Autostart")
-			if err := cmd.Start(); err != nil {
-				log.Printf("Failed to start cmd: %v", err)
-			}
-			break
-
-		default:
+		} else {
 			tryInstall(isWLSEnabled)
 			continue
 		}
@@ -87,8 +60,30 @@ func SuperviseDockerNode() {
 	}
 }
 
+func maybeDockerIsTurnedOff() bool {
+	gui.UI.StateDocker = gui.RunnableStateStarting
+	gui.UI.StateContainer = gui.RunnableStateUnknown
+	gui.UI.Update()
+
+	if isProcessRunning("Docker Desktop.exe") {
+		return false
+	}
+	dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
+	cmd := exec.Command(dd, "-Autostart")
+	if err := cmd.Start(); err != nil {
+		log.Printf("Failed to start cmd: %v", err)
+		return false
+	}
+	return true
+}
+
 func tryInstall(isWLSEnabled bool) {
 	var err error
+
+	if maybeDockerIsTurnedOff() {
+		return
+	}
+
 	if !gui.UI.InstallStage2 {
 		gui.UI.SwitchState(gui.ModalStateInstallNeeded)
 		gui.UI.WaitDialogueComplete()
