@@ -25,7 +25,7 @@ jobs:
         GOOS: windows
 
     - name: Sign
-      uses: mysteriumnetwork/code-sign-action@v6
+      uses: mysteriumnetwork/code-sign-action@v7
       with:
         certificate: '${{ secrets.WINDOWS_CERTS }}'
         password: '${{ secrets.WINDOWS_CERTS_PASSWORD }}'
