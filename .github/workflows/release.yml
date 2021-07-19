@@ -19,6 +19,8 @@ jobs:
       run: |
         $(go env GOPATH)
         go get github.com/josephspurrier/goversioninfo@v1.2.0
+        ls $(go env GOPATH)
+        ls "$(go env GOPATH)\bin"
         $env:GOBIN="$(go env GOPATH)\bin"; go generate
         go build -ldflags="-s -w -H windowsgui" -v -o  build/myst-launcher-amd64.exe .
       env:
