@@ -18,11 +18,15 @@ jobs:
     - name: Build
       run: |
         $(go env GOPATH)
-        ls "$env:GOROOT/bin"
-        "$env:GOROOT/bin"
+        ls "$env:GOPATH/"
+
         $env:GOBIN = "$PWD\bin"; go get github.com/josephspurrier/goversioninfo@v1.2.0
-        "$env:GOROOT/bin"
-        ls "$env:GOROOT/bin"
+        "$PWD\bin"
+        ls "$PWD\bin"
+
+        $env:GOBIN = "$env:GOPATH\bin"; go get github.com/josephspurrier/goversioninfo@v1.2.0
+        "$env:GOPATH\bin"
+        ls "$env:GOPATH\bin"
 
         #$env:GOBIN="$(go env GOPATH)\bin"; go generate
         $env:GOBIN = "$PWD\bin"; go generate
