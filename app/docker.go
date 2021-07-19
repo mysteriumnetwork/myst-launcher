@@ -8,12 +8,17 @@ package app
 
 import (
 	"fmt"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
+	"sync"
 	"syscall"
 	"time"
+
+	"github.com/go-ole/go-ole"
+
+	"github.com/mysteriumnetwork/myst-launcher/myst"
 
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/native"
@@ -22,15 +27,20 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-const (
-	group = "docker-users"
-)
+const group = "docker-users"
 
 func SuperviseDockerNode() {
+	runtime.LockOSThread()
+	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
+
 	mystManager, err := myst.NewManagerWithDefaults()
 	if err != nil {
 		panic(err) // TODO handle gracefully
 	}
+
+	t1 := time.Tick(10 * time.Second)
+	t2 := time.Tick(24 * time.Hour)
+	var once sync.Once
 
 	for {
 		isWLSEnabled := isWLSEnabled()
@@ -51,12 +61,24 @@ func SuperviseDockerNode() {
 			}
 			gui.UI.StateContainer = gui.RunnableStateRunning
 			gui.UI.Update()
+
+			once.Do(checkUpdates)
 		} else {
 			tryInstall(isWLSEnabled)
-			continue
+			//continue
 		}
 
-		time.Sleep(10 * time.Second)
+		select {
+		case <-gui.UI.UpgradeClick:
+			fmt.Println("Upgrade >")
+			upgrade()
+
+		case <-t1:
+			break
+
+		case <-t2:
+			checkUpdates()
+		}
 	}
 }
 

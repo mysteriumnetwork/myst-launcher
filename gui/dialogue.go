@@ -22,8 +22,12 @@ const (
 func CreateDialogue() {
 	var (
 		// common
-		lbDocker      *walk.Label
-		lbContainer   *walk.Label
+		lbDocker         *walk.Label
+		lbContainer      *walk.Label
+		lbVersionLatest  *walk.Label
+		lbVersionCurrent *walk.Label
+		btnUpgrade       *walk.PushButton
+
 		autoStart     *walk.CheckBox
 		btnOpenNodeUI *walk.PushButton
 
@@ -229,6 +233,35 @@ func CreateDialogue() {
 					},
 					VSpacer{ColumnSpan: 2},
 					Label{
+						Text: "Current node version",
+					},
+					Label{
+						Text:     "-",
+						AssignTo: &lbVersionCurrent,
+					},
+					Label{
+						Text: "Latest node version",
+					},
+					Label{
+						Text:     "-",
+						AssignTo: &lbVersionLatest,
+					},
+					PushButton{
+						ColumnSpan: 2,
+						Enabled:    false,
+						Visible:    false,
+						AssignTo:   &btnUpgrade,
+						Text:       "-",
+						OnClicked: func() {
+							UI.BtnUpgradeOnClick()
+						},
+					},
+					Label{
+						Text:       "-",
+						ColumnSpan: 2,
+					},
+
+					Label{
 						Text: "Docker",
 					},
 					Label{
@@ -322,6 +355,13 @@ func CreateDialogue() {
 					lbContainer.SetText("-")
 				}
 				btnOpenNodeUI.SetEnabled(UI.StateContainer == RunnableStateRunning)
+
+				lbVersionLatest.SetText(UI.VersionLatest)
+				lbVersionCurrent.SetText(UI.VersionCurrent)
+				if UI.VersionCurrent != UI.VersionLatest {
+					btnUpgrade.SetVisible(true)
+					btnUpgrade.SetEnabled(true)
+				}
 
 			case ModalStateInstallNeeded:
 				UI.mw.Children().At(frameW).SetVisible(true)
