@@ -68,13 +68,21 @@ func maybeDockerIsTurnedOff() bool {
 	if isProcessRunning("Docker Desktop.exe") {
 		return false
 	}
-	dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
-	cmd := exec.Command(dd, "-Autostart")
-	if err := cmd.Start(); err != nil {
+	if err := startDocker(); err != nil {
 		log.Printf("Failed to start cmd: %v", err)
 		return false
 	}
 	return true
+}
+
+func startDocker() error {
+	dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
+	cmd := exec.Command(dd, "-Autostart")
+	if err := cmd.Start(); err != nil {
+		log.Printf("Failed to start cmd: %v", err)
+		return err
+	}
+	return nil
 }
 
 func tryInstall(isWLSEnabled bool) {
@@ -214,6 +222,14 @@ func tryInstall(isWLSEnabled bool) {
 	err = native.ShellExecuteAndWait(0, "runas", exe, "install --quiet", os.Getenv("TMP"), syscall.SW_NORMAL)
 	if err != nil {
 		log.Println("DockerDesktopInstaller failed:", err)
+		gui.UI.SwitchState(gui.ModalStateInstallError)
+
+		gui.UI.WaitDialogueComplete()
+		gui.UI.ExitApp()
+		return
+	}
+	if err := startDocker(); err != nil {
+		log.Println("Failed starting docker:", err)
 		gui.UI.SwitchState(gui.ModalStateInstallError)
 
 		gui.UI.WaitDialogueComplete()
