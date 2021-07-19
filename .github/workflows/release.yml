@@ -19,9 +19,10 @@ jobs:
       run: |
         $(go env GOPATH)
         ls "$env:GOROOT/bin"
-        ls "C:\Users\runneradmin\go\bin"
+        "$env:GOROOT/bin"
         $env:GOBIN = "$PWD\bin"; go get github.com/josephspurrier/goversioninfo@v1.2.0
-        #ls "$env:GOROOT/bin"
+        "$env:GOROOT/bin"
+        ls "$env:GOROOT/bin"
 
         #$env:GOBIN="$(go env GOPATH)\bin"; go generate
         $env:GOBIN = "$PWD\bin"; go generate
