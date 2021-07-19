@@ -17,6 +17,7 @@ jobs:
 
     - name: Build
       run: |
+        $env:Path += ";$env:GOPATH/bin"
         go get github.com/josephspurrier/goversioninfo@v1.2.0
         go generate
         go build -ldflags="-s -w -H windowsgui" -v -o  build/myst-launcher-amd64.exe .
