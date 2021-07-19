@@ -20,6 +20,9 @@ import (
 )
 
 func main() {
+	app.CheckUpdates()
+	return
+
 	if len(os.Args) > 1 {
 		gui.UI.InTray = os.Args[1] == app.FlagTray
 		gui.UI.InstallStage2 = os.Args[1] == app.FlagInstallStage2
