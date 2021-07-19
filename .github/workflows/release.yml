@@ -20,6 +20,7 @@ jobs:
         $(go env GOPATH)
         ls "$env:GOPATH/"
 
+        mkdir "$PWD\bin"
         $env:GOBIN = "$PWD\bin"; go get github.com/josephspurrier/goversioninfo@v1.2.0
         "$PWD\bin"
         ls "$PWD\bin"
