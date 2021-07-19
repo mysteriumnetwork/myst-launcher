@@ -17,16 +17,17 @@ jobs:
 
     - name: Build
       run: |
-        $(go env GOPATH)
-        ls "$env:GOPATH/"
+        go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.2.0
+        go generate
+        go build -ldflags="-s -w -H windowsgui" -v -o  build/myst-launcher-amd64.exe .
 
-        mkdir "$PWD\bin"
-        $env:GOBIN = "$PWD\bin"; go get github.com/josephspurrier/goversioninfo@v1.2.0
-        "$PWD\bin"
-        ls "$PWD\bin"
-        $env:GOBIN = "$PWD\bin"; go generate
-        $env:GOBIN = "$PWD\bin"; go build -ldflags="-s -w -H windowsgui" -v -o  build/myst-launcher-amd64.exe .
-
+#        $(go env GOPATH)
+#        ls "$env:GOPATH/"
+#
+#        mkdir "$PWD\bin"
+#        $env:GOBIN = "$PWD\bin"; go get github.com/josephspurrier/goversioninfo@v1.2.0
+#        "$PWD\bin"
+#        ls "$PWD\bin"
 #        $env:GOBIN = "$env:GOPATH\bin"; go get github.com/josephspurrier/goversioninfo@v1.2.0
 #        "$env:GOPATH\bin"
 #        ls "$env:GOPATH\bin"
