@@ -35,7 +35,7 @@ func SuperviseDockerNode() {
 		panic(err) // TODO handle gracefully
 	}
 
-	t1 := time.Tick(10 * time.Second)
+	t1 := time.Tick(15 * time.Second)
 	tryStartCount := 0
 
 	for {
@@ -71,8 +71,8 @@ func SuperviseDockerNode() {
 			tryStartCount++
 			tryStartDocker()
 
-			// try starting docker for 4 time, else try install
-			if tryStartCount == 1 {
+			// try starting docker for 3 time, else try install
+			if tryStartCount == 3 {
 				tryStartCount = 0
 				tryInstall(isWLSEnabled)
 			}
@@ -136,7 +136,6 @@ func startDocker() error {
 }
 
 func tryInstall(isWLSEnabled bool) {
-	fmt.Println("tryInstall >")
 	var err error
 
 	if !gui.UI.InstallStage2 {
