@@ -16,14 +16,12 @@ import (
 	"time"
 
 	"github.com/go-ole/go-ole"
-
-	"github.com/mysteriumnetwork/myst-launcher/myst"
-
-	"github.com/mysteriumnetwork/myst-launcher/gui"
-	"github.com/mysteriumnetwork/myst-launcher/native"
-
 	"github.com/lxn/win"
 	"golang.org/x/sys/windows"
+
+	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/myst"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 )
 
 const group = "docker-users"

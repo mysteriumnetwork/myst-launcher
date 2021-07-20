@@ -89,7 +89,6 @@ func cmdRun(name string, args ...string) int {
 }
 
 func CreateShortcut(dst, target, args string) error {
-	//ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
 		return err

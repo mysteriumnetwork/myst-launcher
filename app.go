@@ -13,11 +13,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/lxn/walk"
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-
-	"github.com/lxn/walk"
 )
 
 func main() {

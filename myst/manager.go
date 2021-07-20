@@ -9,20 +9,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 const (
-	imageName = "mysteriumnetwork/myst:latest"
-	//imageName     = "mysteriumnetwork/myst:0.48.0-alpine"
+	imageName     = "mysteriumnetwork/myst:latest"
 	containerName = "myst"
 )
 
