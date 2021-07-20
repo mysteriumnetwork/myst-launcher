@@ -313,9 +313,6 @@ func hasVTx_() bool {
 }
 
 func hasVTx() bool {
-	//ole.CoInitialize(0)
-	//defer ole.CoUninitialize()
-
 	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	defer unknown.Release()
 
@@ -348,30 +345,23 @@ func hasVTx() bool {
 	return false
 }
 
-func isWLSEnabled() bool {
-	//fmt.Println("isWLSEnabled >")
-	//err := ole.CoInitialize(0)
-	//if err != nil {
-	//	fmt.Println("isWLSEnabled >", err)
-	//}
-	//defer ole.CoUninitialize()
-
+func isWLSEnabled() (bool, error) {
 	unknown, err := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	if err != nil {
-		fmt.Println("isWLSEnabled 2>", err)
+		return false, err
 	}
 	defer unknown.Release()
 
 	wmi, err := unknown.QueryInterface(ole.IID_IDispatch)
 	if err != nil {
-		fmt.Println("isWLSEnabled 3>", err)
+		return false, err
 	}
 	defer wmi.Release()
 
 	// service is a SWbemServices
 	serviceRaw, err := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
 	if err != nil {
-		fmt.Println("isWLSEnabled 4>", err)
+		return false, err
 	}
 	service := serviceRaw.ToIDispatch()
 	defer service.Release()
@@ -383,8 +373,8 @@ func isWLSEnabled() bool {
 
 	countVar, err := oleutil.GetProperty(result, "Count")
 	if err != nil {
-		fmt.Println("isWLSEnabled 5>", err)
+		return false, err
 	}
 	count := int(countVar.Val)
-	return count > 0
+	return count > 0, nil
 }

@@ -38,10 +38,13 @@ func SuperviseDockerNode() {
 	}
 
 	t1 := time.Tick(10 * time.Second)
-	t2 := time.Tick(24 * time.Hour)
 
 	for {
-		isWLSEnabled := isWLSEnabled()
+		isWLSEnabled, err := isWLSEnabled()
+		if err != nil {
+			gui.UI.Bus.Publish("show-dlg", "error", err)
+			gui.UI.ExitApp()
+		}
 		if !isWLSEnabled {
 			tryInstall(isWLSEnabled)
 			continue
@@ -54,37 +57,33 @@ func SuperviseDockerNode() {
 
 			err := mystManager.Start()
 			if err != nil {
-				// TODO display what is wrong in ui
-				continue
+				gui.UI.Bus.Publish("show-dlg", "error", err)
+				gui.UI.ExitApp()
 			}
 			gui.UI.StateContainer = gui.RunnableStateRunning
 			gui.UI.Update()
 
-			//once.Do(checkUpdates)
 			id := mystManager.GetCurrentImageDigest()
-			fmt.Println("GetCurrentImageDigest >", id)
 			myst.CheckUpdates(id)
 
 		} else {
 			tryInstall(isWLSEnabled)
-			//continue
 		}
 
 		select {
 		case <-gui.UI.UpgradeClick:
-			fmt.Println("Upgrade >")
 			id := mystManager.GetCurrentImageDigest()
-			fmt.Println("GetCurrentImageDigest >", id)
 			myst.CheckUpdates(id)
 
+			if gui.UI.VersionUpToDate {
+				gui.UI.Bus.Publish("show-dlg", "is-up-to-date")
+				return
+			}
 			mystManager.Stop()
 			mystManager.Update()
 
 		case <-t1:
 			break
-
-		case <-t2:
-			//checkUpdates()
 		}
 	}
 }

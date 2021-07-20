@@ -26,7 +26,6 @@ func CreateDialogue() {
 		lbContainer      *walk.Label
 		lbVersionLatest  *walk.Label
 		lbVersionCurrent *walk.Label
-		btnUpgrade       *walk.PushButton
 
 		autoStart     *walk.CheckBox
 		btnOpenNodeUI *walk.PushButton
@@ -53,12 +52,27 @@ func CreateDialogue() {
 	)
 	UI.ReadConfig()
 
+	var upgradeAction *walk.Action
+
 	if err := (MainWindow{
 		AssignTo: &UI.mw,
 		Title:    "Mysterium Exit Node Launcher",
 		MinSize:  Size{320, 240},
 		Size:     Size{400, 600},
 		Icon:     UI.Icon,
+
+		MenuItems: []MenuItem{
+			Menu{
+				Text: "File",
+				Items: []MenuItem{
+					Action{
+						Text:        "Upgrade",
+						OnTriggered: func() { UI.BtnUpgradeOnClick() },
+						AssignTo:    &upgradeAction,
+					},
+				},
+			},
+		},
 
 		Layout: VBox{},
 		Children: []Widget{
@@ -246,15 +260,6 @@ func CreateDialogue() {
 						Text:     "-",
 						AssignTo: &lbVersionLatest,
 					},
-					PushButton{
-						ColumnSpan: 2,
-						//Enabled:    false,
-						AssignTo: &btnUpgrade,
-						Text:     "-",
-						OnClicked: func() {
-							UI.BtnUpgradeOnClick()
-						},
-					},
 					Label{
 						Text:       "-",
 						ColumnSpan: 2,
@@ -324,6 +329,16 @@ func CreateDialogue() {
 			})
 		}
 	})
+	UI.Bus.Subscribe("show-dlg", func(d string, err error) {
+		if d == "is-up-to-date" {
+			walk.MsgBox(UI.mw, "Update", "Node is up to date.", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconInformation)
+		}
+		if d == "error" {
+			txt := "Error: " + err.Error() + "\r\nApplication will exit"
+			walk.MsgBox(UI.mw, "Application error", txt, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
+		}
+	})
+
 	UI.Bus.Subscribe("state-change", func() {
 		UI.mw.Synchronize(func() {
 			switch UI.state {
@@ -357,10 +372,6 @@ func CreateDialogue() {
 
 				lbVersionLatest.SetText(UI.VersionLatest)
 				lbVersionCurrent.SetText(UI.VersionCurrent)
-				if UI.VersionCurrent != UI.VersionLatest {
-					btnUpgrade.SetVisible(true)
-					btnUpgrade.SetEnabled(true)
-				}
 
 			case ModalStateInstallNeeded:
 				UI.mw.Children().At(frameW).SetVisible(true)

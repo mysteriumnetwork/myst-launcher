@@ -1,21 +1,18 @@
 package myst
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
-
 	"github.com/buger/jsonparser"
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 )
 
 func CheckUpdates(imageDigest string) {
 	url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=10"
 	resp, err := http.Get(url)
-	fmt.Println(">", err)
 	if err != nil {
 		return
 	}
@@ -54,12 +51,7 @@ func CheckUpdates(imageDigest string) {
 		}, "images")
 	}, "results")
 
-	//upToDate := (latestDigest == imageDigest)
-	//fmt.Println("latestDigest >", latestDigest)
-	//fmt.Println("latestVersion >", latestVersion)
-	//fmt.Println("currentVersion >", currentVersion)
-	//fmt.Println("upToDate >", upToDate)
-
+	gui.UI.VersionUpToDate = latestDigest == imageDigest
 	gui.UI.VersionCurrent = currentVersion
 	gui.UI.VersionLatest = latestVersion
 	gui.UI.Update()

@@ -39,10 +39,11 @@ type UIModel struct {
 	state modalState
 
 	// common
-	StateDocker    runnableState
-	StateContainer runnableState
-	VersionLatest  string
-	VersionCurrent string
+	StateDocker     runnableState
+	StateContainer  runnableState
+	VersionLatest   string
+	VersionCurrent  string
+	VersionUpToDate bool
 
 	// inst
 	CheckWindowsVersion  bool

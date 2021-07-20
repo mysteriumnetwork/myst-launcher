@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mysteriumnetwork/myst-launcher/gui"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -19,8 +21,8 @@ import (
 )
 
 const (
-	//imageName = "mysteriumnetwork/myst:latest"
-	imageName     = "mysteriumnetwork/myst:0.48.0-alpine"
+	imageName = "mysteriumnetwork/myst:latest"
+	//imageName     = "mysteriumnetwork/myst:0.48.0-alpine"
 	containerName = "myst"
 )
 
@@ -110,34 +112,31 @@ func (m *Manager) Stop() error {
 	if err != nil {
 		return wrap(err, ErrCouldNotStop)
 	}
+	gui.UI.StateContainer = gui.RunnableStateUnknown
+	gui.UI.Update()
 	return nil
 }
 
 func (m *Manager) Update() error {
 	mystContainer, err := m.findMystContainer()
-	fmt.Println("findMystContainer", err)
 	if err == nil {
 		err = m.dockerAPI.ContainerRemove(m.ctx(), mystContainer.ID, types.ContainerRemoveOptions{})
-		fmt.Println("ContainerRemove", err)
 		if err != nil {
 			return wrap(err, ErrCouldNotRemoveImage)
 		}
 	}
 
 	err = m.pullMystLatest()
-	fmt.Println("pullMystLatest", err)
 	if err != nil {
 		return err
 	}
 
 	err = m.createMystContainer()
-	fmt.Println("createMystContainer", err)
 	if err != nil {
 		return err
 	}
 
 	err = m.startMystContainer()
-	fmt.Println("startMystContainer", err)
 	if err != nil {
 		return err
 	}
@@ -159,6 +158,8 @@ func (m *Manager) startMystContainer() error {
 	if err != nil {
 		return wrap(err, ErrContainerStart)
 	}
+	gui.UI.StateContainer = gui.RunnableStateStarting
+	gui.UI.Update()
 	return nil
 }
 
@@ -169,8 +170,6 @@ func (m *Manager) findMystContainer() (*Container, error) {
 	}
 	for idx, ctr := range list {
 		for _, ctrName := range ctr.Names {
-			fmt.Println("findMystContainer > ctrName", ctrName, "/"+containerName, ctr.Image, ctr.ImageID)
-
 			if ctrName == "/"+containerName {
 				return &Container{&list[idx]}, nil
 			}
@@ -252,19 +251,13 @@ func (m *Manager) GetCurrentImageDigest() string {
 
 	imageDigest := ""
 	for _, image := range images {
-		fmt.Printf("%+v\n", image.RepoDigests)
-
 		if c.ImageID == image.ID {
-			fmt.Printf("%+v\n", image.RepoDigests)
-
 			for _, rd := range image.RepoDigests {
-				fmt.Printf("rd> %+v\n", rd)
 				digestArr := strings.Split(rd, "@")
 				imageDigest = digestArr[1]
 			}
 		}
 	}
-	fmt.Printf("rd> %+v\n", imageDigest)
 	return imageDigest
 }
 
