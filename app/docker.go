@@ -61,6 +61,10 @@ func SuperviseDockerNode() {
 			gui.UI.Update()
 
 			//once.Do(checkUpdates)
+			id := mystManager.GetCurrentImageDigest()
+			fmt.Println("GetCurrentImageDigest >", id)
+			myst.CheckUpdates(id)
+
 		} else {
 			tryInstall(isWLSEnabled)
 			//continue
@@ -70,11 +74,11 @@ func SuperviseDockerNode() {
 		case <-gui.UI.UpgradeClick:
 			fmt.Println("Upgrade >")
 			id := mystManager.GetCurrentImageDigest()
-			fmt.Println("Upgrade >", id)
+			fmt.Println("GetCurrentImageDigest >", id)
 			myst.CheckUpdates(id)
 
-			//mystManager.Stop()
-			//mystManager.Update()
+			mystManager.Stop()
+			mystManager.Update()
 
 		case <-t1:
 			break

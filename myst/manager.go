@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	imageName = "mysteriumnetwork/myst:latest"
-	//imageName     = "mysteriumnetwork/myst:0.48.0-alpine"
+	//imageName = "mysteriumnetwork/myst:latest"
+	imageName     = "mysteriumnetwork/myst:0.48.0-alpine"
 	containerName = "myst"
 )
 

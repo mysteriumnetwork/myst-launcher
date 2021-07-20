@@ -12,27 +12,7 @@ import (
 	"github.com/buger/jsonparser"
 )
 
-const (
-//imageName     = "mysteriumnetwork/myst:0.48.0-alpine"
-//imageName     = "mysteriumnetwork/myst:latest"
-//containerName = "myst"
-)
-
-//var cli *client.Client
-//
-//func init() {
-//	var err error
-//	cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-//	if err != nil {
-//		panic(err)
-//	}
-//}
-
 func CheckUpdates(imageDigest string) {
-	//imageDigest := getCurrent()
-	//imageDigest = "sha256:ff530e6dbc2538aa92887833db24ba8d40f5d630b6ba32a34a258873aad9fac9"
-	//return
-
 	url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=10"
 	resp, err := http.Get(url)
 	fmt.Println(">", err)
@@ -50,38 +30,35 @@ func CheckUpdates(imageDigest string) {
 	currentVersion := ""
 
 	jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-		//fmt.Println("r>", string(value), err)
 		name, err := jsonparser.GetString(value, "name")
-		fmt.Println("r>", name, err)
+		if err != nil {
+			return
+		}
 
 		jsonparser.ArrayEach(value, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			digest, err := jsonparser.GetString(value, "digest")
-			//fmt.Println("i>", string(value), err)
-
+			if err != nil {
+				return
+			}
 			if name == "latest" {
 				latestDigest = digest
 			}
-			//fmt.Println("i >>>", digest, name)
-
 			match, _ := regexp.MatchString(`^\d+\.\d+\.\d+.*$`, name)
 			if match && latestDigest == digest {
 				latestVersion = name
 			}
-
 			digestsMatch := strings.ToLower(digest) == strings.ToLower(imageDigest)
 			if digestsMatch && match {
-				fmt.Println("i>>", digest, name, match)
 				currentVersion = name
 			}
-
 		}, "images")
 	}, "results")
 
-	upToDate := (latestDigest == imageDigest)
-	fmt.Println("latestDigest >", latestDigest)
-	fmt.Println("latestVersion >", latestVersion)
-	fmt.Println("currentVersion >", currentVersion)
-	fmt.Println("upToDate >", upToDate)
+	//upToDate := (latestDigest == imageDigest)
+	//fmt.Println("latestDigest >", latestDigest)
+	//fmt.Println("latestVersion >", latestVersion)
+	//fmt.Println("currentVersion >", currentVersion)
+	//fmt.Println("upToDate >", upToDate)
 
 	gui.UI.VersionCurrent = currentVersion
 	gui.UI.VersionLatest = latestVersion
