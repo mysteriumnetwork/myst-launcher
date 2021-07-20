@@ -69,10 +69,10 @@ func SuperviseDockerNode() {
 
 		} else {
 			tryStartCount++
-			tryStartDocker()
+			started := tryStartDocker()
 
 			// try starting docker for 3 time, else try install
-			if tryStartCount == 3 {
+			if !started || tryStartCount == 3 {
 				tryStartCount = 0
 				tryInstall(isWLSEnabled)
 			}
@@ -80,7 +80,6 @@ func SuperviseDockerNode() {
 
 		select {
 		case act := <-gui.UI.UIAction:
-			//fmt.Println(act)
 			switch act {
 			case "upgrade":
 				id := mystManager.GetCurrentImageDigest()
@@ -233,8 +232,10 @@ func tryInstall(isWLSEnabled bool) {
 		log.Println(fmt.Sprintf("Downloading %d of %d: %s", fi+1, len(list), v.name))
 		if _, err := os.Stat(os.Getenv("TMP") + "\\" + v.name); err != nil {
 
-			err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, func(ignored int) {
-
+			err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, func(progress int) {
+				if progress%10 == 0 {
+					log.Println(fmt.Sprintf("%s - %d%%", v.name, progress))
+				}
 			})
 			if err != nil {
 				log.Println("Download failed")

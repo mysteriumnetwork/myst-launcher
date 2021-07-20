@@ -124,6 +124,8 @@ func (m *Manager) Update() error {
 			return wrap(err, ErrCouldNotRemoveImage)
 		}
 	}
+	gui.UI.StateContainer = gui.RunnableStateInstalling
+	gui.UI.Update()
 
 	err = m.pullMystLatest()
 	if err != nil {

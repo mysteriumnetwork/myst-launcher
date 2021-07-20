@@ -356,7 +356,10 @@ func CreateDialogue() {
 	})
 
 	enableMenu := func(enable bool) {
-		actionMainMenu.SetEnabled(enable)
+		//actionMainMenu.SetEnabled(enable)
+		actionEnable.SetEnabled(enable)
+		actionDisable.SetEnabled(enable)
+		actionUpgrade.SetEnabled(enable)
 	}
 
 	UI.Bus.Subscribe("state-change", func() {
