@@ -50,6 +50,7 @@ func DownloadFile(filepath string, url string, cb PrintProgressCallback) error {
 
 	counter := &WriteCounter{cb: cb}
 	counter.contentLength = uint64(resp.ContentLength)
+	counter.cb(0)
 	if _, err = io.Copy(out, io.TeeReader(resp.Body, counter)); err != nil {
 		out.Close()
 		return err

@@ -21,6 +21,11 @@ const (
 
 func CreateDialogue() {
 	var (
+		actionMainMenu *walk.Action
+		actionUpgrade  *walk.Action
+		actionEnable   *walk.Action
+		actionDisable  *walk.Action
+
 		// common
 		lbDocker         *walk.Label
 		lbContainer      *walk.Label
@@ -52,8 +57,6 @@ func CreateDialogue() {
 	)
 	UI.ReadConfig()
 
-	var upgradeAction *walk.Action
-
 	if err := (MainWindow{
 		AssignTo: &UI.mw,
 		Title:    "Mysterium Exit Node Launcher",
@@ -63,21 +66,24 @@ func CreateDialogue() {
 
 		MenuItems: []MenuItem{
 			Menu{
-				Text: "Node",
+				AssignActionTo: &actionMainMenu,
+				Text:           "Node",
 				Items: []MenuItem{
 					Action{
 						Text:        "Upgrade",
+						AssignTo:    &actionUpgrade,
 						OnTriggered: func() { UI.BtnUpgradeOnClick() },
-						AssignTo:    &upgradeAction,
 					},
 
 					Separator{},
 					Action{
 						Text:        "Disable node",
+						AssignTo:    &actionDisable,
 						OnTriggered: func() { UI.BtnDisableOnClick() },
 					},
 					Action{
 						Text:        "Enable node",
+						AssignTo:    &actionEnable,
 						OnTriggered: func() { UI.BtnEnableOnClick() },
 					},
 				},
@@ -349,10 +355,19 @@ func CreateDialogue() {
 		}
 	})
 
+	enableMenu := func(enable bool) {
+		//actionMainMenu.SetEnabled(enable)
+		actionEnable.SetEnabled(enable)
+		actionDisable.SetEnabled(enable)
+		actionUpgrade.SetEnabled(enable)
+	}
+
 	UI.Bus.Subscribe("state-change", func() {
 		UI.mw.Synchronize(func() {
 			switch UI.state {
 			case ModalStateInitial:
+				enableMenu(true)
+
 				UI.mw.Children().At(frameW).SetVisible(false)
 				UI.mw.Children().At(frameI).SetVisible(false)
 				UI.mw.Children().At(frameS).SetVisible(true)
@@ -384,18 +399,21 @@ func CreateDialogue() {
 				lbVersionCurrent.SetText(UI.VersionCurrent)
 
 			case ModalStateInstallNeeded:
+				enableMenu(false)
 				UI.mw.Children().At(frameW).SetVisible(true)
 				UI.mw.Children().At(frameI).SetVisible(false)
 				UI.mw.Children().At(frameS).SetVisible(false)
 				btnBegin.SetEnabled(true)
 
 			case ModalStateInstallInProgress:
+				enableMenu(false)
 				UI.mw.Children().At(frameW).SetVisible(false)
 				UI.mw.Children().At(frameI).SetVisible(true)
 				UI.mw.Children().At(frameS).SetVisible(false)
 				btnFinish.SetEnabled(false)
 
 			case ModalStateInstallFinished:
+				enableMenu(false)
 				btnFinish.SetEnabled(true)
 				btnFinish.SetText("Finish")
 
@@ -429,4 +447,5 @@ func CreateDialogue() {
 		*canceled = true
 		UI.mw.Hide()
 	})
+
 }
