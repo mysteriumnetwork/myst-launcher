@@ -76,7 +76,7 @@ func SuperviseDockerNode() {
 			myst.CheckUpdates(id)
 
 			if gui.UI.VersionUpToDate {
-				gui.UI.Bus.Publish("show-dlg", "is-up-to-date")
+				gui.UI.Bus.Publish("show-dlg", "is-up-to-date", nil)
 				return
 			}
 			mystManager.Stop()

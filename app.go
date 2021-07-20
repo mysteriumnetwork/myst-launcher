@@ -10,6 +10,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
@@ -20,9 +21,6 @@ import (
 )
 
 func main() {
-	//app.checkUpdates()
-	//return
-
 	if len(os.Args) > 1 {
 		gui.UI.InTray = os.Args[1] == app.FlagTray
 		gui.UI.InstallStage2 = os.Args[1] == app.FlagInstallStage2
@@ -43,7 +41,7 @@ func main() {
 	}
 	utils.CreatePipeAndListen(&gui.UI)
 
-	//log.SetOutput(&gui.UI)
+	log.SetOutput(&gui.UI)
 	gui.UI.Icon, _ = walk.NewIconFromResourceId(2)
 	gui.CreateDialogue()
 

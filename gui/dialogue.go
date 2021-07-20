@@ -63,7 +63,7 @@ func CreateDialogue() {
 
 		MenuItems: []MenuItem{
 			Menu{
-				Text: "File",
+				Text: "Node",
 				Items: []MenuItem{
 					Action{
 						Text:        "Upgrade",
