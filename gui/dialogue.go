@@ -70,6 +70,16 @@ func CreateDialogue() {
 						OnTriggered: func() { UI.BtnUpgradeOnClick() },
 						AssignTo:    &upgradeAction,
 					},
+
+					Separator{},
+					Action{
+						Text:        "Disable node",
+						OnTriggered: func() { UI.BtnDisableOnClick() },
+					},
+					Action{
+						Text:        "Enable node",
+						OnTriggered: func() { UI.BtnEnableOnClick() },
+					},
 				},
 			},
 		},
@@ -280,7 +290,7 @@ func CreateDialogue() {
 						AssignTo: &lbContainer,
 					},
 					CheckBox{
-						Text:     "Start Node automatically",
+						Text:     "Start launcher automatically",
 						AssignTo: &autoStart,
 						OnCheckedChanged: func() {
 							UI.CFG.AutoStart = autoStart.Checked()

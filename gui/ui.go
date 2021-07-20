@@ -22,6 +22,7 @@ import (
 
 type Config struct {
 	AutoStart bool `json:"auto_start"`
+	Enabled   bool `json:"enabled"`
 }
 
 type UIModel struct {
@@ -30,11 +31,11 @@ type UIModel struct {
 	pipeListener  net.Listener
 	CFG           Config
 
-	Bus          EventBus.Bus
-	waitClick    chan int
-	UpgradeClick chan int
-	Icon         *walk.Icon
-	mw           *walk.MainWindow
+	Bus       EventBus.Bus
+	waitClick chan int
+	UIAction  chan string
+	Icon      *walk.Icon
+	mw        *walk.MainWindow
 
 	state modalState
 
@@ -63,7 +64,7 @@ var UI UIModel
 func init() {
 	UI.Bus = EventBus.New()
 	UI.waitClick = make(chan int, 0)
-	UI.UpgradeClick = make(chan int, 1)
+	UI.UIAction = make(chan string, 1)
 }
 
 func (m *UIModel) Write(b []byte) (int, error) {
@@ -104,11 +105,15 @@ func (m *UIModel) BtnOnClick() {
 }
 
 func (m *UIModel) BtnUpgradeOnClick() {
-	select {
-	case m.UpgradeClick <- 0:
-	default:
-		//fmt.Println("no message sent > BtnOnClick")
-	}
+	m.UIAction <- "upgrade"
+}
+
+func (m *UIModel) BtnDisableOnClick() {
+	m.UIAction <- "disable"
+}
+
+func (m *UIModel) BtnEnableOnClick() {
+	m.UIAction <- "enable"
 }
 
 func (m *UIModel) WaitDialogueComplete() {
@@ -141,6 +146,10 @@ func (m *UIModel) ReadConfig() {
 	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
 	_, err := os.Stat(f)
 	if os.IsNotExist(err) {
+		// create default settings
+		UI.CFG.AutoStart = true
+		UI.CFG.Enabled = true
+		m.SaveConfig()
 		return
 	}
 
@@ -148,6 +157,9 @@ func (m *UIModel) ReadConfig() {
 	if err != nil {
 		return
 	}
+
+	// default value
+	UI.CFG.Enabled = true
 	json.NewDecoder(file).Decode(&UI.CFG)
 }
 

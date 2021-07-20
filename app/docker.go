@@ -53,32 +53,49 @@ func SuperviseDockerNode() {
 			gui.UI.StateDocker = gui.RunnableStateRunning
 			gui.UI.Update()
 
-			err := mystManager.Start()
-			if err != nil {
-				gui.UI.Bus.Publish("show-dlg", "error", err)
-				gui.UI.ExitApp()
-			}
-			gui.UI.StateContainer = gui.RunnableStateRunning
-			gui.UI.Update()
+			if gui.UI.CFG.Enabled {
+				err := mystManager.Start()
+				if err != nil {
+					gui.UI.Bus.Publish("show-dlg", "error", err)
+					gui.UI.ExitApp()
+				}
+				gui.UI.StateContainer = gui.RunnableStateRunning
+				gui.UI.Update()
 
-			id := mystManager.GetCurrentImageDigest()
-			myst.CheckUpdates(id)
+				id := mystManager.GetCurrentImageDigest()
+				myst.CheckUpdates(id)
+			}
 
 		} else {
 			tryInstall(isWLSEnabled)
 		}
 
 		select {
-		case <-gui.UI.UpgradeClick:
-			id := mystManager.GetCurrentImageDigest()
-			myst.CheckUpdates(id)
+		case act := <-gui.UI.UIAction:
+			switch act {
+			case "upgrade":
+				fmt.Println("UIAction", act)
+				break
+				id := mystManager.GetCurrentImageDigest()
+				myst.CheckUpdates(id)
 
-			if gui.UI.VersionUpToDate {
-				gui.UI.Bus.Publish("show-dlg", "is-up-to-date", nil)
-				return
+				if gui.UI.VersionUpToDate {
+					gui.UI.Bus.Publish("show-dlg", "is-up-to-date", nil)
+					return
+				}
+				mystManager.Stop()
+				mystManager.Update()
+
+			case "enable":
+				mystManager.Start()
+				gui.UI.CFG.Enabled = true
+				gui.UI.SaveConfig()
+
+			case "disable":
+				mystManager.Stop()
+				gui.UI.CFG.Enabled = false
+				gui.UI.SaveConfig()
 			}
-			mystManager.Stop()
-			mystManager.Update()
 
 		case <-t1:
 			break
