@@ -13,8 +13,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/lxn/walk"
-
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
@@ -39,13 +37,16 @@ func main() {
 	if utils.IsAlreadyRunning() {
 		return
 	}
-	utils.CreatePipeAndListen(&gui.UI)
 
 	log.SetOutput(&gui.UI)
-	gui.UI.Icon, _ = walk.NewIconFromResourceId(2)
+	gui.CreateNotifyIcon()
 	gui.CreateDialogue()
 
+	gui.UI.WaitGroup.Add(1)
 	go app.SuperviseDockerNode()
 
-	app.CreateNotifyIcon()
+	utils.CreatePipeAndListen(&gui.UI)
+
+	// Run the message loop
+	gui.UI.Run()
 }

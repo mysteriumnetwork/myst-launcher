@@ -19,6 +19,15 @@ func IsAlreadyRunning() bool {
 	return false
 }
 
+func StopApp() bool {
+	pipe, err := winio.DialPipe(LauncherPipeName, nil)
+	if err == nil {
+		pipe.Write([]byte("stop\n"))
+		return true
+	}
+	return false
+}
+
 func CreatePipeAndListen(model *gui.UIModel) {
 	l, err := winio.ListenPipe(LauncherPipeName, nil)
 	if err != nil {
@@ -35,8 +44,11 @@ func CreatePipeAndListen(model *gui.UIModel) {
 
 			rw := bufio.NewReadWriter(bufio.NewReader(c), bufio.NewWriter(c))
 			s, _ := rw.ReadString('\n')
-			if s == "popup\n" {
+			switch s {
+			case "popup\n":
 				model.ShowMain()
+			case "stop\n":
+				model.ExitApp()
 			}
 		}
 	}()

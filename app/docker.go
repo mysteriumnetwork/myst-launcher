@@ -29,6 +29,7 @@ const group = "docker-users"
 func SuperviseDockerNode() {
 	runtime.LockOSThread()
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
+	defer gui.UI.WaitGroup.Done()
 
 	mystManager, err := myst.NewManagerWithDefaults()
 	if err != nil {
@@ -101,6 +102,9 @@ func SuperviseDockerNode() {
 				mystManager.Stop()
 				gui.UI.CFG.Enabled = false
 				gui.UI.SaveConfig()
+
+			case "stop":
+				return
 			}
 
 		// wait for ticker event if no action

@@ -21,6 +21,7 @@ import (
 	"unsafe"
 
 	"github.com/mysteriumnetwork/go-fileversion"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
@@ -197,6 +198,7 @@ func InstallExe() error {
 }
 
 func UninstallExe() error {
+	utils.StopApp()
 	registry.DeleteKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`)
 
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "mysterium node launcher.lnk")
@@ -209,6 +211,7 @@ func UninstallExe() error {
 	os.Mkdir(dir, os.ModePerm)
 	shcDst = path.Join(dir, "mysterium node launcher.lnk")
 	_ = os.Remove(shcDst)
+
 	return nil
 }
 

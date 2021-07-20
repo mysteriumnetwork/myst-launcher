@@ -58,17 +58,23 @@ func CreateDialogue() {
 	UI.ReadConfig()
 
 	if err := (MainWindow{
-		AssignTo: &UI.mw,
+		AssignTo: &UI.dlg,
 		Title:    "Mysterium Exit Node Launcher",
 		MinSize:  Size{320, 240},
 		Size:     Size{400, 600},
-		Icon:     UI.Icon,
+		Icon:     UI.icon,
 
 		MenuItems: []MenuItem{
 			Menu{
 				AssignActionTo: &actionMainMenu,
 				Text:           "Node",
 				Items: []MenuItem{
+					Action{
+						Text:        "Open Node UI",
+						AssignTo:    &actionUpgrade,
+						OnTriggered: func() { UI.OpenNodeUI() },
+					},
+					Separator{},
 					Action{
 						Text:        "Upgrade",
 						AssignTo:    &actionUpgrade,
@@ -334,24 +340,24 @@ func CreateDialogue() {
 	}
 
 	if UI.InTray {
-		UI.mw.SetVisible(false)
+		UI.dlg.SetVisible(false)
 	}
 
 	UI.Bus.Subscribe("log", func(p []byte) {
 		switch UI.state {
 		case ModalStateInstallInProgress, ModalStateInstallError, ModalStateInstallFinished:
-			UI.mw.Synchronize(func() {
+			UI.dlg.Synchronize(func() {
 				lbInstallationStatus.AppendText(string(p) + "\r\n")
 			})
 		}
 	})
 	UI.Bus.Subscribe("show-dlg", func(d string, err error) {
 		if d == "is-up-to-date" {
-			walk.MsgBox(UI.mw, "Update", "Node is up to date.", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconInformation)
+			walk.MsgBox(UI.dlg, "Update", "Node is up to date.", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconInformation)
 		}
 		if d == "error" {
 			txt := "Error: " + err.Error() + "\r\nApplication will exit"
-			walk.MsgBox(UI.mw, "Application error", txt, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
+			walk.MsgBox(UI.dlg, "Application error", txt, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
 		}
 	})
 
@@ -363,14 +369,14 @@ func CreateDialogue() {
 	}
 
 	UI.Bus.Subscribe("state-change", func() {
-		UI.mw.Synchronize(func() {
+		UI.dlg.Synchronize(func() {
 			switch UI.state {
 			case ModalStateInitial:
 				enableMenu(true)
 
-				UI.mw.Children().At(frameW).SetVisible(false)
-				UI.mw.Children().At(frameI).SetVisible(false)
-				UI.mw.Children().At(frameS).SetVisible(true)
+				UI.dlg.Children().At(frameW).SetVisible(false)
+				UI.dlg.Children().At(frameI).SetVisible(false)
+				UI.dlg.Children().At(frameS).SetVisible(true)
 				autoStart.SetChecked(UI.CFG.AutoStart)
 
 				switch UI.StateDocker {
@@ -400,16 +406,16 @@ func CreateDialogue() {
 
 			case ModalStateInstallNeeded:
 				enableMenu(false)
-				UI.mw.Children().At(frameW).SetVisible(true)
-				UI.mw.Children().At(frameI).SetVisible(false)
-				UI.mw.Children().At(frameS).SetVisible(false)
+				UI.dlg.Children().At(frameW).SetVisible(true)
+				UI.dlg.Children().At(frameI).SetVisible(false)
+				UI.dlg.Children().At(frameS).SetVisible(false)
 				btnBegin.SetEnabled(true)
 
 			case ModalStateInstallInProgress:
 				enableMenu(false)
-				UI.mw.Children().At(frameW).SetVisible(false)
-				UI.mw.Children().At(frameI).SetVisible(true)
-				UI.mw.Children().At(frameS).SetVisible(false)
+				UI.dlg.Children().At(frameW).SetVisible(false)
+				UI.dlg.Children().At(frameI).SetVisible(true)
+				UI.dlg.Children().At(frameS).SetVisible(false)
 				btnFinish.SetEnabled(false)
 
 			case ModalStateInstallFinished:
@@ -418,8 +424,8 @@ func CreateDialogue() {
 				btnFinish.SetText("Finish")
 
 			case ModalStateInstallError:
-				UI.mw.Children().At(frameI).SetVisible(true)
-				UI.mw.Children().At(frameS).SetVisible(false)
+				UI.dlg.Children().At(frameI).SetVisible(true)
+				UI.dlg.Children().At(frameS).SetVisible(false)
 				btnFinish.SetEnabled(true)
 				btnFinish.SetText("Exit installer")
 			}
@@ -440,12 +446,12 @@ func CreateDialogue() {
 	})
 
 	// prevent closing the app
-	UI.mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
+	UI.dlg.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
 		if UI.isExiting() {
 			walk.App().Exit(0)
 		}
 		*canceled = true
-		UI.mw.Hide()
+		UI.dlg.Hide()
 	})
 
 }

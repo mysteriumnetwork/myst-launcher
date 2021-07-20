@@ -11,6 +11,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 	"syscall"
 
 	"github.com/mysteriumnetwork/myst-launcher/native"
@@ -30,12 +31,16 @@ type UIModel struct {
 	InstallStage2 bool
 	pipeListener  net.Listener
 	CFG           Config
+	WaitGroup     sync.WaitGroup
 
 	Bus       EventBus.Bus
 	waitClick chan int
 	UIAction  chan string
-	Icon      *walk.Icon
-	mw        *walk.MainWindow
+
+	icon *walk.Icon
+	dlg  *walk.MainWindow
+	ni   *walk.NotifyIcon
+	mw   *walk.MainWindow
 
 	state modalState
 
@@ -65,6 +70,7 @@ func init() {
 	UI.Bus = EventBus.New()
 	UI.waitClick = make(chan int, 0)
 	UI.UIAction = make(chan string, 1)
+	UI.icon, _ = walk.NewIconFromResourceId(2)
 }
 
 func (m *UIModel) Write(b []byte) (int, error) {
@@ -82,13 +88,13 @@ func (m *UIModel) Update() {
 }
 
 func (m *UIModel) ShowMain() {
-	win.ShowWindow(m.mw.Handle(), win.SW_SHOW)
-	win.ShowWindow(m.mw.Handle(), win.SW_SHOWNORMAL)
+	win.ShowWindow(m.dlg.Handle(), win.SW_SHOW)
+	win.ShowWindow(m.dlg.Handle(), win.SW_SHOWNORMAL)
 
-	native.SwitchToThisWindow(m.mw.Handle(), false)
-	win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-	win.SetWindowPos(m.mw.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-	win.SetWindowPos(m.mw.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+	native.SwitchToThisWindow(m.dlg.Handle(), false)
+	win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+	win.SetWindowPos(m.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+	win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 }
 
 func (m *UIModel) SwitchState(s modalState) {
@@ -127,7 +133,11 @@ func (m *UIModel) isExiting() bool {
 func (m *UIModel) ExitApp() {
 	m.Bus.Publish("exit")
 
-	m.mw.Synchronize(func() {
+	// wait for SuperviseDockerNode to finish its work
+	m.UIAction <- "stop"
+	m.WaitGroup.Wait()
+
+	m.dlg.Synchronize(func() {
 		walk.App().Exit(0)
 	})
 }
@@ -176,5 +186,9 @@ func (m *UIModel) SaveConfig() {
 }
 
 func (m *UIModel) ConfirmModal(title, message string) int {
-	return walk.MsgBox(m.mw, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+	return walk.MsgBox(m.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+}
+
+func (m *UIModel) Run() {
+	m.mw.Run()
 }
