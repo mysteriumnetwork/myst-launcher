@@ -11,6 +11,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/go-ole/go-ole v1.2.5
 	github.com/josephspurrier/goversioninfo v1.2.0 // indirect
+	github.com/kr/pretty v0.2.1
 	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e
 	github.com/morikuni/aec v1.0.0 // indirect

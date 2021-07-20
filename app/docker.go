@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"sync"
 	"syscall"
 	"time"
 
@@ -40,7 +39,6 @@ func SuperviseDockerNode() {
 
 	t1 := time.Tick(10 * time.Second)
 	t2 := time.Tick(24 * time.Hour)
-	var once sync.Once
 
 	for {
 		isWLSEnabled := isWLSEnabled()
@@ -62,7 +60,7 @@ func SuperviseDockerNode() {
 			gui.UI.StateContainer = gui.RunnableStateRunning
 			gui.UI.Update()
 
-			once.Do(checkUpdates)
+			//once.Do(checkUpdates)
 		} else {
 			tryInstall(isWLSEnabled)
 			//continue
@@ -71,13 +69,18 @@ func SuperviseDockerNode() {
 		select {
 		case <-gui.UI.UpgradeClick:
 			fmt.Println("Upgrade >")
-			upgrade()
+			id := mystManager.GetCurrentImageDigest()
+			fmt.Println("Upgrade >", id)
+			myst.CheckUpdates(id)
+
+			//mystManager.Stop()
+			//mystManager.Update()
 
 		case <-t1:
 			break
 
 		case <-t2:
-			checkUpdates()
+			//checkUpdates()
 		}
 	}
 }

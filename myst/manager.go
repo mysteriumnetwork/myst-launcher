@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -18,7 +19,8 @@ import (
 )
 
 const (
-	imageName     = "mysteriumnetwork/myst:latest"
+	imageName = "mysteriumnetwork/myst:latest"
+	//imageName     = "mysteriumnetwork/myst:0.48.0-alpine"
 	containerName = "myst"
 )
 
@@ -113,24 +115,29 @@ func (m *Manager) Stop() error {
 
 func (m *Manager) Update() error {
 	mystContainer, err := m.findMystContainer()
+	fmt.Println("findMystContainer", err)
 	if err == nil {
-		_, err = m.dockerAPI.ImageRemove(m.ctx(), mystContainer.ID, types.ImageRemoveOptions{Force: true})
+		err = m.dockerAPI.ContainerRemove(m.ctx(), mystContainer.ID, types.ContainerRemoveOptions{})
+		fmt.Println("ContainerRemove", err)
 		if err != nil {
 			return wrap(err, ErrCouldNotRemoveImage)
 		}
 	}
 
 	err = m.pullMystLatest()
+	fmt.Println("pullMystLatest", err)
 	if err != nil {
 		return err
 	}
 
 	err = m.createMystContainer()
+	fmt.Println("createMystContainer", err)
 	if err != nil {
 		return err
 	}
 
 	err = m.startMystContainer()
+	fmt.Println("startMystContainer", err)
 	if err != nil {
 		return err
 	}
@@ -162,6 +169,8 @@ func (m *Manager) findMystContainer() (*Container, error) {
 	}
 	for idx, ctr := range list {
 		for _, ctrName := range ctr.Names {
+			fmt.Println("findMystContainer > ctrName", ctrName, "/"+containerName, ctr.Image, ctr.ImageID)
+
 			if ctrName == "/"+containerName {
 				return &Container{&list[idx]}, nil
 			}
@@ -231,6 +240,32 @@ func (m *Manager) ctx() context.Context {
 
 func (m *Manager) timeout() *time.Duration {
 	return &m.cfg.ActionTimout
+}
+
+func (m *Manager) GetCurrentImageDigest() string {
+	c, _ := m.findMystContainer()
+
+	images, err := m.dockerAPI.ImageList(m.ctx(), types.ImageListOptions{})
+	if err != nil {
+		return ""
+	}
+
+	imageDigest := ""
+	for _, image := range images {
+		fmt.Printf("%+v\n", image.RepoDigests)
+
+		if c.ImageID == image.ID {
+			fmt.Printf("%+v\n", image.RepoDigests)
+
+			for _, rd := range image.RepoDigests {
+				fmt.Printf("rd> %+v\n", rd)
+				digestArr := strings.Split(rd, "@")
+				imageDigest = digestArr[1]
+			}
+		}
+	}
+	fmt.Printf("rd> %+v\n", imageDigest)
+	return imageDigest
 }
 
 type Container struct {

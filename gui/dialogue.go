@@ -248,10 +248,9 @@ func CreateDialogue() {
 					},
 					PushButton{
 						ColumnSpan: 2,
-						Enabled:    false,
-						Visible:    false,
-						AssignTo:   &btnUpgrade,
-						Text:       "-",
+						//Enabled:    false,
+						AssignTo: &btnUpgrade,
+						Text:     "-",
 						OnClicked: func() {
 							UI.BtnUpgradeOnClick()
 						},
