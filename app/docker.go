@@ -35,7 +35,8 @@ func SuperviseDockerNode() {
 		panic(err) // TODO handle gracefully
 	}
 
-	t1 := time.Tick(10 * time.Second)
+	t1 := time.Tick(15 * time.Second)
+	tryStartCount := 0
 
 	for {
 		isWLSEnabled, err := isWLSEnabled()
@@ -67,15 +68,21 @@ func SuperviseDockerNode() {
 			}
 
 		} else {
-			tryInstall(isWLSEnabled)
+			tryStartCount++
+			tryStartDocker()
+
+			// try starting docker for 3 time, else try install
+			if tryStartCount == 3 {
+				tryStartCount = 0
+				tryInstall(isWLSEnabled)
+			}
 		}
 
 		select {
 		case act := <-gui.UI.UIAction:
+			//fmt.Println(act)
 			switch act {
 			case "upgrade":
-				fmt.Println("UIAction", act)
-				break
 				id := mystManager.GetCurrentImageDigest()
 				myst.CheckUpdates(id)
 
@@ -97,19 +104,19 @@ func SuperviseDockerNode() {
 				gui.UI.SaveConfig()
 			}
 
+		// wait for ticker event if no action
 		case <-t1:
-			break
 		}
 	}
 }
 
-func maybeDockerIsTurnedOff() bool {
+func tryStartDocker() bool {
 	gui.UI.StateDocker = gui.RunnableStateStarting
 	gui.UI.StateContainer = gui.RunnableStateUnknown
 	gui.UI.Update()
 
 	if isProcessRunning("Docker Desktop.exe") {
-		return false
+		return true
 	}
 	if err := startDocker(); err != nil {
 		log.Printf("Failed to start cmd: %v", err)
@@ -130,10 +137,6 @@ func startDocker() error {
 
 func tryInstall(isWLSEnabled bool) {
 	var err error
-
-	if maybeDockerIsTurnedOff() {
-		return
-	}
 
 	if !gui.UI.InstallStage2 {
 		gui.UI.SwitchState(gui.ModalStateInstallNeeded)
