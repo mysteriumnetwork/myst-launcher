@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -14,6 +15,8 @@ import (
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -108,13 +111,15 @@ func (m *Manager) Stop() error {
 	if err != nil {
 		return wrap(err, ErrCouldNotStop)
 	}
+	gui.UI.StateContainer = gui.RunnableStateUnknown
+	gui.UI.Update()
 	return nil
 }
 
 func (m *Manager) Update() error {
 	mystContainer, err := m.findMystContainer()
 	if err == nil {
-		_, err = m.dockerAPI.ImageRemove(m.ctx(), mystContainer.ID, types.ImageRemoveOptions{Force: true})
+		err = m.dockerAPI.ContainerRemove(m.ctx(), mystContainer.ID, types.ContainerRemoveOptions{})
 		if err != nil {
 			return wrap(err, ErrCouldNotRemoveImage)
 		}
@@ -152,6 +157,8 @@ func (m *Manager) startMystContainer() error {
 	if err != nil {
 		return wrap(err, ErrContainerStart)
 	}
+	gui.UI.StateContainer = gui.RunnableStateStarting
+	gui.UI.Update()
 	return nil
 }
 
@@ -231,6 +238,26 @@ func (m *Manager) ctx() context.Context {
 
 func (m *Manager) timeout() *time.Duration {
 	return &m.cfg.ActionTimout
+}
+
+func (m *Manager) GetCurrentImageDigest() string {
+	c, _ := m.findMystContainer()
+
+	images, err := m.dockerAPI.ImageList(m.ctx(), types.ImageListOptions{})
+	if err != nil {
+		return ""
+	}
+
+	imageDigest := ""
+	for _, image := range images {
+		if c.ImageID == image.ID {
+			for _, rd := range image.RepoDigests {
+				digestArr := strings.Split(rd, "@")
+				imageDigest = digestArr[1]
+			}
+		}
+	}
+	return imageDigest
 }
 
 type Container struct {

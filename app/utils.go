@@ -89,7 +89,6 @@ func cmdRun(name string, args ...string) int {
 }
 
 func CreateShortcut(dst, target, args string) error {
-	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
 		return err
@@ -313,9 +312,6 @@ func hasVTx_() bool {
 }
 
 func hasVTx() bool {
-	ole.CoInitialize(0)
-	defer ole.CoUninitialize()
-
 	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	defer unknown.Release()
 
@@ -348,18 +344,24 @@ func hasVTx() bool {
 	return false
 }
 
-func isWLSEnabled() bool {
-	ole.CoInitialize(0)
-	defer ole.CoUninitialize()
-
-	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
+func isWLSEnabled() (bool, error) {
+	unknown, err := oleutil.CreateObject("WbemScripting.SWbemLocator")
+	if err != nil {
+		return false, err
+	}
 	defer unknown.Release()
 
-	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
+	wmi, err := unknown.QueryInterface(ole.IID_IDispatch)
+	if err != nil {
+		return false, err
+	}
 	defer wmi.Release()
 
 	// service is a SWbemServices
-	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
+	serviceRaw, err := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
+	if err != nil {
+		return false, err
+	}
 	service := serviceRaw.ToIDispatch()
 	defer service.Release()
 
@@ -368,7 +370,10 @@ func isWLSEnabled() bool {
 	result := resultRaw.ToIDispatch()
 	defer result.Release()
 
-	countVar, _ := oleutil.GetProperty(result, "Count")
+	countVar, err := oleutil.GetProperty(result, "Count")
+	if err != nil {
+		return false, err
+	}
 	count := int(countVar.Val)
-	return count > 0
+	return count > 0, nil
 }

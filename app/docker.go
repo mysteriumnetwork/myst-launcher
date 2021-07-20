@@ -8,32 +8,41 @@ package app
 
 import (
 	"fmt"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"syscall"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
-	"github.com/mysteriumnetwork/myst-launcher/native"
-
+	"github.com/go-ole/go-ole"
 	"github.com/lxn/win"
 	"golang.org/x/sys/windows"
+
+	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/myst"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 )
 
-const (
-	group = "docker-users"
-)
+const group = "docker-users"
 
 func SuperviseDockerNode() {
+	runtime.LockOSThread()
+	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
+
 	mystManager, err := myst.NewManagerWithDefaults()
 	if err != nil {
 		panic(err) // TODO handle gracefully
 	}
 
+	t1 := time.Tick(10 * time.Second)
+
 	for {
-		isWLSEnabled := isWLSEnabled()
+		isWLSEnabled, err := isWLSEnabled()
+		if err != nil {
+			gui.UI.Bus.Publish("show-dlg", "error", err)
+			gui.UI.ExitApp()
+		}
 		if !isWLSEnabled {
 			tryInstall(isWLSEnabled)
 			continue
@@ -46,17 +55,34 @@ func SuperviseDockerNode() {
 
 			err := mystManager.Start()
 			if err != nil {
-				// TODO display what is wrong in ui
-				continue
+				gui.UI.Bus.Publish("show-dlg", "error", err)
+				gui.UI.ExitApp()
 			}
 			gui.UI.StateContainer = gui.RunnableStateRunning
 			gui.UI.Update()
+
+			id := mystManager.GetCurrentImageDigest()
+			myst.CheckUpdates(id)
+
 		} else {
 			tryInstall(isWLSEnabled)
-			continue
 		}
 
-		time.Sleep(10 * time.Second)
+		select {
+		case <-gui.UI.UpgradeClick:
+			id := mystManager.GetCurrentImageDigest()
+			myst.CheckUpdates(id)
+
+			if gui.UI.VersionUpToDate {
+				gui.UI.Bus.Publish("show-dlg", "is-up-to-date", nil)
+				return
+			}
+			mystManager.Stop()
+			mystManager.Update()
+
+		case <-t1:
+			break
+		}
 	}
 }
 

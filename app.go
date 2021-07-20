@@ -13,11 +13,11 @@ import (
 	"log"
 	"os"
 
+	"github.com/lxn/walk"
+
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-
-	"github.com/lxn/walk"
 )
 
 func main() {
@@ -45,8 +45,7 @@ func main() {
 	gui.UI.Icon, _ = walk.NewIconFromResourceId(2)
 	gui.CreateDialogue()
 
-	go func() {
-		app.SuperviseDockerNode()
-	}()
+	go app.SuperviseDockerNode()
+
 	app.CreateNotifyIcon()
 }

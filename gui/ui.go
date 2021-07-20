@@ -30,16 +30,20 @@ type UIModel struct {
 	pipeListener  net.Listener
 	CFG           Config
 
-	Bus       EventBus.Bus
-	waitClick chan int
-	Icon      *walk.Icon
-	mw        *walk.MainWindow
+	Bus          EventBus.Bus
+	waitClick    chan int
+	UpgradeClick chan int
+	Icon         *walk.Icon
+	mw           *walk.MainWindow
 
 	state modalState
 
 	// common
-	StateDocker    runnableState
-	StateContainer runnableState
+	StateDocker     runnableState
+	StateContainer  runnableState
+	VersionLatest   string
+	VersionCurrent  string
+	VersionUpToDate bool
 
 	// inst
 	CheckWindowsVersion  bool
@@ -59,6 +63,7 @@ var UI UIModel
 func init() {
 	UI.Bus = EventBus.New()
 	UI.waitClick = make(chan int, 0)
+	UI.UpgradeClick = make(chan int, 1)
 }
 
 func (m *UIModel) Write(b []byte) (int, error) {
@@ -93,6 +98,14 @@ func (m *UIModel) SwitchState(s modalState) {
 func (m *UIModel) BtnOnClick() {
 	select {
 	case m.waitClick <- 0:
+	default:
+		//fmt.Println("no message sent > BtnOnClick")
+	}
+}
+
+func (m *UIModel) BtnUpgradeOnClick() {
+	select {
+	case m.UpgradeClick <- 0:
 	default:
 		//fmt.Println("no message sent > BtnOnClick")
 	}

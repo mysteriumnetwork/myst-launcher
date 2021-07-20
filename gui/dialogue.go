@@ -22,8 +22,11 @@ const (
 func CreateDialogue() {
 	var (
 		// common
-		lbDocker      *walk.Label
-		lbContainer   *walk.Label
+		lbDocker         *walk.Label
+		lbContainer      *walk.Label
+		lbVersionLatest  *walk.Label
+		lbVersionCurrent *walk.Label
+
 		autoStart     *walk.CheckBox
 		btnOpenNodeUI *walk.PushButton
 
@@ -49,12 +52,27 @@ func CreateDialogue() {
 	)
 	UI.ReadConfig()
 
+	var upgradeAction *walk.Action
+
 	if err := (MainWindow{
 		AssignTo: &UI.mw,
 		Title:    "Mysterium Exit Node Launcher",
 		MinSize:  Size{320, 240},
 		Size:     Size{400, 600},
 		Icon:     UI.Icon,
+
+		MenuItems: []MenuItem{
+			Menu{
+				Text: "Node",
+				Items: []MenuItem{
+					Action{
+						Text:        "Upgrade",
+						OnTriggered: func() { UI.BtnUpgradeOnClick() },
+						AssignTo:    &upgradeAction,
+					},
+				},
+			},
+		},
 
 		Layout: VBox{},
 		Children: []Widget{
@@ -229,6 +247,25 @@ func CreateDialogue() {
 					},
 					VSpacer{ColumnSpan: 2},
 					Label{
+						Text: "Current node version",
+					},
+					Label{
+						Text:     "-",
+						AssignTo: &lbVersionCurrent,
+					},
+					Label{
+						Text: "Latest node version",
+					},
+					Label{
+						Text:     "-",
+						AssignTo: &lbVersionLatest,
+					},
+					Label{
+						Text:       "-",
+						ColumnSpan: 2,
+					},
+
+					Label{
 						Text: "Docker",
 					},
 					Label{
@@ -292,6 +329,16 @@ func CreateDialogue() {
 			})
 		}
 	})
+	UI.Bus.Subscribe("show-dlg", func(d string, err error) {
+		if d == "is-up-to-date" {
+			walk.MsgBox(UI.mw, "Update", "Node is up to date.", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconInformation)
+		}
+		if d == "error" {
+			txt := "Error: " + err.Error() + "\r\nApplication will exit"
+			walk.MsgBox(UI.mw, "Application error", txt, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
+		}
+	})
+
 	UI.Bus.Subscribe("state-change", func() {
 		UI.mw.Synchronize(func() {
 			switch UI.state {
@@ -322,6 +369,9 @@ func CreateDialogue() {
 					lbContainer.SetText("-")
 				}
 				btnOpenNodeUI.SetEnabled(UI.StateContainer == RunnableStateRunning)
+
+				lbVersionLatest.SetText(UI.VersionLatest)
+				lbVersionCurrent.SetText(UI.VersionCurrent)
 
 			case ModalStateInstallNeeded:
 				UI.mw.Children().At(frameW).SetVisible(true)
