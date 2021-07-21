@@ -21,6 +21,7 @@ import (
 	"unsafe"
 
 	"github.com/mysteriumnetwork/go-fileversion"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
@@ -197,6 +198,7 @@ func InstallExe() error {
 }
 
 func UninstallExe() error {
+	utils.StopApp()
 	registry.DeleteKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`)
 
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "mysterium node launcher.lnk")
@@ -209,6 +211,7 @@ func UninstallExe() error {
 	os.Mkdir(dir, os.ModePerm)
 	shcDst = path.Join(dir, "mysterium node launcher.lnk")
 	_ = os.Remove(shcDst)
+
 	return nil
 }
 
@@ -342,6 +345,19 @@ func hasVTx() bool {
 		}
 	}
 	return false
+}
+
+// In case of suspend/resume some APIs may rise unexpected error, so we need to retry it
+func isWLSEnabledWithRetry() (bool, error) {
+	res, err := false, error(nil)
+
+	for i := 0; i < 2; i++ {
+		res, err = isWLSEnabled()
+		if err == nil {
+			return res, nil
+		}
+	}
+	return res, err
 }
 
 func isWLSEnabled() (bool, error) {
