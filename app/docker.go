@@ -27,6 +27,7 @@ import (
 const group = "docker-users"
 
 func SuperviseDockerNode() {
+	var err error
 	runtime.LockOSThread()
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
 	defer gui.UI.WaitGroup.Done()
@@ -40,11 +41,17 @@ func SuperviseDockerNode() {
 	tryStartCount := 0
 
 	for {
-		isWLSEnabled, err := isWLSEnabled()
+		isWLSEnabled, err := isWLSEnabledWithRetry()
+		if err == nil {
+			break
+		}
+
 		if err != nil {
 			gui.UI.Bus.Publish("show-dlg", "error", err)
 			gui.UI.ExitApp()
 		}
+		continue
+
 		if !isWLSEnabled {
 			tryInstall(isWLSEnabled)
 			continue
@@ -72,12 +79,13 @@ func SuperviseDockerNode() {
 			tryStartCount++
 			started := tryStartDocker()
 
-			// try starting docker for 3 time, else try install
-			if !started || tryStartCount == 3 {
+			// try starting docker for 7 times, else try install
+			if !started || tryStartCount == 7 {
 				tryStartCount = 0
 				tryInstall(isWLSEnabled)
 			}
 		}
+		continue
 
 		select {
 		case act := <-gui.UI.UIAction:

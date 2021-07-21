@@ -347,6 +347,19 @@ func hasVTx() bool {
 	return false
 }
 
+// In case of suspend/resume some APIs may rise unexpected error, so we need to retry it
+func isWLSEnabledWithRetry() (bool, error) {
+	res, err := false, error(nil)
+
+	for i := 0; i < 2; i++ {
+		res, err = isWLSEnabled()
+		if err == nil {
+			return res, nil
+		}
+	}
+	return res, err
+}
+
 func isWLSEnabled() (bool, error) {
 	unknown, err := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	if err != nil {
