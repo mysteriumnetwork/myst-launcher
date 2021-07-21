@@ -16,7 +16,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -111,8 +110,6 @@ func (m *Manager) Stop() error {
 	if err != nil {
 		return wrap(err, ErrCouldNotStop)
 	}
-	gui.UI.StateContainer = gui.RunnableStateUnknown
-	gui.UI.Update()
 	return nil
 }
 
@@ -124,9 +121,6 @@ func (m *Manager) Update() error {
 			return wrap(err, ErrCouldNotRemoveImage)
 		}
 	}
-	gui.UI.StateContainer = gui.RunnableStateInstalling
-	gui.UI.Update()
-
 	err = m.pullMystLatest()
 	if err != nil {
 		return err
@@ -159,8 +153,6 @@ func (m *Manager) startMystContainer() error {
 	if err != nil {
 		return wrap(err, ErrContainerStart)
 	}
-	gui.UI.StateContainer = gui.RunnableStateStarting
-	gui.UI.Update()
 	return nil
 }
 

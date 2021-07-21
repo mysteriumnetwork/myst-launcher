@@ -352,11 +352,12 @@ func CreateDialogue() {
 		}
 	})
 	UI.Bus.Subscribe("show-dlg", func(d string, err error) {
-		if d == "is-up-to-date" {
+		switch d {
+		case "is-up-to-date":
 			walk.MsgBox(UI.dlg, "Update", "Node is up to date.", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconInformation)
-		}
-		if d == "error" {
-			txt := "Error: " + err.Error() + "\r\nApplication will exit"
+
+		case "error":
+			txt := err.Error() + "\r\n" + "Application will exit now"
 			walk.MsgBox(UI.dlg, "Application error", txt, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
 		}
 	})
