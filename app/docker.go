@@ -42,15 +42,10 @@ func SuperviseDockerNode() {
 
 	for {
 		isWLSEnabled, err := isWLSEnabledWithRetry()
-		if err == nil {
-			break
-		}
-
 		if err != nil {
 			gui.UI.Bus.Publish("show-dlg", "error", err)
 			gui.UI.ExitApp()
 		}
-		continue
 
 		if !isWLSEnabled {
 			tryInstall(isWLSEnabled)
@@ -85,7 +80,6 @@ func SuperviseDockerNode() {
 				tryInstall(isWLSEnabled)
 			}
 		}
-		continue
 
 		select {
 		case act := <-gui.UI.UIAction:

@@ -106,7 +106,6 @@ func (m *UIModel) BtnOnClick() {
 	select {
 	case m.waitClick <- 0:
 	default:
-		//fmt.Println("no message sent > BtnOnClick")
 	}
 }
 

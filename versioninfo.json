@@ -21,15 +21,15 @@
     "StringFileInfo": {
         "Comments": "",
         "CompanyName": "Mysterium Network",
-        "FileDescription": "Installer",
-        "FileVersion": "0.0.1-preview12",
+        "FileDescription": "Mysterium Network Node Launcher",
+        "FileVersion": "0.0.1-preview17",
         "InternalName": "",
         "LegalCopyright": "Copyright © 2021 Mysterium Network",
         "LegalTrademarks": "",
         "OriginalFilename": "",
         "PrivateBuild": "",
         "ProductName": "Mysterium Network Node Launcher",
-        "ProductVersion": "0.0.1-preview12",
+        "ProductVersion": "0.0.1-preview17",
         "SpecialBuild": ""
     },
     "VarFileInfo": {
