@@ -1,9 +1,7 @@
-*.log
 .idea
-resource.syso
-TODO
-z.bat
-*.ps1
-*.c_
+*.log
+*.syso
 *.exe
 *.lnk
+TODO
+z.bat

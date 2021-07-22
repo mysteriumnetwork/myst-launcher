@@ -68,7 +68,6 @@ func SuperviseDockerNode() {
 
 					err := mystManager.Start()
 					if err != nil {
-						fmt.Println("Start >", err)
 						return
 					}
 					gui.UI.StateContainer = gui.RunnableStateRunning
