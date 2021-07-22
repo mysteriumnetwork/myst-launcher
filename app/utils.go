@@ -31,11 +31,6 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-var (
-	modkernel32                   = syscall.NewLazyDLL("kernel32.dll")
-	procIsProcessorFeaturePresent = modkernel32.NewProc("IsProcessorFeaturePresent")
-)
-
 const launcherLnk = "Mysterium Node launcher.lnk"
 
 func cmdRun(name string, args ...string) int {
@@ -273,18 +268,8 @@ func isWindowsUpdateEnabled() bool {
 	return disableWUfBSafeguards == 1
 }
 
-// does not matter in self-virtualized environment
+// We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
 // see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
-func hasVTx_() bool {
-	const PF_VIRT_FIRMWARE_ENABLED = 21
-	r1, r2, e1 := syscall.Syscall(procIsProcessorFeaturePresent.Addr(), 1, uintptr(PF_VIRT_FIRMWARE_ENABLED), 0, 0)
-	if e1 != 0 {
-		fmt.Printf("Err: %s \n", syscall.Errno(e1))
-	}
-	log.Println("hasVTx", r1, r2)
-	return r1 != 0
-}
-
 func hasVTx() bool {
 	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	defer unknown.Release()
