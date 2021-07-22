@@ -19,7 +19,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"unsafe"
+
+	"github.com/mysteriumnetwork/myst-launcher/native"
 
 	"github.com/mysteriumnetwork/go-fileversion"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
@@ -30,11 +31,7 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-var (
-	modkernel32                   = syscall.NewLazyDLL("kernel32.dll")
-	procCopyFileW                 = modkernel32.NewProc("CopyFileW")
-	procIsProcessorFeaturePresent = modkernel32.NewProc("IsProcessorFeaturePresent")
-)
+const launcherLnk = "Mysterium Node launcher.lnk"
 
 func cmdRun(name string, args ...string) int {
 	log.Print(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
@@ -120,38 +117,6 @@ func CurrentGroupMembership(group string) bool {
 	return is
 }
 
-// CopyFile wraps windows function CopyFileW
-func CopyFile(src, dst string, failIfExists bool) error {
-	lpExistingFileName, err := syscall.UTF16PtrFromString(src)
-	if err != nil {
-		return err
-	}
-
-	lpNewFileName, err := syscall.UTF16PtrFromString(dst)
-	if err != nil {
-		return err
-	}
-
-	var bFailIfExists uint32
-	if failIfExists {
-		bFailIfExists = 1
-	} else {
-		bFailIfExists = 0
-	}
-
-	r1, _, err := syscall.Syscall(
-		procCopyFileW.Addr(),
-		3,
-		uintptr(unsafe.Pointer(lpExistingFileName)),
-		uintptr(unsafe.Pointer(lpNewFileName)),
-		uintptr(bFailIfExists))
-
-	if r1 == 0 {
-		return err
-	}
-	return nil
-}
-
 func getExeNameFromFullPath(fullExe string) string {
 	exe := filepath.Clean(fullExe)
 	return exe[len(filepath.Dir(exe))+1:]
@@ -194,7 +159,7 @@ func InstallExe() error {
 	os.Mkdir(dstPath, os.ModePerm)
 	fullExe, _ := os.Executable()
 	exe := getExeNameFromFullPath(fullExe)
-	CopyFile(fullExe, dstPath+`\`+exe, false)
+	native.CopyFile(fullExe, dstPath+`\`+exe, false)
 	return nil
 }
 
@@ -202,15 +167,15 @@ func UninstallExe() error {
 	utils.StopApp()
 	registry.DeleteKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`)
 
-	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "mysterium node launcher.lnk")
+	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", launcherLnk)
 	_ = os.Remove(shcDst)
 
-	shcDst = path.Join(os.Getenv("USERPROFILE"), "Desktop", "mysterium node launcher.lnk")
+	shcDst = path.Join(os.Getenv("USERPROFILE"), "Desktop", launcherLnk)
 	_ = os.Remove(shcDst)
 
 	dir := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Mysterium Network")
 	os.Mkdir(dir, os.ModePerm)
-	shcDst = path.Join(dir, "mysterium node launcher.lnk")
+	shcDst = path.Join(dir, launcherLnk)
 	_ = os.Remove(shcDst)
 
 	return nil
@@ -224,19 +189,19 @@ func MystNodeLauncherExePath() string {
 }
 
 func CreateAutostartShortcut(args string) {
-	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", "Mysterium node launcher.lnk")
+	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", launcherLnk)
 	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
 func CreateDesktopShortcut(args string) {
-	shcDst := path.Join(os.Getenv("USERPROFILE"), "Desktop", "Mysterium node launcher.lnk")
+	shcDst := path.Join(os.Getenv("USERPROFILE"), "Desktop", launcherLnk)
 	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
 func CreateStartMenuShortcut(args string) {
 	dir := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Mysterium Network")
 	os.Mkdir(dir, os.ModePerm)
-	shcDst := path.Join(dir, "Mysterium node launcher.lnk")
+	shcDst := path.Join(dir, launcherLnk)
 	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
@@ -303,18 +268,8 @@ func isWindowsUpdateEnabled() bool {
 	return disableWUfBSafeguards == 1
 }
 
-// does not matter in self-virtualized environment
+// We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
 // see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
-func hasVTx_() bool {
-	const PF_VIRT_FIRMWARE_ENABLED = 21
-	r1, r2, e1 := syscall.Syscall(procIsProcessorFeaturePresent.Addr(), 1, uintptr(PF_VIRT_FIRMWARE_ENABLED), 0, 0)
-	if e1 != 0 {
-		fmt.Printf("Err: %s \n", syscall.Errno(e1))
-	}
-	log.Println("hasVTx", r1, r2)
-	return r1 != 0
-}
-
 func hasVTx() bool {
 	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	defer unknown.Release()
@@ -348,38 +303,62 @@ func hasVTx() bool {
 	return false
 }
 
-func isWLSEnabled() (bool, error) {
+const (
+	FeatureWSL    = "Microsoft-Windows-Subsystem-Linux"
+	FeatureHyperV = "Microsoft-Hyper-V"
+)
+
+// Returns: featureExists, featureEnabled, error
+func QueryWindowsFeature(feature string) (bool, bool, error) {
 	unknown, err := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	defer unknown.Release()
 
 	wmi, err := unknown.QueryInterface(ole.IID_IDispatch)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	defer wmi.Release()
 
 	// service is a SWbemServices
 	serviceRaw, err := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	service := serviceRaw.ToIDispatch()
 	defer service.Release()
 
 	// result is a SWBemObjectSet
-	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_OptionalFeature Where Name='Microsoft-Windows-Subsystem-Linux' and InstallState=1")
+	resultRaw, err := oleutil.CallMethod(service, "ExecQuery", fmt.Sprintf("SELECT * FROM Win32_OptionalFeature Where Name='%s'", feature))
+	if err != nil {
+		return false, false, err
+	}
 	result := resultRaw.ToIDispatch()
 	defer result.Release()
-
 	countVar, err := oleutil.GetProperty(result, "Count")
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	count := int(countVar.Val)
-	return count > 0, nil
+	featureExists := count > 0
+
+	resultRaw, err = oleutil.CallMethod(service, "ExecQuery", fmt.Sprintf("SELECT * FROM Win32_OptionalFeature Where Name='%s' and InstallState=1", feature))
+	if err != nil {
+		return false, false, err
+	}
+	result = resultRaw.ToIDispatch()
+	defer result.Release()
+
+	countVar, err = oleutil.GetProperty(result, "Count")
+	if err != nil {
+		return false, false, err
+	}
+	count = int(countVar.Val)
+	featureEnabled := count > 0
+
+	return featureExists, featureEnabled, nil
 }
 
 func Retry(attempts int, sleep time.Duration, fn func() error) error {

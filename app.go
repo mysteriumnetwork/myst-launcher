@@ -49,4 +49,10 @@ func main() {
 
 	// Run the message loop
 	gui.UI.Run()
+
+	// send stop action to SuperviseDockerNode
+	gui.UI.UIAction <- "stop"
+
+	// wait for SuperviseDockerNode to finish its work
+	gui.UI.WaitGroup.Wait()
 }

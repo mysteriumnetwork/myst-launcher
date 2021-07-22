@@ -8,6 +8,7 @@ package gui
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -42,7 +43,8 @@ type UIModel struct {
 	ni   *walk.NotifyIcon
 	mw   *walk.MainWindow
 
-	state modalState
+	state    modalState
+	wantExit bool
 
 	// common
 	StateDocker     runnableState
@@ -55,6 +57,7 @@ type UIModel struct {
 	CheckWindowsVersion  bool
 	CheckVTx             bool
 	EnableWSL            bool
+	EnableHyperV         bool
 	InstallExecutable    bool
 	RebootAfterWSLEnable bool
 	DownloadFiles        bool
@@ -102,11 +105,19 @@ func (m *UIModel) SwitchState(s modalState) {
 	m.Update()
 }
 
-func (m *UIModel) BtnOnClick() {
+func (m *UIModel) BtnFinishOnClick() {
+	fmt.Println("BtnFinishOnClick >", m.wantExit)
+	if m.wantExit {
+		m.ExitApp()
+		return
+	}
+
 	select {
 	case m.waitClick <- 0:
 	default:
+		fmt.Println("BtnFinishOnClick > not sent")
 	}
+
 }
 
 func (m *UIModel) BtnUpgradeOnClick() {
@@ -121,8 +132,15 @@ func (m *UIModel) BtnEnableOnClick() {
 	m.UIAction <- "enable"
 }
 
-func (m *UIModel) WaitDialogueComplete() {
-	<-m.waitClick
+// returns channel close status
+func (m *UIModel) WaitDialogueComplete() bool {
+	_, ok := <-m.waitClick
+	return ok
+}
+
+func (m *UIModel) SetWantExit() {
+	m.wantExit = true
+	m.Bus.Publish("want-exit")
 }
 
 func (m *UIModel) isExiting() bool {
@@ -130,14 +148,14 @@ func (m *UIModel) isExiting() bool {
 }
 
 func (m *UIModel) ExitApp() {
-	m.Bus.Publish("exit")
+	close(m.waitClick)
 
-	// wait for SuperviseDockerNode to finish its work
-	m.UIAction <- "stop"
-	m.WaitGroup.Wait()
+	m.Bus.Publish("exit")
+	m.wantExit = true
 
 	m.dlg.Synchronize(func() {
-		walk.App().Exit(0)
+		m.dlg.Close()
+		//walk.App().Exit(0)
 	})
 }
 
@@ -186,6 +204,10 @@ func (m *UIModel) SaveConfig() {
 
 func (m *UIModel) ConfirmModal(title, message string) int {
 	return walk.MsgBox(m.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+}
+
+func (m *UIModel) YesNoModal(title, message string) int {
+	return walk.MsgBox(m.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
 }
 
 func (m *UIModel) Run() {
