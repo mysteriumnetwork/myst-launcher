@@ -42,6 +42,7 @@ func CreateDialogue() {
 		checkWindowsVersion  *walk.CheckBox
 		checkVTx             *walk.CheckBox
 		enableWSL            *walk.CheckBox
+		enableHyperV         *walk.CheckBox
 		installExecutable    *walk.CheckBox
 		rebootAfterWSLEnable *walk.CheckBox
 		downloadFiles        *walk.CheckBox
@@ -61,7 +62,7 @@ func CreateDialogue() {
 		AssignTo: &UI.dlg,
 		Title:    "Mysterium Exit Node Launcher",
 		MinSize:  Size{320, 240},
-		Size:     Size{400, 600},
+		Size:     Size{400, 650},
 		Icon:     UI.icon,
 
 		MenuItems: []MenuItem{
@@ -175,12 +176,20 @@ func CreateDialogue() {
 								AssignTo: &checkVTx,
 							},
 							Label{
-								Text: "Enable WSL",
+								Text: "Check WSL",
 							},
 							CheckBox{
 								Enabled:  false,
 								AssignTo: &enableWSL,
 							},
+							Label{
+								Text: "Check Hyper-V",
+							},
+							CheckBox{
+								Enabled:  false,
+								AssignTo: &enableHyperV,
+							},
+
 							Label{
 								Text: "Install executable",
 							},
@@ -419,7 +428,6 @@ func CreateDialogue() {
 				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameW).SetVisible(true)
-
 				btnBegin.SetEnabled(true)
 
 			case ModalStateInstallInProgress:
@@ -449,6 +457,7 @@ func CreateDialogue() {
 				checkWindowsVersion.SetChecked(UI.CheckWindowsVersion)
 				checkVTx.SetChecked(UI.CheckVTx)
 				enableWSL.SetChecked(UI.EnableWSL)
+				enableHyperV.SetChecked(UI.EnableHyperV)
 				installExecutable.SetChecked(UI.InstallExecutable)
 				rebootAfterWSLEnable.SetChecked(UI.RebootAfterWSLEnable)
 				downloadFiles.SetChecked(UI.DownloadFiles)

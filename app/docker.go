@@ -42,19 +42,33 @@ func SuperviseDockerNode() {
 
 	for {
 		tryStartOrInstall := func() bool {
-			wslEnabled, err := false, error(nil)
 			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
+			needSetup, err := false, error(nil)
 			Retry(3, time.Second, func() error {
-				wslEnabled, err = isWLSEnabled()
+				_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
+				if err != nil {
+					return err
+				}
+				if !wslEnabled {
+					needSetup = true
+					return nil
+				}
+				hyperVExists, hyperVEnabled, err := QueryWindowsFeature(FeatureHyperV)
+				if err != nil {
+					return err
+				}
+				if hyperVExists && !hyperVEnabled {
+					needSetup = true
+					return nil
+				}
 				return err
 			})
 			if err != nil {
 				gui.UI.Bus.Publish("show-dlg", "error", err)
 				return true
 			}
-			if !wslEnabled {
-				exit := tryInstall(wslEnabled)
-				return exit
+			if needSetup {
+				return tryInstall()
 			}
 
 			canPingDocker := mystManager.CanPingDocker()
@@ -84,14 +98,12 @@ func SuperviseDockerNode() {
 				// try starting docker for 7 times, else try install
 				if !started || tryStartCount == 7 {
 					tryStartCount = 0
-					return tryInstall(wslEnabled)
+					return tryInstall()
 				}
 			}
 			return false
 		}
-		fmt.Println("tryStartOrInstall >")
 		exit := tryStartOrInstall()
-		fmt.Println("tryStartOrInstall exit>", exit)
 		if exit {
 			gui.UI.SetWantExit()
 			return
@@ -127,7 +139,6 @@ func SuperviseDockerNode() {
 				gui.UI.SaveConfig()
 
 			case "stop":
-				fmt.Println("Stop >>>>>>>>>>>>>>>>>>>>>")
 				return
 			}
 
@@ -163,8 +174,7 @@ func startDocker() error {
 }
 
 // returns exit state: true means exit
-func tryInstall(isWLSEnabled bool) bool {
-	fmt.Println("tryInstall >>>>>>>>>>>>>>>", isWLSEnabled)
+func tryInstall() bool {
 	var err error
 
 	gui.UI.SwitchState(gui.ModalStateInstallNeeded)
@@ -186,8 +196,6 @@ func tryInstall(isWLSEnabled bool) bool {
 		gui.UI.ConfirmModal("Installation", "Please update to Windows 10 version 2004 or above.")
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		//gui.UI.WaitDialogueComplete()
-		//gui.UI.ExitApp()
 		return true
 	}
 	gui.UI.CheckWindowsVersion = true
@@ -199,15 +207,27 @@ func tryInstall(isWLSEnabled bool) bool {
 		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS")
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		//gui.UI.WaitDialogueComplete()
-		//gui.UI.ExitApp()
 		return true
 	}
 	gui.UI.CheckVTx = true
 	gui.UI.Update()
 
 	if !gui.UI.InstallStage2 {
-		if !isWLSEnabled {
+		_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
+		if err != nil {
+			log.Println("Failed to get state: Microsoft-Windows-Subsystem-Linux")
+			gui.UI.SwitchState(gui.ModalStateInstallError)
+			return true
+		}
+		hyperVExists, hyperVEnabled, err := QueryWindowsFeature(FeatureHyperV)
+		if err != nil {
+			log.Println("Failed to get state: Microsoft-Hyper-V")
+			gui.UI.SwitchState(gui.ModalStateInstallError)
+			return true
+		}
+		needEnableHyperV := hyperVExists && !hyperVEnabled
+
+		if !wslEnabled {
 			log.Println("Enable WSL..")
 			exe := "dism.exe"
 			cmdArgs := "/online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart"
@@ -216,12 +236,25 @@ func tryInstall(isWLSEnabled bool) bool {
 				log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
 
 				gui.UI.SwitchState(gui.ModalStateInstallError)
-				//gui.UI.WaitDialogueComplete()
-				//gui.UI.ExitApp()
 				return true
 			}
 		}
 		gui.UI.EnableWSL = true
+		gui.UI.Update()
+
+		if needEnableHyperV {
+			log.Println("Enable Hyper-V..")
+			exe := "dism.exe"
+			cmdArgs := "/online /enable-feature /featurename:Microsoft-Hyper-V /all /norestart"
+			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+			if err != nil {
+				log.Println("Command failed: failed to enable Microsoft-Hyper-V")
+
+				gui.UI.SwitchState(gui.ModalStateInstallError)
+				return true
+			}
+		}
+		gui.UI.EnableHyperV = true
 		gui.UI.Update()
 
 		log.Println("Install executable")
@@ -232,29 +265,24 @@ func tryInstall(isWLSEnabled bool) bool {
 			log.Println("Failed to install executable")
 
 			gui.UI.SwitchState(gui.ModalStateInstallError)
-			//gui.UI.WaitDialogueComplete()
-			//gui.UI.ExitApp()
 			return true
 		}
 		CreateAutostartShortcut(FlagInstallStage2)
 		gui.UI.InstallExecutable = true
 		gui.UI.Update()
 
-		if !isWLSEnabled {
-			fmt.Println("reboot >")
-			ret := gui.UI.ConfirmModal("Installation", "Reboot is needed to finish installation of WSL\r\nClick OK to reboot")
-			fmt.Println("reboot >2")
-			if ret == win.IDOK {
+		if !wslEnabled || needEnableHyperV {
+			ret := gui.UI.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+
+				"Click Yes to reboot now")
+			if ret == win.IDYES {
 				native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
 			}
-			fmt.Println("reboot >3")
-			//gui.UI.WaitDialogueComplete()
-			//gui.UI.ExitApp()
 			return true
 		}
 	} else {
 		// proceeding install after reboot
 		gui.UI.EnableWSL = true
+		gui.UI.EnableHyperV = true
 		gui.UI.InstallExecutable = true
 		gui.UI.RebootAfterWSLEnable = true
 		gui.UI.Update()
@@ -280,8 +308,6 @@ func tryInstall(isWLSEnabled bool) bool {
 				log.Println("Download failed")
 
 				gui.UI.SwitchState(gui.ModalStateInstallError)
-				//gui.UI.WaitDialogueComplete()
-				//gui.UI.ExitApp()
 				return true
 			}
 		}
@@ -296,8 +322,6 @@ func tryInstall(isWLSEnabled bool) bool {
 		log.Println("Command failed: msiexec.exe /i wsl_update_x64.msi /quiet")
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		//gui.UI.WaitDialogueComplete()
-		//gui.UI.ExitApp()
 		return true
 	}
 	gui.UI.InstallWSLUpdate = true
@@ -310,16 +334,12 @@ func tryInstall(isWLSEnabled bool) bool {
 		log.Println("DockerDesktopInstaller failed:", err)
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		//gui.UI.WaitDialogueComplete()
-		//gui.UI.ExitApp()
 		return true
 	}
 	if err := startDocker(); err != nil {
 		log.Println("Failed starting docker:", err)
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		//gui.UI.WaitDialogueComplete()
-		//gui.UI.ExitApp()
 		return true
 	}
 	gui.UI.InstallDocker = true
@@ -336,8 +356,6 @@ func tryInstall(isWLSEnabled bool) bool {
 		}
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		//gui.UI.WaitDialogueComplete()
-		//gui.UI.ExitApp()
 		return true
 	}
 	gui.UI.CheckGroupMembership = true

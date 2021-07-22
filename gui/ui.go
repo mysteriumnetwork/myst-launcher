@@ -57,6 +57,7 @@ type UIModel struct {
 	CheckWindowsVersion  bool
 	CheckVTx             bool
 	EnableWSL            bool
+	EnableHyperV         bool
 	InstallExecutable    bool
 	RebootAfterWSLEnable bool
 	DownloadFiles        bool
@@ -203,6 +204,10 @@ func (m *UIModel) SaveConfig() {
 
 func (m *UIModel) ConfirmModal(title, message string) int {
 	return walk.MsgBox(m.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+}
+
+func (m *UIModel) YesNoModal(title, message string) int {
+	return walk.MsgBox(m.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
 }
 
 func (m *UIModel) Run() {
