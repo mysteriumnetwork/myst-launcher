@@ -27,11 +27,11 @@ import (
 const group = "docker-users"
 
 func SuperviseDockerNode() {
-	var err error
 	runtime.LockOSThread()
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
 	defer gui.UI.WaitGroup.Done()
 
+	var err error
 	mystManager, err := myst.NewManagerWithDefaults()
 	if err != nil {
 		panic(err) // TODO handle gracefully
@@ -41,45 +41,54 @@ func SuperviseDockerNode() {
 	tryStartCount := 0
 
 	for {
-		isWLSEnabled, err := isWLSEnabledWithRetry()
+		wslEnabled, err := false, error(nil)
+		// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
+		Retry(3, time.Second, func() error {
+			wslEnabled, err = isWLSEnabled()
+			return err
+		})
 		if err != nil {
 			gui.UI.Bus.Publish("show-dlg", "error", err)
 			gui.UI.ExitApp()
 		}
-
-		if !isWLSEnabled {
-			tryInstall(isWLSEnabled)
+		if !wslEnabled {
+			tryInstall(wslEnabled)
 			continue
 		}
 
-		canPingDocker := mystManager.CanPingDocker()
-		if canPingDocker {
-			gui.UI.StateDocker = gui.RunnableStateRunning
-			gui.UI.Update()
-
-			if gui.UI.CFG.Enabled {
-				err := mystManager.Start()
-				if err != nil {
-					gui.UI.Bus.Publish("show-dlg", "error", err)
-					gui.UI.ExitApp()
-				}
-				gui.UI.StateContainer = gui.RunnableStateRunning
+		tryStartOrInstall := func() {
+			canPingDocker := mystManager.CanPingDocker()
+			if canPingDocker {
+				gui.UI.StateDocker = gui.RunnableStateRunning
 				gui.UI.Update()
 
-				id := mystManager.GetCurrentImageDigest()
-				myst.CheckUpdates(id)
-			}
+				if gui.UI.CFG.Enabled {
+					gui.UI.StateContainer = gui.RunnableStateInstalling
+					gui.UI.Update()
 
-		} else {
-			tryStartCount++
-			started := tryStartDocker()
+					err := mystManager.Start()
+					if err != nil {
+						return
+					}
+					gui.UI.StateContainer = gui.RunnableStateRunning
+					gui.UI.Update()
 
-			// try starting docker for 7 times, else try install
-			if !started || tryStartCount == 7 {
-				tryStartCount = 0
-				tryInstall(isWLSEnabled)
+					id := mystManager.GetCurrentImageDigest()
+					myst.CheckUpdates(id)
+				}
+
+			} else {
+				tryStartCount++
+				started := tryStartDocker()
+
+				// try starting docker for 7 times, else try install
+				if !started || tryStartCount == 7 {
+					tryStartCount = 0
+					tryInstall(wslEnabled)
+				}
 			}
 		}
+		tryStartOrInstall()
 
 		select {
 		case act := <-gui.UI.UIAction:
@@ -92,7 +101,12 @@ func SuperviseDockerNode() {
 					gui.UI.Bus.Publish("show-dlg", "is-up-to-date", nil)
 					return
 				}
+				gui.UI.StateContainer = gui.RunnableStateUnknown
+				gui.UI.Update()
 				mystManager.Stop()
+
+				gui.UI.StateContainer = gui.RunnableStateInstalling
+				gui.UI.Update()
 				mystManager.Update()
 
 			case "enable":

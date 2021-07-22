@@ -1,2 +1,7 @@
-*.log
 .idea
+*.log
+*.syso
+*.exe
+*.lnk
+TODO
+z.bat

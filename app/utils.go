@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/mysteriumnetwork/go-fileversion"
@@ -347,19 +348,6 @@ func hasVTx() bool {
 	return false
 }
 
-// In case of suspend/resume some APIs may rise unexpected error, so we need to retry it
-func isWLSEnabledWithRetry() (bool, error) {
-	res, err := false, error(nil)
-
-	for i := 0; i < 2; i++ {
-		res, err = isWLSEnabled()
-		if err == nil {
-			return res, nil
-		}
-	}
-	return res, err
-}
-
 func isWLSEnabled() (bool, error) {
 	unknown, err := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	if err != nil {
@@ -392,4 +380,15 @@ func isWLSEnabled() (bool, error) {
 	}
 	count := int(countVar.Val)
 	return count > 0, nil
+}
+
+func Retry(attempts int, sleep time.Duration, fn func() error) error {
+	if err := fn(); err != nil {
+		if attempts--; attempts > 0 {
+			time.Sleep(sleep)
+			return Retry(attempts, sleep, fn)
+		}
+		return err
+	}
+	return nil
 }
