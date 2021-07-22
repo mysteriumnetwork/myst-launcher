@@ -8,6 +8,7 @@ package gui
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -106,6 +107,7 @@ func (m *UIModel) BtnOnClick() {
 	select {
 	case m.waitClick <- 0:
 	default:
+		fmt.Println("BtnOnClick > not sent")
 	}
 }
 
@@ -122,7 +124,9 @@ func (m *UIModel) BtnEnableOnClick() {
 }
 
 func (m *UIModel) WaitDialogueComplete() {
+	fmt.Println("<-m.waitClick ...")
 	<-m.waitClick
+	fmt.Println("<-m.waitClick OK")
 }
 
 func (m *UIModel) isExiting() bool {
@@ -132,9 +136,8 @@ func (m *UIModel) isExiting() bool {
 func (m *UIModel) ExitApp() {
 	m.Bus.Publish("exit")
 
-	// wait for SuperviseDockerNode to finish its work
+	// send stop action to SuperviseDockerNode
 	m.UIAction <- "stop"
-	m.WaitGroup.Wait()
 
 	m.dlg.Synchronize(func() {
 		walk.App().Exit(0)

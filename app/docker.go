@@ -172,6 +172,7 @@ func tryInstall(isWLSEnabled bool) {
 		log.Println("You must run Windows 10 version 2004 or above.")
 		gui.UI.ConfirmModal("Installation", "Please update to Windows 10 version 2004 or above.")
 
+		gui.UI.SwitchState(gui.ModalStateInstallError)
 		gui.UI.WaitDialogueComplete()
 		gui.UI.ExitApp()
 		return
@@ -181,8 +182,10 @@ func tryInstall(isWLSEnabled bool) {
 
 	log.Println("Checking VT-x")
 	if !hasVTx() {
+		log.Println("Please Enable virtualization in BIOS")
 		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS")
 
+		gui.UI.SwitchState(gui.ModalStateInstallError)
 		gui.UI.WaitDialogueComplete()
 		gui.UI.ExitApp()
 		return
@@ -198,8 +201,8 @@ func tryInstall(isWLSEnabled bool) {
 			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
 			if err != nil {
 				log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
-				gui.UI.SwitchState(gui.ModalStateInstallError)
 
+				gui.UI.SwitchState(gui.ModalStateInstallError)
 				gui.UI.WaitDialogueComplete()
 				gui.UI.ExitApp()
 				return
@@ -214,8 +217,8 @@ func tryInstall(isWLSEnabled bool) {
 		err = native.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
 		if err != nil {
 			log.Println("Failed to install executable")
-			gui.UI.SwitchState(gui.ModalStateInstallError)
 
+			gui.UI.SwitchState(gui.ModalStateInstallError)
 			gui.UI.WaitDialogueComplete()
 			gui.UI.ExitApp()
 			return
@@ -229,7 +232,6 @@ func tryInstall(isWLSEnabled bool) {
 			if ret == win.IDOK {
 				native.ShellExecuteAndWait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
 			}
-			gui.UI.WaitDialogueComplete()
 			gui.UI.ExitApp()
 			return
 		}
@@ -259,8 +261,8 @@ func tryInstall(isWLSEnabled bool) {
 			})
 			if err != nil {
 				log.Println("Download failed")
-				gui.UI.SwitchState(gui.ModalStateInstallError)
 
+				gui.UI.SwitchState(gui.ModalStateInstallError)
 				gui.UI.WaitDialogueComplete()
 				gui.UI.ExitApp()
 				return
@@ -275,8 +277,8 @@ func tryInstall(isWLSEnabled bool) {
 	err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, os.Getenv("TMP"), syscall.SW_NORMAL)
 	if err != nil {
 		log.Println("Command failed: msiexec.exe /i wsl_update_x64.msi /quiet")
-		gui.UI.SwitchState(gui.ModalStateInstallError)
 
+		gui.UI.SwitchState(gui.ModalStateInstallError)
 		gui.UI.WaitDialogueComplete()
 		gui.UI.ExitApp()
 		return
@@ -289,16 +291,16 @@ func tryInstall(isWLSEnabled bool) {
 	err = native.ShellExecuteAndWait(0, "runas", exe, "install --quiet", os.Getenv("TMP"), syscall.SW_NORMAL)
 	if err != nil {
 		log.Println("DockerDesktopInstaller failed:", err)
-		gui.UI.SwitchState(gui.ModalStateInstallError)
 
+		gui.UI.SwitchState(gui.ModalStateInstallError)
 		gui.UI.WaitDialogueComplete()
 		gui.UI.ExitApp()
 		return
 	}
 	if err := startDocker(); err != nil {
 		log.Println("Failed starting docker:", err)
-		gui.UI.SwitchState(gui.ModalStateInstallError)
 
+		gui.UI.SwitchState(gui.ModalStateInstallError)
 		gui.UI.WaitDialogueComplete()
 		gui.UI.ExitApp()
 		return
@@ -309,15 +311,15 @@ func tryInstall(isWLSEnabled bool) {
 	log.Println("Checking current group membership")
 	if !CurrentGroupMembership(group) {
 		// request a logout //
+		log.Println("Log of from the current session to finish the installation.")
 
 		ret := gui.UI.ConfirmModal("Installation", "Log of from the current session to finish the installation.")
 		if ret == win.IDYES {
 			windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
 			return
 		}
-		log.Println("Log of from the current session to finish the installation.")
-		gui.UI.SwitchState(gui.ModalStateInstallError)
 
+		gui.UI.SwitchState(gui.ModalStateInstallError)
 		gui.UI.WaitDialogueComplete()
 		gui.UI.ExitApp()
 		return
