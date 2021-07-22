@@ -133,7 +133,7 @@ func CreateDialogue() {
 								AssignTo: &btnBegin,
 								Text:     "Install",
 								OnClicked: func() {
-									UI.BtnOnClick()
+									UI.BtnFinishOnClick()
 								},
 							},
 						},
@@ -251,7 +251,7 @@ func CreateDialogue() {
 								AssignTo:   &btnFinish,
 								Text:       "Finish",
 								OnClicked: func() {
-									UI.BtnOnClick()
+									UI.BtnFinishOnClick()
 								},
 							},
 						},
@@ -343,6 +343,13 @@ func CreateDialogue() {
 		UI.dlg.SetVisible(false)
 	}
 
+	// Events
+	UI.Bus.Subscribe("want-exit", func() {
+		UI.dlg.Synchronize(func() {
+			btnFinish.SetEnabled(true)
+		})
+	})
+
 	UI.Bus.Subscribe("log", func(p []byte) {
 		switch UI.state {
 		case ModalStateInstallInProgress, ModalStateInstallError, ModalStateInstallFinished:
@@ -377,6 +384,7 @@ func CreateDialogue() {
 
 				UI.dlg.Children().At(frameW).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(false)
+				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(true)
 				autoStart.SetChecked(UI.CFG.AutoStart)
 
@@ -407,16 +415,19 @@ func CreateDialogue() {
 
 			case ModalStateInstallNeeded:
 				enableMenu(false)
-				UI.dlg.Children().At(frameW).SetVisible(true)
+				UI.dlg.Children().At(frameW).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
+				UI.dlg.Children().At(frameW).SetVisible(true)
+
 				btnBegin.SetEnabled(true)
 
 			case ModalStateInstallInProgress:
 				enableMenu(false)
 				UI.dlg.Children().At(frameW).SetVisible(false)
-				UI.dlg.Children().At(frameI).SetVisible(true)
+				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
+				UI.dlg.Children().At(frameI).SetVisible(true)
 				btnFinish.SetEnabled(false)
 
 			case ModalStateInstallFinished:
@@ -425,8 +436,10 @@ func CreateDialogue() {
 				btnFinish.SetText("Finish")
 
 			case ModalStateInstallError:
-				UI.dlg.Children().At(frameI).SetVisible(true)
+				UI.dlg.Children().At(frameW).SetVisible(false)
+				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
+				UI.dlg.Children().At(frameI).SetVisible(true)
 				btnFinish.SetEnabled(true)
 				btnFinish.SetText("Exit installer")
 			}
@@ -448,11 +461,10 @@ func CreateDialogue() {
 
 	// prevent closing the app
 	UI.dlg.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		if UI.isExiting() {
+		if UI.wantExit {
 			walk.App().Exit(0)
 		}
 		*canceled = true
 		UI.dlg.Hide()
 	})
-
 }

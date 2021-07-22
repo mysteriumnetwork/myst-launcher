@@ -41,22 +41,22 @@ func SuperviseDockerNode() {
 	tryStartCount := 0
 
 	for {
-		wslEnabled, err := false, error(nil)
-		// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
-		Retry(3, time.Second, func() error {
-			wslEnabled, err = isWLSEnabled()
-			return err
-		})
-		if err != nil {
-			gui.UI.Bus.Publish("show-dlg", "error", err)
-			gui.UI.ExitApp()
-		}
-		if !wslEnabled {
-			tryInstall(wslEnabled)
-			continue
-		}
+		tryStartOrInstall := func() bool {
+			wslEnabled, err := false, error(nil)
+			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
+			Retry(3, time.Second, func() error {
+				wslEnabled, err = isWLSEnabled()
+				return err
+			})
+			if err != nil {
+				gui.UI.Bus.Publish("show-dlg", "error", err)
+				return true
+			}
+			if !wslEnabled {
+				exit := tryInstall(wslEnabled)
+				return exit
+			}
 
-		tryStartOrInstall := func() {
 			canPingDocker := mystManager.CanPingDocker()
 			if canPingDocker {
 				gui.UI.StateDocker = gui.RunnableStateRunning
@@ -68,7 +68,7 @@ func SuperviseDockerNode() {
 
 					err := mystManager.Start()
 					if err != nil {
-						return
+						return false
 					}
 					gui.UI.StateContainer = gui.RunnableStateRunning
 					gui.UI.Update()
@@ -84,11 +84,18 @@ func SuperviseDockerNode() {
 				// try starting docker for 7 times, else try install
 				if !started || tryStartCount == 7 {
 					tryStartCount = 0
-					tryInstall(wslEnabled)
+					return tryInstall(wslEnabled)
 				}
 			}
+			return false
 		}
-		tryStartOrInstall()
+		fmt.Println("tryStartOrInstall >")
+		exit := tryStartOrInstall()
+		fmt.Println("tryStartOrInstall exit>", exit)
+		if exit {
+			gui.UI.SetWantExit()
+			return
+		}
 
 		select {
 		case act := <-gui.UI.UIAction:
@@ -120,6 +127,7 @@ func SuperviseDockerNode() {
 				gui.UI.SaveConfig()
 
 			case "stop":
+				fmt.Println("Stop >>>>>>>>>>>>>>>>>>>>>")
 				return
 			}
 
@@ -154,12 +162,17 @@ func startDocker() error {
 	return nil
 }
 
-func tryInstall(isWLSEnabled bool) {
+// returns exit state: true means exit
+func tryInstall(isWLSEnabled bool) bool {
+	fmt.Println("tryInstall >>>>>>>>>>>>>>>", isWLSEnabled)
 	var err error
 
+	gui.UI.SwitchState(gui.ModalStateInstallNeeded)
 	if !gui.UI.InstallStage2 {
-		gui.UI.SwitchState(gui.ModalStateInstallNeeded)
-		gui.UI.WaitDialogueComplete()
+		ok := gui.UI.WaitDialogueComplete()
+		if !ok {
+			return true
+		}
 	}
 	gui.UI.SwitchState(gui.ModalStateInstallInProgress)
 
@@ -173,9 +186,9 @@ func tryInstall(isWLSEnabled bool) {
 		gui.UI.ConfirmModal("Installation", "Please update to Windows 10 version 2004 or above.")
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		gui.UI.WaitDialogueComplete()
-		gui.UI.ExitApp()
-		return
+		//gui.UI.WaitDialogueComplete()
+		//gui.UI.ExitApp()
+		return true
 	}
 	gui.UI.CheckWindowsVersion = true
 	gui.UI.Update()
@@ -186,9 +199,9 @@ func tryInstall(isWLSEnabled bool) {
 		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS")
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		gui.UI.WaitDialogueComplete()
-		gui.UI.ExitApp()
-		return
+		//gui.UI.WaitDialogueComplete()
+		//gui.UI.ExitApp()
+		return true
 	}
 	gui.UI.CheckVTx = true
 	gui.UI.Update()
@@ -203,9 +216,9 @@ func tryInstall(isWLSEnabled bool) {
 				log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
 
 				gui.UI.SwitchState(gui.ModalStateInstallError)
-				gui.UI.WaitDialogueComplete()
-				gui.UI.ExitApp()
-				return
+				//gui.UI.WaitDialogueComplete()
+				//gui.UI.ExitApp()
+				return true
 			}
 		}
 		gui.UI.EnableWSL = true
@@ -219,21 +232,25 @@ func tryInstall(isWLSEnabled bool) {
 			log.Println("Failed to install executable")
 
 			gui.UI.SwitchState(gui.ModalStateInstallError)
-			gui.UI.WaitDialogueComplete()
-			gui.UI.ExitApp()
-			return
+			//gui.UI.WaitDialogueComplete()
+			//gui.UI.ExitApp()
+			return true
 		}
 		CreateAutostartShortcut(FlagInstallStage2)
 		gui.UI.InstallExecutable = true
 		gui.UI.Update()
 
 		if !isWLSEnabled {
+			fmt.Println("reboot >")
 			ret := gui.UI.ConfirmModal("Installation", "Reboot is needed to finish installation of WSL\r\nClick OK to reboot")
+			fmt.Println("reboot >2")
 			if ret == win.IDOK {
-				native.ShellExecuteAndWait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
+				native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
 			}
-			gui.UI.ExitApp()
-			return
+			fmt.Println("reboot >3")
+			//gui.UI.WaitDialogueComplete()
+			//gui.UI.ExitApp()
+			return true
 		}
 	} else {
 		// proceeding install after reboot
@@ -263,9 +280,9 @@ func tryInstall(isWLSEnabled bool) {
 				log.Println("Download failed")
 
 				gui.UI.SwitchState(gui.ModalStateInstallError)
-				gui.UI.WaitDialogueComplete()
-				gui.UI.ExitApp()
-				return
+				//gui.UI.WaitDialogueComplete()
+				//gui.UI.ExitApp()
+				return true
 			}
 		}
 	}
@@ -279,9 +296,9 @@ func tryInstall(isWLSEnabled bool) {
 		log.Println("Command failed: msiexec.exe /i wsl_update_x64.msi /quiet")
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		gui.UI.WaitDialogueComplete()
-		gui.UI.ExitApp()
-		return
+		//gui.UI.WaitDialogueComplete()
+		//gui.UI.ExitApp()
+		return true
 	}
 	gui.UI.InstallWSLUpdate = true
 	gui.UI.Update()
@@ -293,17 +310,17 @@ func tryInstall(isWLSEnabled bool) {
 		log.Println("DockerDesktopInstaller failed:", err)
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		gui.UI.WaitDialogueComplete()
-		gui.UI.ExitApp()
-		return
+		//gui.UI.WaitDialogueComplete()
+		//gui.UI.ExitApp()
+		return true
 	}
 	if err := startDocker(); err != nil {
 		log.Println("Failed starting docker:", err)
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		gui.UI.WaitDialogueComplete()
-		gui.UI.ExitApp()
-		return
+		//gui.UI.WaitDialogueComplete()
+		//gui.UI.ExitApp()
+		return true
 	}
 	gui.UI.InstallDocker = true
 	gui.UI.Update()
@@ -316,13 +333,12 @@ func tryInstall(isWLSEnabled bool) {
 		ret := gui.UI.ConfirmModal("Installation", "Log of from the current session to finish the installation.")
 		if ret == win.IDYES {
 			windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
-			return
 		}
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
-		gui.UI.WaitDialogueComplete()
-		gui.UI.ExitApp()
-		return
+		//gui.UI.WaitDialogueComplete()
+		//gui.UI.ExitApp()
+		return true
 	}
 	gui.UI.CheckGroupMembership = true
 	gui.UI.Update()
@@ -333,6 +349,12 @@ func tryInstall(isWLSEnabled bool) {
 	log.Println("Installation succeeded")
 
 	gui.UI.SwitchState(gui.ModalStateInstallFinished)
-	gui.UI.WaitDialogueComplete()
+
+	ok := gui.UI.WaitDialogueComplete()
+	if !ok {
+		return true
+	}
+
 	gui.UI.SwitchState(gui.ModalStateInitial)
+	return false
 }

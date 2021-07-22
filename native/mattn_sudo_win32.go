@@ -113,7 +113,7 @@ func ShellExecuteAndWait(hwnd hwnd, lpOperation, lpFile, lpParameters, lpDirecto
 }
 
 // _ShellExecuteNoWait is version of ShellExecuteEx which don't want process
-func _ShellExecuteNowait(hwnd hwnd, lpOperation, lpFile, lpParameters, lpDirectory string, nShowCmd int) error {
+func ShellExecuteNowait(hwnd hwnd, lpOperation, lpFile, lpParameters, lpDirectory string, nShowCmd int) error {
 	var lpctstrVerb, lpctstrParameters, lpctstrDirectory lpctstr
 	if len(lpOperation) != 0 {
 		lpctstrVerb = lpctstr(unsafe.Pointer(syscall.StringToUTF16Ptr(lpOperation)))

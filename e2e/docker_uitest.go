@@ -2,11 +2,12 @@ package e2e
 
 import (
 	"fmt"
-	"github.com/mysteriumnetwork/myst-launcher/gui"
-	"github.com/mysteriumnetwork/myst-launcher/native"
 	"log"
 	"os"
 	"syscall"
+
+	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 )
 
 func uiTest() {

@@ -43,7 +43,8 @@ type UIModel struct {
 	ni   *walk.NotifyIcon
 	mw   *walk.MainWindow
 
-	state modalState
+	state    modalState
+	wantExit bool
 
 	// common
 	StateDocker     runnableState
@@ -103,12 +104,19 @@ func (m *UIModel) SwitchState(s modalState) {
 	m.Update()
 }
 
-func (m *UIModel) BtnOnClick() {
+func (m *UIModel) BtnFinishOnClick() {
+	fmt.Println("BtnFinishOnClick >", m.wantExit)
+	if m.wantExit {
+		m.ExitApp()
+		return
+	}
+
 	select {
 	case m.waitClick <- 0:
 	default:
-		fmt.Println("BtnOnClick > not sent")
+		fmt.Println("BtnFinishOnClick > not sent")
 	}
+
 }
 
 func (m *UIModel) BtnUpgradeOnClick() {
@@ -123,10 +131,15 @@ func (m *UIModel) BtnEnableOnClick() {
 	m.UIAction <- "enable"
 }
 
-func (m *UIModel) WaitDialogueComplete() {
-	fmt.Println("<-m.waitClick ...")
-	<-m.waitClick
-	fmt.Println("<-m.waitClick OK")
+// returns channel close status
+func (m *UIModel) WaitDialogueComplete() bool {
+	_, ok := <-m.waitClick
+	return ok
+}
+
+func (m *UIModel) SetWantExit() {
+	m.wantExit = true
+	m.Bus.Publish("want-exit")
 }
 
 func (m *UIModel) isExiting() bool {
@@ -134,13 +147,14 @@ func (m *UIModel) isExiting() bool {
 }
 
 func (m *UIModel) ExitApp() {
-	m.Bus.Publish("exit")
+	close(m.waitClick)
 
-	// send stop action to SuperviseDockerNode
-	m.UIAction <- "stop"
+	m.Bus.Publish("exit")
+	m.wantExit = true
 
 	m.dlg.Synchronize(func() {
-		walk.App().Exit(0)
+		m.dlg.Close()
+		//walk.App().Exit(0)
 	})
 }
 

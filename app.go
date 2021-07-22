@@ -10,6 +10,8 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"log"
 	"os"
 
@@ -49,7 +51,16 @@ func main() {
 
 	// Run the message loop
 	gui.UI.Run()
+	fmt.Println("GUI exit >")
+
+	// send stop action to SuperviseDockerNode
+	gui.UI.UIAction <- "stop"
 
 	// wait for SuperviseDockerNode to finish its work
 	gui.UI.WaitGroup.Wait()
+
+	fmt.Print("Press 'Enter' to continue...")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
+	fmt.Print("Press 'Enter' to continue...")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
