@@ -65,6 +65,8 @@ type UIModel struct {
 	InstallDocker        bool
 	CheckGroupMembership bool
 	installationStatus   string
+
+	ImageName string
 }
 
 var UI UIModel
@@ -91,13 +93,24 @@ func (m *UIModel) Update() {
 }
 
 func (m *UIModel) ShowMain() {
-	win.ShowWindow(m.dlg.Handle(), win.SW_SHOW)
-	win.ShowWindow(m.dlg.Handle(), win.SW_SHOWNORMAL)
+	if !m.dlg.Visible() {
+		win.ShowWindow(m.dlg.Handle(), win.SW_SHOW)
+		win.ShowWindow(m.dlg.Handle(), win.SW_SHOWNORMAL)
 
-	native.SwitchToThisWindow(m.dlg.Handle(), false)
-	win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-	win.SetWindowPos(m.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-	win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		native.SwitchToThisWindow(m.dlg.Handle(), false)
+
+		win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		win.SetWindowPos(m.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		return
+	}
+
+	if !win.IsIconic(m.dlg.Handle()) {
+		win.ShowWindow(m.dlg.Handle(), win.SW_MINIMIZE)
+
+	} else {
+		win.ShowWindow(m.dlg.Handle(), win.SW_RESTORE)
+	}
 }
 
 func (m *UIModel) SwitchState(s modalState) {
@@ -155,11 +168,12 @@ func (m *UIModel) ExitApp() {
 
 	m.dlg.Synchronize(func() {
 		m.dlg.Close()
-		//walk.App().Exit(0)
 	})
 }
 
 func (m *UIModel) OpenNodeUI() {
+	m.UIAction <- "open-ui"
+
 	native.ShellExecuteAndWait(
 		0,
 		"",
@@ -212,4 +226,14 @@ func (m *UIModel) YesNoModal(title, message string) int {
 
 func (m *UIModel) Run() {
 	m.mw.Run()
+}
+
+func (m *UIModel) ShowNotification() {
+	err := m.ni.ShowCustom(
+		"Mysterium Node successfully installed!",
+		"Click this notification to open Node UI in browser",
+		m.icon)
+
+	if err != nil {
+	}
 }

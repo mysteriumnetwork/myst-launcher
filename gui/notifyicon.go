@@ -43,7 +43,9 @@ func CreateNotifyIcon() {
 		}
 		UI.ShowMain()
 	})
-	UI.ni.MessageClicked().Attach(func() {})
+	UI.ni.MessageClicked().Attach(func() {
+		UI.OpenNodeUI()
+	})
 
 	exitAction := walk.NewAction()
 	if err := exitAction.SetText("E&xit"); err != nil {

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mysteriumnetwork/myst-launcher/gui"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -19,10 +21,20 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
+var imageTag = "latest"
+
 const (
-	imageName     = "mysteriumnetwork/myst:latest"
+	imageName     = "mysteriumnetwork/myst"
 	containerName = "myst"
 )
+
+func GetImageName() string {
+	return imageName + ":" + imageTag
+}
+
+func init() {
+	gui.UI.ImageName = GetImageName()
+}
 
 var (
 	ErrCouldNotConnect     = errors.New("could not connect to docker client")
@@ -79,25 +91,26 @@ func (m *Manager) CanPingDocker() bool {
 	return true
 }
 
-func (m *Manager) Start() error {
+// Returns: alreadyRunning, error
+func (m *Manager) Start() (bool, error) {
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
 		if err := m.pullMystLatest(); err != nil {
-			return err
+			return false, err
 		}
 		if err := m.createMystContainer(); err != nil {
-			return err
+			return false, err
 		}
 		mystContainer, err = m.findMystContainer()
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
 	if mystContainer.IsRunning() {
-		return nil
+		return true, nil
 	}
 
-	return m.startMystContainer()
+	return false, m.startMystContainer()
 }
 
 func (m *Manager) Stop() error {
@@ -173,7 +186,7 @@ func (m *Manager) findMystContainer() (*Container, error) {
 }
 
 func (m *Manager) pullMystLatest() error {
-	out, err := m.dockerAPI.ImagePull(m.ctx(), imageName, types.ImagePullOptions{})
+	out, err := m.dockerAPI.ImagePull(m.ctx(), GetImageName(), types.ImagePullOptions{})
 	if err != nil {
 		return wrap(err, ErrCouldNotPullImage)
 	}
@@ -183,7 +196,7 @@ func (m *Manager) pullMystLatest() error {
 
 func (m *Manager) createMystContainer() error {
 	config := &container.Config{
-		Image: imageName,
+		Image: GetImageName(),
 		ExposedPorts: nat.PortSet{
 			"4449/tcp": struct{}{},
 		},

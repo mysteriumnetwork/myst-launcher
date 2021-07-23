@@ -10,8 +10,10 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 )
 
+var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
+
 func CheckUpdates(imageDigest string) {
-	url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=10"
+	url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=30"
 	resp, err := http.Get(url)
 	if err != nil {
 		return
@@ -21,7 +23,7 @@ func CheckUpdates(imageDigest string) {
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
 
-	//results
+	// results
 	latestDigest := ""
 	latestVersion := ""
 	currentVersion := ""
@@ -37,10 +39,15 @@ func CheckUpdates(imageDigest string) {
 			if err != nil {
 				return
 			}
-			if name == "latest" {
+
+			if name == imageTag {
 				latestDigest = digest
 			}
-			match, _ := regexp.MatchString(`^\d+\.\d+\.\d+.*$`, name)
+			match := versionRegex.MatchString(name)
+			// a work-around for testnet3, b/c there's only 1 version of image
+			if imageTag == "testnet3" {
+				match = true
+			}
 			if match && latestDigest == digest {
 				latestVersion = name
 			}

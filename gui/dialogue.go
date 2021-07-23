@@ -21,10 +21,12 @@ const (
 
 func CreateDialogue() {
 	var (
+		actionFileMenu *walk.Action
 		actionMainMenu *walk.Action
-		actionUpgrade  *walk.Action
-		actionEnable   *walk.Action
-		actionDisable  *walk.Action
+
+		actionUpgrade *walk.Action
+		actionEnable  *walk.Action
+		actionDisable *walk.Action
 
 		// common
 		lbDocker         *walk.Label
@@ -67,11 +69,22 @@ func CreateDialogue() {
 
 		MenuItems: []MenuItem{
 			Menu{
-				AssignActionTo: &actionMainMenu,
-				Text:           "Node",
+				AssignActionTo: &actionFileMenu,
+				Text:           "&File",
 				Items: []MenuItem{
 					Action{
-						Text:        "Open Node UI",
+						Text:        "E&xit",
+						OnTriggered: func() { UI.ExitApp() },
+					},
+				},
+			},
+
+			Menu{
+				AssignActionTo: &actionMainMenu,
+				Text:           "&Node",
+				Items: []MenuItem{
+					Action{
+						Text:        "&Open Node UI",
 						AssignTo:    &actionUpgrade,
 						OnTriggered: func() { UI.OpenNodeUI() },
 					},
@@ -292,6 +305,12 @@ func CreateDialogue() {
 						AssignTo: &lbVersionLatest,
 					},
 					Label{
+						Text: "Docker Hub image name",
+					},
+					Label{
+						Text: UI.ImageName,
+					},
+					Label{
 						Text:       "-",
 						ColumnSpan: 2,
 					},
@@ -393,7 +412,6 @@ func CreateDialogue() {
 
 				UI.dlg.Children().At(frameW).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(false)
-				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(true)
 				autoStart.SetChecked(UI.CFG.AutoStart)
 
@@ -407,6 +425,7 @@ func CreateDialogue() {
 				case RunnableStateUnknown:
 					lbDocker.SetText("-")
 				}
+
 				switch UI.StateContainer {
 				case RunnableStateRunning:
 					lbContainer.SetText("Running [OK]")
@@ -417,6 +436,10 @@ func CreateDialogue() {
 				case RunnableStateUnknown:
 					lbContainer.SetText("-")
 				}
+				if !UI.CFG.Enabled {
+					lbContainer.SetText("Disabled")
+				}
+
 				btnOpenNodeUI.SetEnabled(UI.StateContainer == RunnableStateRunning)
 
 				lbVersionLatest.SetText(UI.VersionLatest)
@@ -424,7 +447,6 @@ func CreateDialogue() {
 
 			case ModalStateInstallNeeded:
 				enableMenu(false)
-				UI.dlg.Children().At(frameW).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameW).SetVisible(true)
@@ -433,7 +455,6 @@ func CreateDialogue() {
 			case ModalStateInstallInProgress:
 				enableMenu(false)
 				UI.dlg.Children().At(frameW).SetVisible(false)
-				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(true)
 				btnFinish.SetEnabled(false)
@@ -445,7 +466,6 @@ func CreateDialogue() {
 
 			case ModalStateInstallError:
 				UI.dlg.Children().At(frameW).SetVisible(false)
-				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(true)
 				btnFinish.SetEnabled(true)
