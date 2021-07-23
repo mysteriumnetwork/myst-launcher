@@ -20,9 +20,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/native"
-
 	"github.com/mysteriumnetwork/go-fileversion"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/go-ole/go-ole"

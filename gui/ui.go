@@ -91,13 +91,24 @@ func (m *UIModel) Update() {
 }
 
 func (m *UIModel) ShowMain() {
-	win.ShowWindow(m.dlg.Handle(), win.SW_SHOW)
-	win.ShowWindow(m.dlg.Handle(), win.SW_SHOWNORMAL)
+	if !m.dlg.Visible() {
+		win.ShowWindow(m.dlg.Handle(), win.SW_SHOW)
+		win.ShowWindow(m.dlg.Handle(), win.SW_SHOWNORMAL)
 
-	native.SwitchToThisWindow(m.dlg.Handle(), false)
-	win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-	win.SetWindowPos(m.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-	win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		native.SwitchToThisWindow(m.dlg.Handle(), false)
+
+		win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		win.SetWindowPos(m.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		win.SetWindowPos(m.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		return
+	}
+
+	if !win.IsIconic(m.dlg.Handle()) {
+		win.ShowWindow(m.dlg.Handle(), win.SW_MINIMIZE)
+
+	} else {
+		win.ShowWindow(m.dlg.Handle(), win.SW_RESTORE)
+	}
 }
 
 func (m *UIModel) SwitchState(s modalState) {
