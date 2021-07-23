@@ -65,6 +65,8 @@ type UIModel struct {
 	InstallDocker        bool
 	CheckGroupMembership bool
 	installationStatus   string
+
+	ImageName string
 }
 
 var UI UIModel

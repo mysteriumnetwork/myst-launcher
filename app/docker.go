@@ -40,6 +40,7 @@ func SuperviseDockerNode() {
 	t1 := time.Tick(15 * time.Second)
 	tryStartCount := 0
 	didInstall := false
+	countStarted := 0
 
 	for {
 		tryStartOrInstall := func() bool {
@@ -86,6 +87,9 @@ func SuperviseDockerNode() {
 					if err != nil {
 						return false
 					}
+					if !alreadyRunning {
+						countStarted = 0
+					}
 
 					gui.UI.StateContainer = gui.RunnableStateRunning
 					gui.UI.Update()
@@ -94,8 +98,11 @@ func SuperviseDockerNode() {
 						gui.UI.ShowNotification()
 					}
 
-					id := mystManager.GetCurrentImageDigest()
-					myst.CheckUpdates(id)
+					if countStarted == 0 {
+						id := mystManager.GetCurrentImageDigest()
+						myst.CheckUpdates(id)
+					}
+					countStarted++
 				}
 
 			} else {
@@ -136,6 +143,9 @@ func SuperviseDockerNode() {
 				gui.UI.Update()
 				mystManager.Update()
 
+				id = mystManager.GetCurrentImageDigest()
+				myst.CheckUpdates(id)
+
 			case "enable":
 				gui.UI.StateContainer = gui.RunnableStateRunning
 				gui.UI.Update()
@@ -151,10 +161,6 @@ func SuperviseDockerNode() {
 				gui.UI.SaveConfig()
 
 			case "open-ui":
-
-				if didInstall {
-					didInstall = false
-				}
 
 			case "stop":
 				return

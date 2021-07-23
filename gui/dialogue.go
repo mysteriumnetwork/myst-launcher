@@ -305,6 +305,12 @@ func CreateDialogue() {
 						AssignTo: &lbVersionLatest,
 					},
 					Label{
+						Text: "Docker Hub image name",
+					},
+					Label{
+						Text: UI.ImageName,
+					},
+					Label{
 						Text:       "-",
 						ColumnSpan: 2,
 					},
@@ -419,6 +425,7 @@ func CreateDialogue() {
 				case RunnableStateUnknown:
 					lbDocker.SetText("-")
 				}
+
 				switch UI.StateContainer {
 				case RunnableStateRunning:
 					lbContainer.SetText("Running [OK]")
@@ -429,6 +436,10 @@ func CreateDialogue() {
 				case RunnableStateUnknown:
 					lbContainer.SetText("-")
 				}
+				if !UI.CFG.Enabled {
+					lbContainer.SetText("Disabled")
+				}
+
 				btnOpenNodeUI.SetEnabled(UI.StateContainer == RunnableStateRunning)
 
 				lbVersionLatest.SetText(UI.VersionLatest)
