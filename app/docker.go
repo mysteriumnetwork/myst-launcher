@@ -67,6 +67,7 @@ func SuperviseDockerNode() {
 				gui.UI.Bus.Publish("show-dlg", "error", err)
 				return true
 			}
+
 			if needSetup {
 				return tryInstall()
 			}
@@ -95,8 +96,8 @@ func SuperviseDockerNode() {
 				tryStartCount++
 				started := tryStartDocker()
 
-				// try starting docker for 7 times, else try install
-				if !started || tryStartCount == 7 {
+				// try starting docker for 10 times, else try install
+				if !started || tryStartCount == 10 {
 					tryStartCount = 0
 					return tryInstall()
 				}
@@ -129,11 +130,15 @@ func SuperviseDockerNode() {
 				mystManager.Update()
 
 			case "enable":
+				gui.UI.StateContainer = gui.RunnableStateRunning
+				gui.UI.Update()
 				mystManager.Start()
 				gui.UI.CFG.Enabled = true
 				gui.UI.SaveConfig()
 
 			case "disable":
+				gui.UI.StateContainer = gui.RunnableStateUnknown
+				gui.UI.Update()
 				mystManager.Stop()
 				gui.UI.CFG.Enabled = false
 				gui.UI.SaveConfig()

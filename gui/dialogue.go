@@ -21,10 +21,12 @@ const (
 
 func CreateDialogue() {
 	var (
+		actionFileMenu *walk.Action
 		actionMainMenu *walk.Action
-		actionUpgrade  *walk.Action
-		actionEnable   *walk.Action
-		actionDisable  *walk.Action
+
+		actionUpgrade *walk.Action
+		actionEnable  *walk.Action
+		actionDisable *walk.Action
 
 		// common
 		lbDocker         *walk.Label
@@ -67,11 +69,22 @@ func CreateDialogue() {
 
 		MenuItems: []MenuItem{
 			Menu{
-				AssignActionTo: &actionMainMenu,
-				Text:           "Node",
+				AssignActionTo: &actionFileMenu,
+				Text:           "&File",
 				Items: []MenuItem{
 					Action{
-						Text:        "Open Node UI",
+						Text:        "E&xit",
+						OnTriggered: func() { UI.ExitApp() },
+					},
+				},
+			},
+
+			Menu{
+				AssignActionTo: &actionMainMenu,
+				Text:           "&Node",
+				Items: []MenuItem{
+					Action{
+						Text:        "&Open Node UI",
 						AssignTo:    &actionUpgrade,
 						OnTriggered: func() { UI.OpenNodeUI() },
 					},

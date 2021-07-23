@@ -31,7 +31,7 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-const launcherLnk = "Mysterium Node launcher.lnk"
+const launcherLnk = "Mysterium Node Launcher.lnk"
 
 func cmdRun(name string, args ...string) int {
 	log.Print(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
@@ -122,12 +122,14 @@ func getExeNameFromFullPath(fullExe string) string {
 	return exe[len(filepath.Dir(exe))+1:]
 }
 
+const launcherExe = "myst-launcher-amd64.exe"
+
 func checkExe() bool {
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
+	//fullExe, _ := os.Executable()
+	//exe := getExeNameFromFullPath(fullExe)
 
-	fullExe, _ := os.Executable()
-	exe := getExeNameFromFullPath(fullExe)
-	_, err := os.Stat(dst + "\\" + exe)
+	_, err := os.Stat(dst + "\\" + launcherExe)
 	if os.IsNotExist(err) {
 		return false
 	}
@@ -136,7 +138,7 @@ func checkExe() bool {
 
 func InstallExe() error {
 	fullExe_, _ := os.Executable()
-	f, err := fileversion.New(fullExe_)
+	ver, err := fileversion.New(fullExe_)
 	if err != nil {
 		return err
 	}
@@ -147,19 +149,20 @@ func InstallExe() error {
 	defer k.Close()
 
 	dstPath := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	exeName := "\\myst-launcher-amd64.exe"
+	//exeName := "\\myst-launcher-amd64.exe"
 
-	k.SetStringValue("DisplayIcon", dstPath+exeName)
-	k.SetStringValue("DisplayName", f.ProductName()+" "+f.ProductVersion())
-	k.SetStringValue("DisplayVersion", f.ProductVersion())
+	k.SetStringValue("DisplayIcon", fmt.Sprintf(`%s\%s -uninstall`, dstPath, launcherExe))
+	k.SetStringValue("DisplayName", ver.ProductName()+" "+ver.ProductVersion())
+	k.SetStringValue("DisplayVersion", ver.ProductVersion())
 	k.SetStringValue("InstallLocation", dstPath)
-	k.SetStringValue("UninstallString", fmt.Sprintf(`"%s%s" -uninstall`, dstPath, exeName))
-	k.SetStringValue("Publisher", f.CompanyName())
+	k.SetStringValue("UninstallString", fmt.Sprintf(`"%s\%s" -uninstall`, dstPath, launcherExe))
+	k.SetStringValue("Publisher", ver.CompanyName())
 
 	os.Mkdir(dstPath, os.ModePerm)
-	fullExe, _ := os.Executable()
-	exe := getExeNameFromFullPath(fullExe)
-	native.CopyFile(fullExe, dstPath+`\`+exe, false)
+	srcPath, _ := os.Executable()
+
+	//exe := getExeNameFromFullPath(srcPath)
+	native.CopyFile(srcPath, dstPath+`\`+launcherExe, false)
 	return nil
 }
 
@@ -183,9 +186,9 @@ func UninstallExe() error {
 
 func MystNodeLauncherExePath() string {
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	fullExe, _ := os.Executable()
-	exe := getExeNameFromFullPath(fullExe)
-	return dst + "\\" + exe
+	//fullExe, _ := os.Executable()
+	//exe := getExeNameFromFullPath(fullExe)
+	return dst + "\\" + launcherExe
 }
 
 func CreateAutostartShortcut(args string) {
