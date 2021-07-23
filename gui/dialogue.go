@@ -406,7 +406,6 @@ func CreateDialogue() {
 
 				UI.dlg.Children().At(frameW).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(false)
-				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(true)
 				autoStart.SetChecked(UI.CFG.AutoStart)
 
@@ -437,7 +436,6 @@ func CreateDialogue() {
 
 			case ModalStateInstallNeeded:
 				enableMenu(false)
-				UI.dlg.Children().At(frameW).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameW).SetVisible(true)
@@ -446,7 +444,6 @@ func CreateDialogue() {
 			case ModalStateInstallInProgress:
 				enableMenu(false)
 				UI.dlg.Children().At(frameW).SetVisible(false)
-				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(true)
 				btnFinish.SetEnabled(false)
@@ -458,7 +455,6 @@ func CreateDialogue() {
 
 			case ModalStateInstallError:
 				UI.dlg.Children().At(frameW).SetVisible(false)
-				UI.dlg.Children().At(frameI).SetVisible(false)
 				UI.dlg.Children().At(frameS).SetVisible(false)
 				UI.dlg.Children().At(frameI).SetVisible(true)
 				btnFinish.SetEnabled(true)

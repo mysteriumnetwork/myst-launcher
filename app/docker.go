@@ -39,6 +39,7 @@ func SuperviseDockerNode() {
 
 	t1 := time.Tick(15 * time.Second)
 	tryStartCount := 0
+	didInstall := false
 
 	for {
 		tryStartOrInstall := func() bool {
@@ -67,8 +68,8 @@ func SuperviseDockerNode() {
 				gui.UI.Bus.Publish("show-dlg", "error", err)
 				return true
 			}
-
 			if needSetup {
+				didInstall = true
 				return tryInstall()
 			}
 
@@ -81,12 +82,17 @@ func SuperviseDockerNode() {
 					gui.UI.StateContainer = gui.RunnableStateInstalling
 					gui.UI.Update()
 
-					err := mystManager.Start()
+					alreadyRunning, err := mystManager.Start()
 					if err != nil {
 						return false
 					}
+
 					gui.UI.StateContainer = gui.RunnableStateRunning
 					gui.UI.Update()
+					if !alreadyRunning && didInstall {
+						didInstall = false
+						gui.UI.ShowNotification()
+					}
 
 					id := mystManager.GetCurrentImageDigest()
 					myst.CheckUpdates(id)
@@ -99,13 +105,14 @@ func SuperviseDockerNode() {
 				// try starting docker for 10 times, else try install
 				if !started || tryStartCount == 10 {
 					tryStartCount = 0
+					didInstall = true
 					return tryInstall()
 				}
 			}
 			return false
 		}
-		exit := tryStartOrInstall()
-		if exit {
+		wantExit := tryStartOrInstall()
+		if wantExit {
 			gui.UI.SetWantExit()
 			return
 		}
@@ -142,6 +149,12 @@ func SuperviseDockerNode() {
 				mystManager.Stop()
 				gui.UI.CFG.Enabled = false
 				gui.UI.SaveConfig()
+
+			case "open-ui":
+
+				if didInstall {
+					didInstall = false
+				}
 
 			case "stop":
 				return
@@ -332,7 +345,7 @@ func tryInstall() bool {
 	gui.UI.InstallWSLUpdate = true
 	gui.UI.Update()
 
-	log.Println("Installing docker desktop")
+	log.Println("Installing docker desktop (wait ~5 minutes)")
 	exe = os.Getenv("TMP") + "\\DockerDesktopInstaller.exe"
 	err = native.ShellExecuteAndWait(0, "runas", exe, "install --quiet", os.Getenv("TMP"), syscall.SW_NORMAL)
 	if err != nil {

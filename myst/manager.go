@@ -79,25 +79,26 @@ func (m *Manager) CanPingDocker() bool {
 	return true
 }
 
-func (m *Manager) Start() error {
+// Returns: alreadyRunning, error
+func (m *Manager) Start() (bool, error) {
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
 		if err := m.pullMystLatest(); err != nil {
-			return err
+			return false, err
 		}
 		if err := m.createMystContainer(); err != nil {
-			return err
+			return false, err
 		}
 		mystContainer, err = m.findMystContainer()
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
 	if mystContainer.IsRunning() {
-		return nil
+		return true, nil
 	}
 
-	return m.startMystContainer()
+	return false, m.startMystContainer()
 }
 
 func (m *Manager) Stop() error {

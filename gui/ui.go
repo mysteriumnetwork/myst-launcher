@@ -166,11 +166,12 @@ func (m *UIModel) ExitApp() {
 
 	m.dlg.Synchronize(func() {
 		m.dlg.Close()
-		//walk.App().Exit(0)
 	})
 }
 
 func (m *UIModel) OpenNodeUI() {
+	m.UIAction <- "open-ui"
+
 	native.ShellExecuteAndWait(
 		0,
 		"",
@@ -223,4 +224,14 @@ func (m *UIModel) YesNoModal(title, message string) int {
 
 func (m *UIModel) Run() {
 	m.mw.Run()
+}
+
+func (m *UIModel) ShowNotification() {
+	err := m.ni.ShowCustom(
+		"Mysterium Node successfully installed!",
+		"Click this notification to open Node UI in browser",
+		m.icon)
+
+	if err != nil {
+	}
 }
