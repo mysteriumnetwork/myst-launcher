@@ -10,14 +10,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"os"
-	"sync"
 	"syscall"
+
+	"github.com/mysteriumnetwork/myst-launcher/model"
 
 	"github.com/mysteriumnetwork/myst-launcher/native"
 
-	"github.com/asaskevich/EventBus"
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
@@ -30,11 +29,11 @@ type Config struct {
 type UIModel struct {
 	InTray        bool
 	InstallStage2 bool
-	pipeListener  net.Listener
-	CFG           Config
-	WaitGroup     sync.WaitGroup
 
-	Bus       EventBus.Bus
+	Config Config
+	//WaitGroup sync.WaitGroup
+	//Bus       EventBus.Bus
+
 	waitClick chan int
 	UIAction  chan string
 
@@ -47,8 +46,8 @@ type UIModel struct {
 	wantExit bool
 
 	// common
-	StateDocker     runnableState
-	StateContainer  runnableState
+	//StateDocker     runnableState
+	//StateContainer  runnableState
 	VersionLatest   string
 	VersionCurrent  string
 	VersionUpToDate bool
@@ -64,15 +63,15 @@ type UIModel struct {
 	InstallWSLUpdate     bool
 	InstallDocker        bool
 	CheckGroupMembership bool
-	installationStatus   string
 
-	ImageName string
+	//installationStatus   string
+	//ImageName string
 }
 
 var UI UIModel
 
 func init() {
-	UI.Bus = EventBus.New()
+	//model.State.Bus = EventBus.New()
 	UI.waitClick = make(chan int, 0)
 	UI.UIAction = make(chan string, 1)
 	UI.icon, _ = walk.NewIconFromResourceId(2)
@@ -84,12 +83,12 @@ func (m *UIModel) Write(b []byte) (int, error) {
 	bCopy := make([]byte, len(b))
 	copy(bCopy, b)
 
-	UI.Bus.Publish("log", bCopy)
+	model.State.Bus.Publish("log", bCopy)
 	return len(bCopy), nil
 }
 
 func (m *UIModel) Update() {
-	UI.Bus.Publish("state-change")
+	model.State.Bus.Publish("model-change")
 }
 
 func (m *UIModel) ShowMain() {
@@ -153,7 +152,7 @@ func (m *UIModel) WaitDialogueComplete() bool {
 
 func (m *UIModel) SetWantExit() {
 	m.wantExit = true
-	m.Bus.Publish("want-exit")
+	model.State.Bus.Publish("want-exit")
 }
 
 func (m *UIModel) isExiting() bool {
@@ -163,7 +162,7 @@ func (m *UIModel) isExiting() bool {
 func (m *UIModel) ExitApp() {
 	close(m.waitClick)
 
-	m.Bus.Publish("exit")
+	model.State.Bus.Publish("exit")
 	m.wantExit = true
 
 	m.dlg.Synchronize(func() {
@@ -188,8 +187,8 @@ func (m *UIModel) ReadConfig() {
 	_, err := os.Stat(f)
 	if os.IsNotExist(err) {
 		// create default settings
-		UI.CFG.AutoStart = true
-		UI.CFG.Enabled = true
+		UI.Config.AutoStart = true
+		UI.Config.Enabled = true
 		m.SaveConfig()
 		return
 	}
@@ -200,8 +199,8 @@ func (m *UIModel) ReadConfig() {
 	}
 
 	// default value
-	UI.CFG.Enabled = true
-	json.NewDecoder(file).Decode(&UI.CFG)
+	UI.Config.Enabled = true
+	json.NewDecoder(file).Decode(&UI.Config)
 }
 
 func (m *UIModel) SaveConfig() {
@@ -213,7 +212,7 @@ func (m *UIModel) SaveConfig() {
 	}
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", " ")
-	enc.Encode(&UI.CFG)
+	enc.Encode(&UI.Config)
 }
 
 func (m *UIModel) ConfirmModal(title, message string) int {

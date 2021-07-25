@@ -1,4 +1,4 @@
-package gui
+package model
 
 type modalState int
 
@@ -19,3 +19,18 @@ const (
 	RunnableStateRunning    runnableState = 2
 	RunnableStateInstalling runnableState = 3
 )
+
+func (r runnableState) String() string {
+	switch r {
+	case RunnableStateRunning:
+		return "Running [OK]"
+	case RunnableStateInstalling:
+		return "Installing.."
+	case RunnableStateStarting:
+		return "Starting.."
+	case RunnableStateUnknown:
+		return "-"
+	default:
+		return "?"
+	}
+}

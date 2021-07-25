@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/model"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -33,7 +33,7 @@ func GetImageName() string {
 }
 
 func init() {
-	gui.UI.ImageName = GetImageName()
+	model.State.ImageName = GetImageName()
 }
 
 var (

@@ -13,6 +13,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/mysteriumnetwork/myst-launcher/model"
+
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
@@ -40,13 +42,14 @@ func main() {
 
 	log.SetOutput(&gui.UI)
 	gui.CreateNotifyIcon()
-	gui.CreateDialogue()
+	gui.Mw.CreateDialogue()
 
-	gui.UI.WaitGroup.Add(1)
+	model.State.WaitGroup.Add(1)
 	go app.SuperviseDockerNode()
 
 	utils.CreatePipeAndListen(&gui.UI)
 
+	gui.SetWS()
 	// Run the message loop
 	gui.UI.Run()
 
@@ -54,5 +57,5 @@ func main() {
 	gui.UI.UIAction <- "stop"
 
 	// wait for SuperviseDockerNode to finish its work
-	gui.UI.WaitGroup.Wait()
+	model.State.WaitGroup.Wait()
 }
