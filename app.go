@@ -13,17 +13,18 @@ import (
 	"log"
 	"os"
 
-	"github.com/mysteriumnetwork/myst-launcher/model"
-
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func main() {
+	a := app.NewApp()
+
 	if len(os.Args) > 1 {
-		gui.UI.InTray = os.Args[1] == app.FlagTray
-		gui.UI.InstallStage2 = os.Args[1] == app.FlagInstallStage2
+		a.InTray = os.Args[1] == app.FlagTray
+		a.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
 		switch os.Args[1] {
 		case app.FlagInstall:
@@ -40,22 +41,25 @@ func main() {
 		return
 	}
 
-	log.SetOutput(&gui.UI)
-	gui.CreateNotifyIcon()
-	gui.Mw.CreateDialogue()
+	log.SetOutput(a)
+	a.ReadConfig()
+	a.ImageName = myst.GetImageName()
 
-	model.State.WaitGroup.Add(1)
-	go app.SuperviseDockerNode()
+	gui.UI.SetApp(a)
+	gui.CreateNotifyIcon()
+	gui.CreateDialogue()
+
+	a.WaitGroup.Add(1)
+	go a.SuperviseDockerNode()
 
 	utils.CreatePipeAndListen(&gui.UI)
 
-	gui.SetWS()
 	// Run the message loop
 	gui.UI.Run()
 
 	// send stop action to SuperviseDockerNode
-	gui.UI.UIAction <- "stop"
+	a.TriggerAction("stop")
 
 	// wait for SuperviseDockerNode to finish its work
-	model.State.WaitGroup.Wait()
+	a.WaitGroup.Wait()
 }

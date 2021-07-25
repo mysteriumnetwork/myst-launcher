@@ -7,10 +7,7 @@
 package gui
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"syscall"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -21,21 +18,8 @@ import (
 	"github.com/lxn/win"
 )
 
-type Config struct {
-	AutoStart bool `json:"auto_start"`
-	Enabled   bool `json:"enabled"`
-}
-
 type UIModel struct {
-	InTray        bool
-	InstallStage2 bool
-
-	Config Config
-	//WaitGroup sync.WaitGroup
-	//Bus       EventBus.Bus
-
 	waitClick chan int
-	UIAction  chan string
 
 	icon *walk.Icon
 	dlg  *walk.MainWindow
@@ -46,8 +30,8 @@ type UIModel struct {
 	wantExit bool
 
 	// common
-	//StateDocker     runnableState
-	//StateContainer  runnableState
+	StateDocker     RunnableState
+	StateContainer  RunnableState
 	VersionLatest   string
 	VersionCurrent  string
 	VersionUpToDate bool
@@ -64,31 +48,22 @@ type UIModel struct {
 	InstallDocker        bool
 	CheckGroupMembership bool
 
-	//installationStatus   string
-	//ImageName string
+	app model.AppInterface
 }
 
 var UI UIModel
 
 func init() {
-	//model.State.Bus = EventBus.New()
 	UI.waitClick = make(chan int, 0)
-	UI.UIAction = make(chan string, 1)
 	UI.icon, _ = walk.NewIconFromResourceId(2)
 }
 
-func (m *UIModel) Write(b []byte) (int, error) {
-	// copy to avoid data corruption
-	// see https://stackoverflow.com/a/20688698/4413696
-	bCopy := make([]byte, len(b))
-	copy(bCopy, b)
-
-	model.State.Bus.Publish("log", bCopy)
-	return len(bCopy), nil
+func (m *UIModel) SetApp(app model.AppInterface) {
+	UI.app = app
 }
 
 func (m *UIModel) Update() {
-	model.State.Bus.Publish("model-change")
+	UI.app.Publish("model-change")
 }
 
 func (m *UIModel) ShowMain() {
@@ -133,15 +108,15 @@ func (m *UIModel) BtnFinishOnClick() {
 }
 
 func (m *UIModel) BtnUpgradeOnClick() {
-	m.UIAction <- "upgrade"
+	m.app.TriggerAction("upgrade")
 }
 
 func (m *UIModel) BtnDisableOnClick() {
-	m.UIAction <- "disable"
+	m.app.TriggerAction("disable")
 }
 
 func (m *UIModel) BtnEnableOnClick() {
-	m.UIAction <- "enable"
+	m.app.TriggerAction("enable")
 }
 
 // returns channel close status
@@ -152,7 +127,7 @@ func (m *UIModel) WaitDialogueComplete() bool {
 
 func (m *UIModel) SetWantExit() {
 	m.wantExit = true
-	model.State.Bus.Publish("want-exit")
+	m.app.Publish("want-exit")
 }
 
 func (m *UIModel) isExiting() bool {
@@ -162,7 +137,7 @@ func (m *UIModel) isExiting() bool {
 func (m *UIModel) ExitApp() {
 	close(m.waitClick)
 
-	model.State.Bus.Publish("exit")
+	m.app.Publish("exit")
 	m.wantExit = true
 
 	m.dlg.Synchronize(func() {
@@ -171,8 +146,6 @@ func (m *UIModel) ExitApp() {
 }
 
 func (m *UIModel) OpenNodeUI() {
-	m.UIAction <- "open-ui"
-
 	native.ShellExecuteAndWait(
 		0,
 		"",
@@ -180,39 +153,6 @@ func (m *UIModel) OpenNodeUI() {
 		"url.dll,FileProtocolHandler http://localhost:4449/",
 		"",
 		syscall.SW_NORMAL)
-}
-
-func (m *UIModel) ReadConfig() {
-	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
-	_, err := os.Stat(f)
-	if os.IsNotExist(err) {
-		// create default settings
-		UI.Config.AutoStart = true
-		UI.Config.Enabled = true
-		m.SaveConfig()
-		return
-	}
-
-	file, err := os.Open(f)
-	if err != nil {
-		return
-	}
-
-	// default value
-	UI.Config.Enabled = true
-	json.NewDecoder(file).Decode(&UI.Config)
-}
-
-func (m *UIModel) SaveConfig() {
-	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
-	file, err := os.Create(f)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	enc := json.NewEncoder(file)
-	enc.SetIndent("", " ")
-	enc.Encode(&UI.Config)
 }
 
 func (m *UIModel) ConfirmModal(title, message string) int {
@@ -235,4 +175,18 @@ func (m *UIModel) ShowNotification() {
 
 	if err != nil {
 	}
+}
+
+func (m *UIModel) IsRunning() bool {
+	return UI.StateContainer == RunnableStateRunning
+}
+
+func (m *UIModel) SetStateDocker(r RunnableState) {
+	UI.StateDocker = r
+	m.app.Publish("model-change")
+}
+
+func (m *UIModel) SetStateContainer(r RunnableState) {
+	UI.StateContainer = r
+	m.app.Publish("model-change")
 }

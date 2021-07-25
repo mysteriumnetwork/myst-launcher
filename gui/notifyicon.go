@@ -10,8 +10,6 @@ package gui
 import (
 	"log"
 
-	"github.com/mysteriumnetwork/myst-launcher/model"
-
 	"github.com/lxn/walk"
 )
 
@@ -27,7 +25,7 @@ func CreateNotifyIcon() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	model.State.Bus.Subscribe("exit", func() {
+	UI.app.Subscribe("exit", func() {
 		UI.ni.Dispose()
 	})
 

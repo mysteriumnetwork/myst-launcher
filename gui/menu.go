@@ -4,7 +4,7 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
-func (mw *MWState) menu() []MenuItem {
+func (mw *Gui) menu() []MenuItem {
 	return []MenuItem{
 		Menu{
 			AssignActionTo: &mw.actionFileMenu,

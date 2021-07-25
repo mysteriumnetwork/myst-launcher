@@ -15,8 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/model"
-
 	"github.com/go-ole/go-ole"
 	"github.com/lxn/win"
 	"golang.org/x/sys/windows"
@@ -28,10 +26,10 @@ import (
 
 const group = "docker-users"
 
-func SuperviseDockerNode() {
+func (s *AppState) SuperviseDockerNode() {
 	runtime.LockOSThread()
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
-	defer model.State.WaitGroup.Done()
+	defer s.WaitGroup.Done()
 
 	var err error
 	mystManager, err := myst.NewManagerWithDefaults()
@@ -68,24 +66,20 @@ func SuperviseDockerNode() {
 				return err
 			})
 			if err != nil {
-				model.State.Bus.Publish("show-dlg", "error", err)
+				s.Bus.Publish("show-dlg", "error", err)
 				return true
 			}
 			if needSetup {
 				didInstall = true
-				return tryInstall()
+				return s.tryInstall()
 			}
 
 			canPingDocker := mystManager.CanPingDocker()
 			if canPingDocker {
-				//model.State.StateDocker = model.RunnableStateRunning
-				model.State.SetStateDocker(model.RunnableStateRunning)
-				//gui.UI.Update()
+				gui.UI.SetStateDocker(gui.RunnableStateRunning)
 
-				if gui.UI.Config.Enabled {
-					//gui.UI.StateContainer = gui.RunnableStateInstalling
-					model.State.SetStateContainer(model.RunnableStateInstalling)
-					//gui.UI.Update()
+				if s.Config.Enabled {
+					gui.UI.SetStateContainer(gui.RunnableStateInstalling)
 
 					alreadyRunning, err := mystManager.Start()
 					if err != nil {
@@ -95,8 +89,7 @@ func SuperviseDockerNode() {
 						countStarted = 0
 					}
 
-					//gui.UI.StateContainer = gui.RunnableStateRunning
-					model.State.SetStateContainer(model.RunnableStateRunning)
+					gui.UI.SetStateContainer(gui.RunnableStateRunning)
 					gui.UI.Update()
 					if !alreadyRunning && didInstall {
 						didInstall = false
@@ -118,7 +111,7 @@ func SuperviseDockerNode() {
 				if !started || tryStartCount == 10 {
 					tryStartCount = 0
 					didInstall = true
-					return tryInstall()
+					return s.tryInstall()
 				}
 			}
 			return false
@@ -130,48 +123,38 @@ func SuperviseDockerNode() {
 		}
 
 		select {
-		case act := <-gui.UI.UIAction:
+		case act := <-s.Action:
 			switch act {
 			case "upgrade":
 				id := mystManager.GetCurrentImageDigest()
 				myst.CheckUpdates(id)
 
 				if gui.UI.VersionUpToDate {
-					model.State.Bus.Publish("show-dlg", "is-up-to-date", nil)
+					s.Bus.Publish("show-dlg", "is-up-to-date", nil)
 					return
 				}
-				//gui.UI.StateContainer = gui.RunnableStateUnknown
-				model.State.SetStateContainer(model.RunnableStateUnknown)
-				//gui.UI.Update()
+				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
 				mystManager.Stop()
 
-				//gui.UI.StateContainer = gui.RunnableStateInstalling
-				model.State.SetStateContainer(model.RunnableStateInstalling)
-				//gui.UI.Update()
+				gui.UI.SetStateContainer(gui.RunnableStateInstalling)
 				mystManager.Update()
 
 				id = mystManager.GetCurrentImageDigest()
 				myst.CheckUpdates(id)
 
 			case "enable":
-				//gui.UI.StateContainer = gui.RunnableStateRunning
-				model.State.SetStateContainer(model.RunnableStateRunning)
-				//gui.UI.Update()
+				gui.UI.SetStateContainer(gui.RunnableStateRunning)
 
 				mystManager.Start()
-				gui.UI.Config.Enabled = true
-				gui.UI.SaveConfig()
+				s.Config.Enabled = true
+				s.SaveConfig()
 
 			case "disable":
-				//gui.UI.StateContainer = gui.RunnableStateUnknown
-				model.State.SetStateContainer(model.RunnableStateUnknown)
-				//gui.UI.Update()
+				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
 
 				mystManager.Stop()
-				gui.UI.Config.Enabled = false
-				gui.UI.SaveConfig()
-
-			case "open-ui":
+				s.Config.Enabled = false
+				s.SaveConfig()
 
 			case "stop":
 				return
@@ -184,11 +167,8 @@ func SuperviseDockerNode() {
 }
 
 func tryStartDocker() bool {
-	model.State.SetStateContainer(model.RunnableStateUnknown)
-	model.State.SetStateDocker(model.RunnableStateStarting)
-	//gui.UI.StateDocker = gui.RunnableStateStarting
-	//gui.UI.StateContainer = gui.RunnableStateUnknown
-	//gui.UI.Update()
+	gui.UI.SetStateContainer(gui.RunnableStateUnknown)
+	gui.UI.SetStateDocker(gui.RunnableStateStarting)
 
 	if isProcessRunning("Docker Desktop.exe") {
 		return true
@@ -211,11 +191,11 @@ func startDocker() error {
 }
 
 // returns exit model: true means exit
-func tryInstall() bool {
+func (s *AppState) tryInstall() bool {
 	var err error
 
 	gui.UI.SwitchState(gui.ModalStateInstallNeeded)
-	if !gui.UI.InstallStage2 {
+	if !s.InstallStage2 {
 		ok := gui.UI.WaitDialogueComplete()
 		if !ok {
 			return true
@@ -247,7 +227,7 @@ func tryInstall() bool {
 	gui.UI.CheckVTx = true
 	gui.UI.Update()
 
-	if !gui.UI.InstallStage2 {
+	if !s.InstallStage2 {
 		_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
 		if err != nil {
 			log.Println("Failed to get model: Microsoft-Windows-Subsystem-Linux")
@@ -396,13 +376,12 @@ func tryInstall() bool {
 	gui.UI.CheckGroupMembership = true
 	gui.UI.Update()
 
-	gui.UI.ReadConfig()
-	gui.UI.Config.AutoStart = true
-	gui.UI.SaveConfig()
+	s.ReadConfig()
+	s.Config.AutoStart = true
+	s.SaveConfig()
 	log.Println("Installation succeeded")
 
 	gui.UI.SwitchState(gui.ModalStateInstallFinished)
-
 	ok := gui.UI.WaitDialogueComplete()
 	if !ok {
 		return true

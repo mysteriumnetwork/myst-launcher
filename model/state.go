@@ -1,36 +1,19 @@
 package model
 
-type modalState int
+type Config struct {
+	AutoStart bool `json:"auto_start"`
+	Enabled   bool `json:"enabled"`
+}
 
-const (
-	// model
-	ModalStateInitial           modalState = 0
-	ModalStateInstallNeeded     modalState = -1
-	ModalStateInstallInProgress modalState = -2
-	ModalStateInstallFinished   modalState = -3
-	ModalStateInstallError      modalState = -4
-)
+type AppInterface interface {
+	ReadConfig()
+	SaveConfig()
 
-type runnableState int
+	Publish(topic string, args ...interface{})
+	Subscribe(topic string, fn interface{}) error
+	TriggerAction(action string)
 
-const (
-	RunnableStateUnknown    runnableState = 0
-	RunnableStateStarting   runnableState = 1
-	RunnableStateRunning    runnableState = 2
-	RunnableStateInstalling runnableState = 3
-)
-
-func (r runnableState) String() string {
-	switch r {
-	case RunnableStateRunning:
-		return "Running [OK]"
-	case RunnableStateInstalling:
-		return "Installing.."
-	case RunnableStateStarting:
-		return "Starting.."
-	case RunnableStateUnknown:
-		return "-"
-	default:
-		return "?"
-	}
+	GetInTray() bool
+	GetConfig() *Config
+	GetImageName() string
 }
