@@ -65,30 +65,28 @@ var gui Gui
 
 func CreateDialogue() {
 	if err := (MainWindow{
+		Visible:   false,
 		AssignTo:  &UI.dlg,
 		Title:     "Mysterium Exit Node Launcher",
-		MinSize:   Size{320, 440},
-		Size:      Size{320, 640},
-		MaxSize:   Size{320, 640},
+		MinSize:   Size{420, 640},
+		Size:      Size{420, 640},
 		Icon:      UI.icon,
 		MenuItems: gui.menu(),
-		Layout:    VBox{
-			//MarginsZero: true,
-		},
+		Layout:    VBox{},
 
 		Children: []Widget{
 			ImageView{
 				AssignTo:  &gui.iv,
 				Alignment: AlignHNearVFar,
 			},
-			gui.instWiz(),
+			gui.installationWelcome(),
 			gui.installationDlg(),
 			gui.stateDlg(),
-			//VSpacer{RowSpan: 1},
 		},
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
+	UI.dlg.SetVisible(!UI.app.GetInTray())
 
 	var err error
 	gui.ico, err = walk.NewIconFromResourceIdWithSize(2, walk.Size{
@@ -109,10 +107,6 @@ func CreateDialogue() {
 	UI.app.Subscribe("container-state", func() {
 		gui.SetImage()
 	})
-
-	if UI.app.GetInTray() {
-		UI.dlg.SetVisible(false)
-	}
 
 	// Events
 	UI.app.Subscribe("want-exit", func() {

@@ -7,7 +7,6 @@
 package gui
 
 import (
-	"fmt"
 	"syscall"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -96,7 +95,6 @@ func (m *UIModel) SwitchState(s modalState) {
 }
 
 func (m *UIModel) BtnFinishOnClick() {
-	fmt.Println("BtnFinishOnClick >", m.wantExit)
 	if m.wantExit {
 		m.ExitApp()
 		return
@@ -105,7 +103,6 @@ func (m *UIModel) BtnFinishOnClick() {
 	select {
 	case m.waitClick <- 0:
 	default:
-		fmt.Println("BtnFinishOnClick > not sent")
 	}
 
 }

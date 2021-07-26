@@ -4,7 +4,7 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
-func (mw *Gui) instWiz() Widget {
+func (mw *Gui) installationWelcome() Widget {
 	return Composite{
 		Visible: false,
 		Layout: VBox{
@@ -171,6 +171,7 @@ func (mw *Gui) stateDlg() Widget {
 		Layout: VBox{
 			MarginsZero: true,
 		},
+		AlwaysConsumeSpace: true,
 		Children: []Widget{
 			GroupBox{
 				Visible: true,
@@ -218,7 +219,7 @@ func (mw *Gui) stateDlg() Widget {
 						AssignTo: &mw.lbContainer,
 					},
 					CheckBox{
-						Text:     "Start launcher automatically",
+						Text:     "Start automatically",
 						AssignTo: &mw.autoStart,
 						OnCheckedChanged: func() {
 							UI.app.GetConfig().AutoStart = mw.autoStart.Checked()
