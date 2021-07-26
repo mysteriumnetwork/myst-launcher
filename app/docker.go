@@ -143,18 +143,16 @@ func (s *AppState) SuperviseDockerNode() {
 				myst.CheckUpdates(id)
 
 			case "enable":
-				gui.UI.SetStateContainer(gui.RunnableStateRunning)
-
-				mystManager.Start()
 				s.Config.Enabled = true
 				s.SaveConfig()
+				gui.UI.SetStateContainer(gui.RunnableStateRunning)
+				mystManager.Start()
 
 			case "disable":
-				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
-
-				mystManager.Stop()
 				s.Config.Enabled = false
 				s.SaveConfig()
+				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
+				mystManager.Stop()
 
 			case "stop":
 				return

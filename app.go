@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-//go:generate goversioninfo -icon=ico/icon_512x512.ico -manifest=launcher.exe.manifest
-
 package main
 
 import (

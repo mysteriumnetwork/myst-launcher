@@ -10,6 +10,7 @@ require (
 	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/go-ole/go-ole v1.2.5
+	github.com/hallazzang/syso v0.0.0-20190816135029-43d74b8c1725 // indirect
 	github.com/josephspurrier/goversioninfo v1.2.0 // indirect
 	github.com/kr/pretty v0.2.1
 	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794

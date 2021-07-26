@@ -21,10 +21,12 @@ import (
 type UIModel struct {
 	waitClick chan int
 
-	icon *walk.Icon
-	dlg  *walk.MainWindow
-	ni   *walk.NotifyIcon
-	mw   *walk.MainWindow
+	icon       *walk.Icon
+	iconActive *walk.Icon
+
+	dlg *walk.MainWindow
+	ni  *walk.NotifyIcon
+	mw  *walk.MainWindow
 
 	state    modalState
 	wantExit bool
@@ -56,6 +58,7 @@ var UI UIModel
 func init() {
 	UI.waitClick = make(chan int, 0)
 	UI.icon, _ = walk.NewIconFromResourceId(2)
+	UI.iconActive, _ = walk.NewIconFromResourceId(3)
 }
 
 func (m *UIModel) SetApp(app model.AppInterface) {
@@ -189,4 +192,5 @@ func (m *UIModel) SetStateDocker(r RunnableState) {
 func (m *UIModel) SetStateContainer(r RunnableState) {
 	UI.StateContainer = r
 	m.app.Publish("model-change")
+	m.app.Publish("container-state")
 }

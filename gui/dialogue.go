@@ -57,12 +57,13 @@ type Gui struct {
 	iv        *walk.ImageView
 
 	currentView modalState
+	ico         *walk.Icon
+	icoActive   *walk.Icon
 }
 
 var gui Gui
 
 func CreateDialogue() {
-
 	if err := (MainWindow{
 		AssignTo:  &UI.dlg,
 		Title:     "Mysterium Exit Node Launcher",
@@ -89,17 +90,25 @@ func CreateDialogue() {
 		log.Fatal(err)
 	}
 
-	icon, err := walk.NewIconFromResourceIdWithSize(2, walk.Size{
+	var err error
+	gui.ico, err = walk.NewIconFromResourceIdWithSize(2, walk.Size{
 		Width:  64,
 		Height: 64,
 	})
-	if err == nil {
-		i, err := walk.ImageFrom(icon)
-		if err == nil {
-			_ = i
-			gui.iv.SetImage(i)
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
+	gui.icoActive, err = walk.NewIconFromResourceIdWithSize(3, walk.Size{
+		Width:  64,
+		Height: 64,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	gui.SetImage()
+	UI.app.Subscribe("container-state", func() {
+		gui.SetImage()
+	})
 
 	if UI.app.GetInTray() {
 		UI.dlg.SetVisible(false)
@@ -214,4 +223,16 @@ func CreateDialogue() {
 		*canceled = true
 		UI.dlg.Hide()
 	})
+}
+
+func (g *Gui) SetImage() {
+	ico := gui.ico
+	if UI.StateContainer == RunnableStateRunning {
+		ico = gui.icoActive
+	}
+	img, err := walk.ImageFrom(ico)
+	if err != nil {
+		return
+	}
+	gui.iv.SetImage(img)
 }
