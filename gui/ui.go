@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
-
 	"github.com/mysteriumnetwork/myst-launcher/native"
 
 	"github.com/lxn/walk"

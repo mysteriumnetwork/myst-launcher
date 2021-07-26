@@ -149,6 +149,8 @@ func CreateDialogue() {
 			UI.dlg.Children().At(int(prev)).SetVisible(false)
 		}
 		UI.dlg.Children().At(int(state)).SetVisible(true)
+		UI.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(true)
+		UI.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(false)
 	}
 	changeView(frameState)
 

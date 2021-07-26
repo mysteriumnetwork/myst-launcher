@@ -300,7 +300,7 @@ func (s *AppState) tryInstall() bool {
 		gui.UI.RebootAfterWSLEnable = true
 		gui.UI.Update()
 	}
-	CreateAutostartShortcut("")
+	CreateAutostartShortcut(FlagTray)
 	CreateDesktopShortcut("")
 	CreateStartMenuShortcut("")
 

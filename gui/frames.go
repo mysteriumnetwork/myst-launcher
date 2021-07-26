@@ -171,12 +171,11 @@ func (mw *Gui) stateDlg() Widget {
 		Layout: VBox{
 			MarginsZero: true,
 		},
-		AlwaysConsumeSpace: true,
+
 		Children: []Widget{
 			GroupBox{
-				Visible: true,
-				Title:   "Status",
-				Layout:  Grid{Columns: 2},
+				Title:  "Status",
+				Layout: Grid{Columns: 2},
 				Children: []Widget{
 					VSpacer{ColumnSpan: 2},
 					Label{
