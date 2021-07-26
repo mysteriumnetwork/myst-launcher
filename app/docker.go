@@ -26,10 +26,10 @@ import (
 
 const group = "docker-users"
 
-func SuperviseDockerNode() {
+func (s *AppState) SuperviseDockerNode() {
 	runtime.LockOSThread()
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
-	defer gui.UI.WaitGroup.Done()
+	defer s.WaitGroup.Done()
 
 	var err error
 	mystManager, err := myst.NewManagerWithDefaults()
@@ -66,22 +66,20 @@ func SuperviseDockerNode() {
 				return err
 			})
 			if err != nil {
-				gui.UI.Bus.Publish("show-dlg", "error", err)
+				s.Bus.Publish("show-dlg", "error", err)
 				return true
 			}
 			if needSetup {
 				didInstall = true
-				return tryInstall()
+				return s.tryInstall()
 			}
 
 			canPingDocker := mystManager.CanPingDocker()
 			if canPingDocker {
-				gui.UI.StateDocker = gui.RunnableStateRunning
-				gui.UI.Update()
+				gui.UI.SetStateDocker(gui.RunnableStateRunning)
 
-				if gui.UI.CFG.Enabled {
-					gui.UI.StateContainer = gui.RunnableStateInstalling
-					gui.UI.Update()
+				if s.Config.Enabled {
+					gui.UI.SetStateContainer(gui.RunnableStateInstalling)
 
 					alreadyRunning, err := mystManager.Start()
 					if err != nil {
@@ -91,7 +89,7 @@ func SuperviseDockerNode() {
 						countStarted = 0
 					}
 
-					gui.UI.StateContainer = gui.RunnableStateRunning
+					gui.UI.SetStateContainer(gui.RunnableStateRunning)
 					gui.UI.Update()
 					if !alreadyRunning && didInstall {
 						didInstall = false
@@ -113,7 +111,7 @@ func SuperviseDockerNode() {
 				if !started || tryStartCount == 10 {
 					tryStartCount = 0
 					didInstall = true
-					return tryInstall()
+					return s.tryInstall()
 				}
 			}
 			return false
@@ -125,42 +123,36 @@ func SuperviseDockerNode() {
 		}
 
 		select {
-		case act := <-gui.UI.UIAction:
+		case act := <-s.Action:
 			switch act {
 			case "upgrade":
 				id := mystManager.GetCurrentImageDigest()
 				myst.CheckUpdates(id)
 
 				if gui.UI.VersionUpToDate {
-					gui.UI.Bus.Publish("show-dlg", "is-up-to-date", nil)
+					s.Bus.Publish("show-dlg", "is-up-to-date", nil)
 					return
 				}
-				gui.UI.StateContainer = gui.RunnableStateUnknown
-				gui.UI.Update()
+				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
 				mystManager.Stop()
 
-				gui.UI.StateContainer = gui.RunnableStateInstalling
-				gui.UI.Update()
+				gui.UI.SetStateContainer(gui.RunnableStateInstalling)
 				mystManager.Update()
 
 				id = mystManager.GetCurrentImageDigest()
 				myst.CheckUpdates(id)
 
 			case "enable":
-				gui.UI.StateContainer = gui.RunnableStateRunning
-				gui.UI.Update()
+				s.Config.Enabled = true
+				s.SaveConfig()
+				gui.UI.SetStateContainer(gui.RunnableStateRunning)
 				mystManager.Start()
-				gui.UI.CFG.Enabled = true
-				gui.UI.SaveConfig()
 
 			case "disable":
-				gui.UI.StateContainer = gui.RunnableStateUnknown
-				gui.UI.Update()
+				s.Config.Enabled = false
+				s.SaveConfig()
+				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
 				mystManager.Stop()
-				gui.UI.CFG.Enabled = false
-				gui.UI.SaveConfig()
-
-			case "open-ui":
 
 			case "stop":
 				return
@@ -173,9 +165,8 @@ func SuperviseDockerNode() {
 }
 
 func tryStartDocker() bool {
-	gui.UI.StateDocker = gui.RunnableStateStarting
-	gui.UI.StateContainer = gui.RunnableStateUnknown
-	gui.UI.Update()
+	gui.UI.SetStateContainer(gui.RunnableStateUnknown)
+	gui.UI.SetStateDocker(gui.RunnableStateStarting)
 
 	if isProcessRunning("Docker Desktop.exe") {
 		return true
@@ -197,12 +188,12 @@ func startDocker() error {
 	return nil
 }
 
-// returns exit state: true means exit
-func tryInstall() bool {
+// returns exit model: true means exit
+func (s *AppState) tryInstall() bool {
 	var err error
 
 	gui.UI.SwitchState(gui.ModalStateInstallNeeded)
-	if !gui.UI.InstallStage2 {
+	if !s.InstallStage2 {
 		ok := gui.UI.WaitDialogueComplete()
 		if !ok {
 			return true
@@ -211,8 +202,6 @@ func tryInstall() bool {
 	gui.UI.SwitchState(gui.ModalStateInstallInProgress)
 
 	log.Println("Checking Windows version")
-	gui.UI.Update()
-
 	if !IsWindowsVersionCompatible() {
 		gui.UI.SwitchState(gui.ModalStateInstallError)
 
@@ -236,16 +225,16 @@ func tryInstall() bool {
 	gui.UI.CheckVTx = true
 	gui.UI.Update()
 
-	if !gui.UI.InstallStage2 {
+	if !s.InstallStage2 {
 		_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
 		if err != nil {
-			log.Println("Failed to get state: Microsoft-Windows-Subsystem-Linux")
+			log.Println("Failed to get model: Microsoft-Windows-Subsystem-Linux")
 			gui.UI.SwitchState(gui.ModalStateInstallError)
 			return true
 		}
 		hyperVExists, hyperVEnabled, err := QueryWindowsFeature(FeatureHyperV)
 		if err != nil {
-			log.Println("Failed to get state: Microsoft-Hyper-V")
+			log.Println("Failed to get model: Microsoft-Hyper-V")
 			gui.UI.SwitchState(gui.ModalStateInstallError)
 			return true
 		}
@@ -311,7 +300,7 @@ func tryInstall() bool {
 		gui.UI.RebootAfterWSLEnable = true
 		gui.UI.Update()
 	}
-	CreateAutostartShortcut("")
+	CreateAutostartShortcut(FlagTray)
 	CreateDesktopShortcut("")
 	CreateStartMenuShortcut("")
 
@@ -385,13 +374,12 @@ func tryInstall() bool {
 	gui.UI.CheckGroupMembership = true
 	gui.UI.Update()
 
-	gui.UI.ReadConfig()
-	gui.UI.CFG.AutoStart = true
-	gui.UI.SaveConfig()
+	s.ReadConfig()
+	s.Config.AutoStart = true
+	s.SaveConfig()
 	log.Println("Installation succeeded")
 
 	gui.UI.SwitchState(gui.ModalStateInstallFinished)
-
 	ok := gui.UI.WaitDialogueComplete()
 	if !ok {
 		return true

@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-//go:generate goversioninfo -icon=ico/icon_512x512.ico -manifest=launcher.exe.manifest
-
 package main
 
 import (
@@ -15,13 +13,16 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func main() {
+	a := app.NewApp()
+
 	if len(os.Args) > 1 {
-		gui.UI.InTray = os.Args[1] == app.FlagTray
-		gui.UI.InstallStage2 = os.Args[1] == app.FlagInstallStage2
+		a.InTray = os.Args[1] == app.FlagTray
+		a.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
 		switch os.Args[1] {
 		case app.FlagInstall:
@@ -38,12 +39,16 @@ func main() {
 		return
 	}
 
-	log.SetOutput(&gui.UI)
+	log.SetOutput(a)
+	a.ReadConfig()
+	a.ImageName = myst.GetImageName()
+
+	gui.UI.SetApp(a)
 	gui.CreateNotifyIcon()
 	gui.CreateDialogue()
 
-	gui.UI.WaitGroup.Add(1)
-	go app.SuperviseDockerNode()
+	a.WaitGroup.Add(1)
+	go a.SuperviseDockerNode()
 
 	utils.CreatePipeAndListen(&gui.UI)
 
@@ -51,8 +56,8 @@ func main() {
 	gui.UI.Run()
 
 	// send stop action to SuperviseDockerNode
-	gui.UI.UIAction <- "stop"
+	a.TriggerAction("stop")
 
 	// wait for SuperviseDockerNode to finish its work
-	gui.UI.WaitGroup.Wait()
+	a.WaitGroup.Wait()
 }

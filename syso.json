@@ -1,0 +1,47 @@
+{
+  "Icons": [
+    {
+      "ID": 2,
+      "Path": "ico/icon_512x512.ico"
+    },
+    {
+      "ID": 3,
+      "Path": "ico/windows-active.ico"
+    }
+  ],
+  "Manifest": {
+    "ID": 1,
+    "Path": "launcher.exe.manifest"
+  },
+  "VersionInfos": [
+    {
+      "ID": 1,
+      "Fixed": {
+        "FileVersion": "0.0.1.0",
+        "ProductVersion": "0.0.1.0"
+      },
+      "StringTables": [
+        {
+          "Language": "0409",
+          "Charset": "04b0",
+          "Strings": {
+            "CompanyName": "Mysterium Network",
+            "FileDescription": "Mysterium Network Node Launcher",
+            "FileVersion": "0.0.1-preview21",
+            "InternalName": "",
+            "LegalCopyright": "Copyright \u00a9 2021 Mysterium Network",
+            "OriginalFilename": "",
+            "ProductName": "Mysterium Network Node Launcher",
+            "ProductVersion": "0.0.1-preview21"
+          }
+        }
+      ],
+      "Translations": [
+        {
+          "Language": "0409",
+          "Charset": "04b0"
+        }
+      ]
+    }
+  ]
+}

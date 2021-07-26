@@ -125,9 +125,6 @@ const launcherExe = "myst-launcher-amd64.exe"
 
 func checkExe() bool {
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	//fullExe, _ := os.Executable()
-	//exe := getExeNameFromFullPath(fullExe)
-
 	_, err := os.Stat(dst + "\\" + launcherExe)
 	if os.IsNotExist(err) {
 		return false
@@ -148,7 +145,6 @@ func InstallExe() error {
 	defer k.Close()
 
 	dstPath := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	//exeName := "\\myst-launcher-amd64.exe"
 
 	k.SetStringValue("DisplayIcon", fmt.Sprintf(`%s\%s -uninstall`, dstPath, launcherExe))
 	k.SetStringValue("DisplayName", ver.ProductName()+" "+ver.ProductVersion())
@@ -160,7 +156,6 @@ func InstallExe() error {
 	os.Mkdir(dstPath, os.ModePerm)
 	srcPath, _ := os.Executable()
 
-	//exe := getExeNameFromFullPath(srcPath)
 	native.CopyFile(srcPath, dstPath+`\`+launcherExe, false)
 	return nil
 }
@@ -185,8 +180,6 @@ func UninstallExe() error {
 
 func MystNodeLauncherExePath() string {
 	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	//fullExe, _ := os.Executable()
-	//exe := getExeNameFromFullPath(fullExe)
 	return dst + "\\" + launcherExe
 }
 

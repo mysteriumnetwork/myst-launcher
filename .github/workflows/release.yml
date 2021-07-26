@@ -17,8 +17,8 @@ jobs:
 
     - name: Build
       run: |
-        go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.2.0
-        go generate
+        go get -u github.com/hallazzang/syso/...
+        syso
         go build -ldflags="-s -w -H windowsgui" -v -o  build/myst-launcher-amd64.exe .
         go build -ldflags="-s -w -H windowsgui -X 'github.com/mysteriumnetwork/myst-launcher/myst.imageTag=testnet3'" -v -o  build/myst-launcher-testnet3-amd64.exe .
       env:

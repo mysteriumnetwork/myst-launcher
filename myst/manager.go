@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -30,10 +28,6 @@ const (
 
 func GetImageName() string {
 	return imageName + ":" + imageTag
-}
-
-func init() {
-	gui.UI.ImageName = GetImageName()
 }
 
 var (

@@ -14,379 +14,116 @@ import (
 )
 
 const (
-	frameW = 1
-	frameI = 2
-	frameS = 3
+	ofs          = 0
+	frameImage_  = 0 + ofs
+	frameInsNeed = 1 + ofs
+	frameIns     = 2 + ofs
+	frameState   = 3 + ofs
 )
 
+type Gui struct {
+	actionFileMenu *walk.Action
+	actionMainMenu *walk.Action
+
+	actionUpgrade *walk.Action
+	actionEnable  *walk.Action
+	actionDisable *walk.Action
+
+	// common
+	lbDocker         *walk.Label
+	lbContainer      *walk.Label
+	lbVersionLatest  *walk.Label
+	lbVersionCurrent *walk.Label
+
+	autoStart     *walk.CheckBox
+	btnOpenNodeUI *walk.PushButton
+
+	// install
+	lbInstallationStatus *walk.TextEdit
+	btnBegin             *walk.PushButton
+
+	checkWindowsVersion  *walk.CheckBox
+	checkVTx             *walk.CheckBox
+	enableWSL            *walk.CheckBox
+	enableHyperV         *walk.CheckBox
+	installExecutable    *walk.CheckBox
+	rebootAfterWSLEnable *walk.CheckBox
+	downloadFiles        *walk.CheckBox
+	installWSLUpdate     *walk.CheckBox
+	installDocker        *walk.CheckBox
+	checkGroupMembership *walk.CheckBox
+
+	btnFinish *walk.PushButton
+	iv        *walk.ImageView
+
+	currentView modalState
+	ico         *walk.Icon
+	icoActive   *walk.Icon
+}
+
+var gui Gui
+
 func CreateDialogue() {
-	var (
-		actionFileMenu *walk.Action
-		actionMainMenu *walk.Action
-
-		actionUpgrade *walk.Action
-		actionEnable  *walk.Action
-		actionDisable *walk.Action
-
-		// common
-		lbDocker         *walk.Label
-		lbContainer      *walk.Label
-		lbVersionLatest  *walk.Label
-		lbVersionCurrent *walk.Label
-
-		autoStart     *walk.CheckBox
-		btnOpenNodeUI *walk.PushButton
-
-		// install
-		lbInstallationStatus *walk.TextEdit
-		btnBegin             *walk.PushButton
-
-		checkWindowsVersion  *walk.CheckBox
-		checkVTx             *walk.CheckBox
-		enableWSL            *walk.CheckBox
-		enableHyperV         *walk.CheckBox
-		installExecutable    *walk.CheckBox
-		rebootAfterWSLEnable *walk.CheckBox
-		downloadFiles        *walk.CheckBox
-		installWSLUpdate     *walk.CheckBox
-		installDocker        *walk.CheckBox
-		checkGroupMembership *walk.CheckBox
-
-		btnFinish *walk.PushButton
-
-		iv  *walk.ImageView
-		iv2 *walk.ImageView
-		iv3 *walk.ImageView
-	)
-	UI.ReadConfig()
-
 	if err := (MainWindow{
-		AssignTo: &UI.dlg,
-		Title:    "Mysterium Exit Node Launcher",
-		MinSize:  Size{320, 240},
-		Size:     Size{400, 650},
-		Icon:     UI.icon,
+		Visible:   false,
+		AssignTo:  &UI.dlg,
+		Title:     "Mysterium Exit Node Launcher",
+		MinSize:   Size{420, 640},
+		Size:      Size{420, 640},
+		Icon:      UI.icon,
+		MenuItems: gui.menu(),
+		Layout:    VBox{},
 
-		MenuItems: []MenuItem{
-			Menu{
-				AssignActionTo: &actionFileMenu,
-				Text:           "&File",
-				Items: []MenuItem{
-					Action{
-						Text:        "E&xit",
-						OnTriggered: func() { UI.ExitApp() },
-					},
-				},
-			},
-
-			Menu{
-				AssignActionTo: &actionMainMenu,
-				Text:           "&Node",
-				Items: []MenuItem{
-					Action{
-						Text:        "&Open Node UI",
-						AssignTo:    &actionUpgrade,
-						OnTriggered: func() { UI.OpenNodeUI() },
-					},
-					Separator{},
-					Action{
-						Text:        "Upgrade",
-						AssignTo:    &actionUpgrade,
-						OnTriggered: func() { UI.BtnUpgradeOnClick() },
-					},
-
-					Separator{},
-					Action{
-						Text:        "Disable node",
-						AssignTo:    &actionDisable,
-						OnTriggered: func() { UI.BtnDisableOnClick() },
-					},
-					Action{
-						Text:        "Enable node",
-						AssignTo:    &actionEnable,
-						OnTriggered: func() { UI.BtnEnableOnClick() },
-					},
-				},
-			},
-		},
-
-		Layout: VBox{},
 		Children: []Widget{
-			VSpacer{RowSpan: 1},
-
-			Composite{
-				Visible: false,
-				Layout: VBox{
-					MarginsZero: true,
-				},
-
-				Children: []Widget{
-					GroupBox{
-						Title:  "Installation",
-						Layout: VBox{},
-						Children: []Widget{
-							ImageView{
-								AssignTo:  &iv3,
-								Alignment: AlignHNearVFar,
-							},
-							HSpacer{ColumnSpan: 1},
-							VSpacer{RowSpan: 1},
-							Label{
-								Text: "Installation status:",
-							},
-							TextEdit{
-								Text: "This wizard will help with installation of missing components to run Mysterium Node.\r\n\r\n" +
-									"Please press Install button to proceed with installation.",
-								ReadOnly: true,
-								MaxSize: Size{
-									Height: 120,
-								},
-							},
-							VSpacer{Row: 1},
-							PushButton{
-								AssignTo: &btnBegin,
-								Text:     "Install",
-								OnClicked: func() {
-									UI.BtnFinishOnClick()
-								},
-							},
-						},
-					},
-				},
+			ImageView{
+				AssignTo:  &gui.iv,
+				Alignment: AlignHNearVFar,
 			},
-
-			Composite{
-				Visible: false,
-				Layout: VBox{
-					MarginsZero: true,
-				},
-
-				Children: []Widget{
-					GroupBox{
-						Title:  "Installation process",
-						Layout: Grid{Columns: 2},
-						Children: []Widget{
-							ImageView{
-								AssignTo:   &iv2,
-								Alignment:  AlignHNearVFar,
-								ColumnSpan: 2,
-							},
-							VSpacer{RowSpan: 1, ColumnSpan: 2},
-
-							Label{
-								Text: "Check Windows version",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &checkWindowsVersion,
-							},
-
-							Label{
-								Text: "Check VT-x",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &checkVTx,
-							},
-							Label{
-								Text: "Check WSL",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &enableWSL,
-							},
-							Label{
-								Text: "Check Hyper-V",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &enableHyperV,
-							},
-
-							Label{
-								Text: "Install executable",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &installExecutable,
-							},
-							Label{
-								Text: "Reboot after WSL enable",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &rebootAfterWSLEnable,
-							},
-							Label{
-								Text: "Download files",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &downloadFiles,
-							},
-							Label{
-								Text: "Install WSL update",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &installWSLUpdate,
-							},
-							Label{
-								Text: "Install Docker",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &installDocker,
-							},
-							Label{
-								Text: "Check group membership (docker-users)",
-							},
-							CheckBox{
-								Enabled:  false,
-								AssignTo: &checkGroupMembership,
-							},
-
-							VSpacer{
-								ColumnSpan: 2,
-								MinSize: Size{
-									Height: 24,
-								},
-							},
-							Label{
-								Text:       "Installation status:",
-								ColumnSpan: 2,
-							},
-							TextEdit{
-								ColumnSpan: 2,
-								RowSpan:    1,
-								AssignTo:   &lbInstallationStatus,
-								ReadOnly:   true,
-								MaxSize: Size{
-									Height: 120,
-								},
-								VScroll: true,
-							},
-
-							VSpacer{ColumnSpan: 2, Row: 1},
-							PushButton{
-								ColumnSpan: 2,
-								AssignTo:   &btnFinish,
-								Text:       "Finish",
-								OnClicked: func() {
-									UI.BtnFinishOnClick()
-								},
-							},
-						},
-					},
-				},
-			},
-
-			GroupBox{
-				Visible: false,
-				Title:   "Status",
-				Layout:  Grid{Columns: 2},
-				Children: []Widget{
-					ImageView{
-						AssignTo: &iv,
-					},
-					VSpacer{ColumnSpan: 2},
-					Label{
-						Text: "Current node version",
-					},
-					Label{
-						Text:     "-",
-						AssignTo: &lbVersionCurrent,
-					},
-					Label{
-						Text: "Latest node version",
-					},
-					Label{
-						Text:     "-",
-						AssignTo: &lbVersionLatest,
-					},
-					Label{
-						Text: "Docker Hub image name",
-					},
-					Label{
-						Text: UI.ImageName,
-					},
-					Label{
-						Text:       "-",
-						ColumnSpan: 2,
-					},
-
-					Label{
-						Text: "Docker",
-					},
-					Label{
-						Text:     "-",
-						AssignTo: &lbDocker,
-					},
-					Label{
-						Text: "Container",
-					},
-					Label{
-						Text:     "-",
-						AssignTo: &lbContainer,
-					},
-					CheckBox{
-						Text:     "Start launcher automatically",
-						AssignTo: &autoStart,
-						OnCheckedChanged: func() {
-							UI.CFG.AutoStart = autoStart.Checked()
-							UI.SaveConfig()
-						},
-					},
-					PushButton{
-						Enabled:  false,
-						AssignTo: &btnOpenNodeUI,
-						Text:     "Open Node UI",
-						OnClicked: func() {
-							UI.OpenNodeUI()
-						},
-						ColumnSpan: 2,
-					},
-					VSpacer{ColumnSpan: 2},
-				},
-			},
-			VSpacer{RowSpan: 1},
+			gui.installationWelcome(),
+			gui.installationDlg(),
+			gui.stateDlg(),
 		},
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
-	icon, err := walk.NewIconFromResourceIdWithSize(2, walk.Size{
+	UI.dlg.SetVisible(!UI.app.GetInTray())
+
+	var err error
+	gui.ico, err = walk.NewIconFromResourceIdWithSize(2, walk.Size{
 		Width:  64,
 		Height: 64,
 	})
-	if err == nil {
-		i, err := walk.ImageFrom(icon)
-		if err == nil {
-			iv.SetImage(i)
-			iv2.SetImage(i)
-			iv3.SetImage(i)
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	if UI.InTray {
-		UI.dlg.SetVisible(false)
+	gui.icoActive, err = walk.NewIconFromResourceIdWithSize(3, walk.Size{
+		Width:  64,
+		Height: 64,
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
+	gui.SetImage()
+	UI.app.Subscribe("container-state", func() {
+		gui.SetImage()
+	})
 
 	// Events
-	UI.Bus.Subscribe("want-exit", func() {
+	UI.app.Subscribe("want-exit", func() {
 		UI.dlg.Synchronize(func() {
-			btnFinish.SetEnabled(true)
+			gui.btnFinish.SetEnabled(true)
 		})
 	})
 
-	UI.Bus.Subscribe("log", func(p []byte) {
+	UI.app.Subscribe("log", func(p []byte) {
 		switch UI.state {
 		case ModalStateInstallInProgress, ModalStateInstallError, ModalStateInstallFinished:
 			UI.dlg.Synchronize(func() {
-				lbInstallationStatus.AppendText(string(p) + "\r\n")
+				gui.lbInstallationStatus.AppendText(string(p) + "\r\n")
 			})
 		}
 	})
-	UI.Bus.Subscribe("show-dlg", func(d string, err error) {
+	UI.app.Subscribe("show-dlg", func(d string, err error) {
 		switch d {
 		case "is-up-to-date":
 			walk.MsgBox(UI.dlg, "Update", "Node is up to date.", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconInformation)
@@ -399,91 +136,77 @@ func CreateDialogue() {
 
 	enableMenu := func(enable bool) {
 		//actionMainMenu.SetEnabled(enable)
-		actionEnable.SetEnabled(enable)
-		actionDisable.SetEnabled(enable)
-		actionUpgrade.SetEnabled(enable)
+		gui.actionEnable.SetEnabled(enable)
+		gui.actionDisable.SetEnabled(enable)
+		gui.actionUpgrade.SetEnabled(enable)
 	}
+	gui.currentView = frameState
 
-	UI.Bus.Subscribe("state-change", func() {
+	changeView := func(state modalState) {
+		prev := gui.currentView
+		gui.currentView = state
+		if prev != state {
+			UI.dlg.Children().At(int(prev)).SetVisible(false)
+		}
+		UI.dlg.Children().At(int(state)).SetVisible(true)
+		UI.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(true)
+		UI.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(false)
+	}
+	changeView(frameState)
+
+	UI.app.Subscribe("model-change", func() {
 		UI.dlg.Synchronize(func() {
 			switch UI.state {
 			case ModalStateInitial:
 				enableMenu(true)
+				changeView(frameState)
 
-				UI.dlg.Children().At(frameW).SetVisible(false)
-				UI.dlg.Children().At(frameI).SetVisible(false)
-				UI.dlg.Children().At(frameS).SetVisible(true)
-				autoStart.SetChecked(UI.CFG.AutoStart)
+				gui.autoStart.SetChecked(UI.app.GetConfig().AutoStart)
 
-				switch UI.StateDocker {
-				case RunnableStateRunning:
-					lbDocker.SetText("Running [OK]")
-				case RunnableStateInstalling:
-					lbDocker.SetText("Installing..")
-				case RunnableStateStarting:
-					lbDocker.SetText("Starting..")
-				case RunnableStateUnknown:
-					lbDocker.SetText("-")
+				gui.lbDocker.SetText(UI.StateDocker.String())
+				gui.lbContainer.SetText(UI.StateContainer.String())
+				if !UI.app.GetConfig().Enabled {
+					gui.lbContainer.SetText("Disabled")
 				}
 
-				switch UI.StateContainer {
-				case RunnableStateRunning:
-					lbContainer.SetText("Running [OK]")
-				case RunnableStateInstalling:
-					lbContainer.SetText("Installing..")
-				case RunnableStateStarting:
-					lbContainer.SetText("Starting..")
-				case RunnableStateUnknown:
-					lbContainer.SetText("-")
-				}
-				if !UI.CFG.Enabled {
-					lbContainer.SetText("Disabled")
-				}
-
-				btnOpenNodeUI.SetEnabled(UI.StateContainer == RunnableStateRunning)
-
-				lbVersionLatest.SetText(UI.VersionLatest)
-				lbVersionCurrent.SetText(UI.VersionCurrent)
+				gui.btnOpenNodeUI.SetEnabled(UI.IsRunning())
+				gui.lbVersionLatest.SetText(UI.VersionLatest)
+				gui.lbVersionCurrent.SetText(UI.VersionCurrent)
 
 			case ModalStateInstallNeeded:
 				enableMenu(false)
-				UI.dlg.Children().At(frameI).SetVisible(false)
-				UI.dlg.Children().At(frameS).SetVisible(false)
-				UI.dlg.Children().At(frameW).SetVisible(true)
-				btnBegin.SetEnabled(true)
+				changeView(frameInsNeed)
+				gui.btnBegin.SetEnabled(true)
 
 			case ModalStateInstallInProgress:
 				enableMenu(false)
-				UI.dlg.Children().At(frameW).SetVisible(false)
-				UI.dlg.Children().At(frameS).SetVisible(false)
-				UI.dlg.Children().At(frameI).SetVisible(true)
-				btnFinish.SetEnabled(false)
+				changeView(frameIns)
+				gui.btnFinish.SetEnabled(false)
 
 			case ModalStateInstallFinished:
 				enableMenu(false)
-				btnFinish.SetEnabled(true)
-				btnFinish.SetText("Finish")
+				changeView(frameIns)
+				gui.btnFinish.SetEnabled(true)
+				gui.btnFinish.SetText("Finish")
 
 			case ModalStateInstallError:
-				UI.dlg.Children().At(frameW).SetVisible(false)
-				UI.dlg.Children().At(frameS).SetVisible(false)
-				UI.dlg.Children().At(frameI).SetVisible(true)
-				btnFinish.SetEnabled(true)
-				btnFinish.SetText("Exit installer")
+				changeView(frameIns)
+				gui.btnFinish.SetEnabled(true)
+				gui.btnFinish.SetText("Exit installer")
 			}
 
 			switch UI.state {
 			case ModalStateInstallInProgress, ModalStateInstallFinished, ModalStateInstallError:
-				checkWindowsVersion.SetChecked(UI.CheckWindowsVersion)
-				checkVTx.SetChecked(UI.CheckVTx)
-				enableWSL.SetChecked(UI.EnableWSL)
-				enableHyperV.SetChecked(UI.EnableHyperV)
-				installExecutable.SetChecked(UI.InstallExecutable)
-				rebootAfterWSLEnable.SetChecked(UI.RebootAfterWSLEnable)
-				downloadFiles.SetChecked(UI.DownloadFiles)
-				installWSLUpdate.SetChecked(UI.InstallWSLUpdate)
-				installDocker.SetChecked(UI.InstallDocker)
-				checkGroupMembership.SetChecked(UI.CheckGroupMembership)
+				gui.checkWindowsVersion.SetChecked(UI.CheckWindowsVersion)
+				gui.checkVTx.SetChecked(UI.CheckVTx)
+				gui.enableWSL.SetChecked(UI.EnableWSL)
+				gui.enableHyperV.SetChecked(UI.EnableHyperV)
+				gui.installExecutable.SetChecked(UI.InstallExecutable)
+				gui.rebootAfterWSLEnable.SetChecked(UI.RebootAfterWSLEnable)
+				gui.downloadFiles.SetChecked(UI.DownloadFiles)
+				gui.installWSLUpdate.SetChecked(UI.InstallWSLUpdate)
+				gui.installDocker.SetChecked(UI.InstallDocker)
+				gui.checkGroupMembership.SetChecked(UI.CheckGroupMembership)
 			}
 		})
 	})
@@ -496,4 +219,16 @@ func CreateDialogue() {
 		*canceled = true
 		UI.dlg.Hide()
 	})
+}
+
+func (g *Gui) SetImage() {
+	ico := gui.ico
+	if UI.StateContainer == RunnableStateRunning {
+		ico = gui.icoActive
+	}
+	img, err := walk.ImageFrom(ico)
+	if err != nil {
+		return
+	}
+	gui.iv.SetImage(img)
 }

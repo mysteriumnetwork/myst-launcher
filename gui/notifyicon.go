@@ -25,8 +25,17 @@ func CreateNotifyIcon() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	UI.Bus.Subscribe("exit", func() {
+	UI.app.Subscribe("exit", func() {
 		UI.ni.Dispose()
+	})
+	UI.app.Subscribe("container-state", func() {
+		if UI.StateContainer == RunnableStateRunning {
+			UI.ni.SetIcon(UI.iconActive)
+			UI.dlg.SetIcon(UI.iconActive)
+		} else {
+			UI.ni.SetIcon(UI.icon)
+			UI.dlg.SetIcon(UI.icon)
+		}
 	})
 
 	if err := UI.ni.SetIcon(UI.icon); err != nil {
