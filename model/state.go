@@ -1,8 +1,25 @@
 package model
 
+import "time"
+
 type Config struct {
 	AutoStart bool `json:"auto_start"`
 	Enabled   bool `json:"enabled"`
+
+	// allow auto-upgrades
+	AutoUpgrade bool `json:"auto_upgrade"`
+	// the last time we checked for upgrade, Unix timestamp, [second]
+	LastUpgradeCheck int64 `json:"last_upgrade_check"`
+}
+
+func (c *Config) RefreshLastUpgradeCheck() {
+	c.LastUpgradeCheck = time.Now().Unix()
+}
+
+// Check if 24 hours passed since last upgrade check
+func (c *Config) NeedToCheckUpgrade() bool {
+	t := time.Unix(c.LastUpgradeCheck, 0)
+	return t.Add(24 * time.Hour).Before(time.Now())
 }
 
 type AppInterface interface {

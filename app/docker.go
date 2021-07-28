@@ -39,11 +39,11 @@ func (s *AppState) SuperviseDockerNode() {
 
 	t1 := time.Tick(15 * time.Second)
 	tryStartCount := 0
-	didInstall := false
+	didDockerInstall := false
 	countStarted := 0
 
 	for {
-		tryStartOrInstall := func() bool {
+		tryStartOrInstallDocker := func() bool {
 			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
 			needSetup, err := false, error(nil)
 			Retry(3, time.Second, func() error {
@@ -70,57 +70,63 @@ func (s *AppState) SuperviseDockerNode() {
 				return true
 			}
 			if needSetup {
-				didInstall = true
+				didDockerInstall = true
 				return s.tryInstall()
 			}
 
 			canPingDocker := mystManager.CanPingDocker()
-			if canPingDocker {
-				gui.UI.SetStateDocker(gui.RunnableStateRunning)
-
-				if s.Config.Enabled {
-					gui.UI.SetStateContainer(gui.RunnableStateInstalling)
-
-					alreadyRunning, err := mystManager.Start()
-					if err != nil {
-						return false
-					}
-					if !alreadyRunning {
-						countStarted = 0
-					}
-
-					gui.UI.SetStateContainer(gui.RunnableStateRunning)
-					gui.UI.Update()
-					if !alreadyRunning && didInstall {
-						didInstall = false
-						gui.UI.ShowNotification()
-					}
-
-					if countStarted == 0 {
-						id := mystManager.GetCurrentImageDigest()
-						myst.CheckUpdates(id)
-					}
-					countStarted++
-				}
-
-			} else {
+			if !canPingDocker {
 				tryStartCount++
-				started := tryStartDocker()
 
 				// try starting docker for 10 times, else try install
-				if !started || tryStartCount == 10 {
+				if !tryStartDocker() || tryStartCount == 10 {
 					tryStartCount = 0
-					didInstall = true
+					didDockerInstall = true
 					return s.tryInstall()
 				}
 			}
 			return false
 		}
-		wantExit := tryStartOrInstall()
+		wantExit := tryStartOrInstallDocker()
 		if wantExit {
 			gui.UI.SetWantExit()
 			return
 		}
+
+		// docker is running now
+		// check for image updates before starting container, offer upgrade interactively
+		// start container
+		func() {
+			gui.UI.SetStateDocker(gui.RunnableStateRunning)
+			if s.Config.Enabled {
+				gui.UI.SetStateContainer(gui.RunnableStateInstalling)
+
+				containerAlreadyRunning, err := mystManager.Start()
+				if err != nil {
+					return
+				}
+				if !containerAlreadyRunning {
+					countStarted = 0
+				}
+
+				gui.UI.SetStateContainer(gui.RunnableStateRunning)
+				gui.UI.Update()
+				if !containerAlreadyRunning && didDockerInstall {
+					didDockerInstall = false
+					gui.UI.ShowNotification()
+				}
+
+				// check version after first try to Start() container
+				if countStarted == 0 {
+					id := mystManager.GetCurrentImageDigest()
+					myst.CheckUpdates(id)
+
+					s.Config.RefreshLastUpgradeCheck()
+					s.SaveConfig()
+				}
+				countStarted++
+			}
+		}()
 
 		select {
 		case act := <-s.Action:
@@ -138,6 +144,9 @@ func (s *AppState) SuperviseDockerNode() {
 
 				gui.UI.SetStateContainer(gui.RunnableStateInstalling)
 				mystManager.Update()
+
+				s.Config.RefreshLastUpgradeCheck()
+				s.SaveConfig()
 
 				id = mystManager.GetCurrentImageDigest()
 				myst.CheckUpdates(id)
