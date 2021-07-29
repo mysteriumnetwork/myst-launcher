@@ -162,6 +162,10 @@ func (m *UIModel) YesNoModal(title, message string) int {
 	return walk.MsgBox(m.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
 }
 
+func (m *UIModel) ErrorModal(title, message string) int {
+	return walk.MsgBox(UI.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
+}
+
 func (m *UIModel) Run() {
 	m.mw.Run()
 }

@@ -44,9 +44,14 @@ func (s *AppState) SuperviseDockerNode() {
 
 	for {
 		tryStartOrInstall := func() bool {
+
 			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
-			needSetup, err := false, error(nil)
-			Retry(3, time.Second, func() error {
+			checkVMSettings, needSetup, err := false, false, error(nil)
+			err = Retry(3, time.Second, func() error {
+				checkVMSettings, err = hasVMWithoutVirtualization()
+				if err != nil {
+					return err
+				}
 				_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
 				if err != nil {
 					return err
@@ -66,7 +71,13 @@ func (s *AppState) SuperviseDockerNode() {
 				return err
 			})
 			if err != nil {
-				s.Bus.Publish("show-dlg", "error", err)
+				log.Println("error", err)
+				gui.UI.ErrorModal("Application error", err.Error())
+				return true
+			}
+			if checkVMSettings {
+				gui.UI.ConfirmModal("Requirements checker", "VM has been detected, but no hypervisor applications. \r\n\r\nPlease enable hypervisor applications for this VM \r\n(VT-x / EPT and IOMMU) and restart your VM.")
+				gui.UI.ExitApp()
 				return true
 			}
 			if needSetup {
@@ -214,10 +225,10 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.CheckWindowsVersion = true
 	gui.UI.Update()
 
-	log.Println("Checking VT-x")
+	log.Println("Checking VT-x / EPT")
 	if !hasVTx() {
 		log.Println("Please Enable virtualization in BIOS")
-		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS")
+		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS / Hypervisor: VT-x and EPT (Intel), SVM (AMD)")
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
 		return true
