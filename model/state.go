@@ -8,6 +8,7 @@ import (
 type Config struct {
 	AutoStart bool `json:"auto_start"`
 	Enabled   bool `json:"enabled"`
+	CheckVMSettingsConfirm bool `json:"check_vm_settings_confirm"`
 
 	// allow auto-upgrades
 	AutoUpgrade bool `json:"auto_upgrade"`

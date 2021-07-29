@@ -46,8 +46,12 @@ func (s *AppState) SuperviseDockerNode() {
 	for {
 		tryStartOrInstallDocker := func() bool {
 			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
-			needSetup, err := false, error(nil)
-			Retry(3, time.Second, func() error {
+			checkVMSettings, needSetup, err := false, false, error(nil)
+			err = Retry(3, time.Second, func() error {
+				checkVMSettings, err = isUnderVm()
+				if err != nil {
+					return err
+				}
 				_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
 				if err != nil {
 					return err
@@ -67,8 +71,18 @@ func (s *AppState) SuperviseDockerNode() {
 				return err
 			})
 			if err != nil {
-				s.Bus.Publish("show-dlg", "error", err)
+				log.Println("error", err)
+				gui.UI.ErrorModal("Application error", err.Error())
 				return true
+			}
+			if checkVMSettings && !s.Config.CheckVMSettingsConfirm {
+				ret := gui.UI.YesNoModal("Requirements checker", "VM has been detected. \r\n\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
+				if ret == win.IDNO {
+					gui.UI.ExitApp()
+					return true
+				}
+				s.Config.CheckVMSettingsConfirm = true
+				s.SaveConfig()
 			}
 			if needSetup {
 				didDockerInstall = true
@@ -237,10 +251,10 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.CheckWindowsVersion = true
 	gui.UI.Update()
 
-	log.Println("Checking VT-x")
+	log.Println("Checking VT-x / EPT")
 	if !hasVTx() {
 		log.Println("Please Enable virtualization in BIOS")
-		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS")
+		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS / Hypervisor: VT-x and EPT (Intel), SVM (AMD)")
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
 		return true

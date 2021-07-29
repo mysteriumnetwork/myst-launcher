@@ -263,6 +263,48 @@ func isWindowsUpdateEnabled() bool {
 	return disableWUfBSafeguards == 1
 }
 
+func isUnderVm() (bool, error) {
+	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
+	defer unknown.Release()
+
+	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
+	defer wmi.Release()
+
+	// service is a SWbemServices
+	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
+	service := serviceRaw.ToIDispatch()
+	defer service.Release()
+
+	// result is a SWBemObjectSet
+	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_ComputerSystem")
+	result := resultRaw.ToIDispatch()
+	defer result.Release()
+
+	countVar, _ := oleutil.GetProperty(result, "Count")
+	count := int(countVar.Val)
+	model := ""
+	if count > 0 {
+		itemRaw, _ := oleutil.CallMethod(result, "ItemIndex", 0)
+		item := itemRaw.ToIDispatch()
+		defer item.Release()
+
+		variantModel, err := oleutil.GetProperty(item, "Model")
+		if err != nil {
+			return false, err
+		}
+		model = variantModel.ToString()
+	}
+	vmTest := []string{"virtual", "vmware", "kvm", "xen"}
+	isVM := false
+	for _, v := range vmTest {
+		if strings.Contains(strings.ToLower(model), v) {
+			isVM = true
+			break
+		}
+	}
+	return isVM, nil
+}
+
 // We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
 // see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
 func hasVTx() bool {
