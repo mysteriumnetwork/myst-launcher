@@ -185,8 +185,8 @@ func (m *UIModel) ShowNotificationInstalled() {
 
 func (m *UIModel) ShowNotificationUpgrade() {
 	err := m.ni.ShowCustom(
-		"Update!",
-		"Click this notification to update",
+		"Upgrade available",
+		"Click this notification to see details.",
 		m.icon)
 
 	if err != nil {

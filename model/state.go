@@ -12,7 +12,8 @@ type Config struct {
 	// allow auto-upgrades
 	AutoUpgrade bool `json:"auto_upgrade"`
 	// the last time we checked for upgrade, Unix timestamp, [second]
-	LastUpgradeCheck int64 `json:"last_upgrade_check"`
+	LastUpgradeCheck int64  `json:"last_upgrade_check"`
+	LastSeenUpgrade  string `json:"last_seen_upgrade"`
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {

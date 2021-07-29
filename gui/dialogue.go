@@ -249,7 +249,7 @@ func (g *Gui) Ask() {
 
 	err := Dialog{
 		AssignTo:      &dialog,
-		Title:         "Do you want to upgrade?",
+		Title:         "Would you like to upgrade?",
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		MinSize:       Size{400, 175},
