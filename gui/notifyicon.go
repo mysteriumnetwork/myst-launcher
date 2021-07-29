@@ -8,6 +8,7 @@
 package gui
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lxn/walk"
@@ -53,7 +54,13 @@ func CreateNotifyIcon() {
 		UI.ShowMain()
 	})
 	UI.ni.MessageClicked().Attach(func() {
-		UI.OpenNodeUI()
+		fmt.Println("MessageClicked", UI.LastNotificationID)
+		switch UI.LastNotificationID {
+		case NotificationUpgrade:
+			gui.Ask()
+		case NotificationContainerStarted:
+			UI.OpenNodeUI()
+		}
 	})
 
 	exitAction := walk.NewAction()

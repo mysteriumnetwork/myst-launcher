@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
 
@@ -179,28 +180,40 @@ func (mw *Gui) stateDlg() Widget {
 				Children: []Widget{
 					VSpacer{ColumnSpan: 2},
 					Label{
-						Text: "Current node version",
-					},
-					Label{
-						Text:     "-",
-						AssignTo: &mw.lbVersionCurrent,
-					},
-					Label{
-						Text: "Latest node version",
-					},
-					Label{
-						Text:     "-",
-						AssignTo: &mw.lbVersionLatest,
-					},
-					Label{
 						Text: "Docker Hub image name",
 					},
 					Label{
 						Text: UI.app.GetImageName(),
 					},
 					Label{
-						Text:       "-",
+						Text: "Node version installed",
+					},
+					Label{
+						Text:     "-",
+						AssignTo: &mw.lbVersionCurrent,
+					},
+					//Label{
+					//	Text: "Node version latest",
+					//},
+					//Label{
+					//	Text:     "-",
+					//	AssignTo: &mw.lbVersionLatest,
+					//},
+					Label{
+						Text: "Upgrade available",
+					},
+					LinkLabel{
+						AssignTo: &mw.lbVersionUpdatesAvail,
+						Text:     `-`,
+						OnLinkActivated: func(link *walk.LinkLabelLink) {
+							if link.Id() == "upgrade" {
+								gui.Ask()
+							}
+						},
+					},
+					VSpacer{
 						ColumnSpan: 2,
+						Size:       20,
 					},
 
 					Label{
@@ -226,6 +239,11 @@ func (mw *Gui) stateDlg() Widget {
 						},
 						ColumnSpan: 2,
 					},
+					VSpacer{
+						ColumnSpan: 2,
+						Size:       20,
+					},
+
 					PushButton{
 						Enabled:  false,
 						AssignTo: &mw.btnOpenNodeUI,

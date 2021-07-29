@@ -28,7 +28,7 @@ func (mw *Gui) menu() []MenuItem {
 				},
 				Separator{},
 				Action{
-					Text:        "Upgrade",
+					Text:        "Check updates",
 					AssignTo:    &mw.actionUpgrade,
 					OnTriggered: func() { UI.BtnUpgradeOnClick() },
 				},

@@ -48,8 +48,16 @@ type UIModel struct {
 	InstallDocker        bool
 	CheckGroupMembership bool
 
-	app model.AppInterface
+	app                model.AppInterface
+	LastNotificationID NotificationTypeID
 }
+
+type NotificationTypeID int
+
+const (
+	NotificationUpgrade          = NotificationTypeID(1)
+	NotificationContainerStarted = NotificationTypeID(2)
+)
 
 var UI UIModel
 
@@ -103,11 +111,10 @@ func (m *UIModel) BtnFinishOnClick() {
 	case m.waitClick <- 0:
 	default:
 	}
-
 }
 
 func (m *UIModel) BtnUpgradeOnClick() {
-	m.app.TriggerAction("upgrade")
+	m.app.TriggerAction("upgrade:i")
 }
 
 func (m *UIModel) BtnDisableOnClick() {
@@ -166,10 +173,20 @@ func (m *UIModel) Run() {
 	m.mw.Run()
 }
 
-func (m *UIModel) ShowNotification() {
+func (m *UIModel) ShowNotificationInstalled() {
 	err := m.ni.ShowCustom(
 		"Mysterium Node successfully installed!",
 		"Click this notification to open Node UI in browser",
+		m.icon)
+
+	if err != nil {
+	}
+}
+
+func (m *UIModel) ShowNotificationUpgrade() {
+	err := m.ni.ShowCustom(
+		"Update!",
+		"Click this notification to update",
 		m.icon)
 
 	if err != nil {

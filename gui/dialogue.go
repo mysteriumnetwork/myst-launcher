@@ -7,6 +7,7 @@
 package gui
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lxn/walk"
@@ -30,10 +31,11 @@ type Gui struct {
 	actionDisable *walk.Action
 
 	// common
-	lbDocker         *walk.Label
-	lbContainer      *walk.Label
-	lbVersionLatest  *walk.Label
-	lbVersionCurrent *walk.Label
+	lbDocker              *walk.Label
+	lbContainer           *walk.Label
+	lbVersionLatest       *walk.Label
+	lbVersionCurrent      *walk.Label
+	lbVersionUpdatesAvail *walk.LinkLabel
 
 	autoStart     *walk.CheckBox
 	btnOpenNodeUI *walk.PushButton
@@ -170,8 +172,12 @@ func CreateDialogue() {
 				}
 
 				gui.btnOpenNodeUI.SetEnabled(UI.IsRunning())
-				gui.lbVersionLatest.SetText(UI.VersionLatest)
+				//gui.lbVersionLatest.SetText(UI.VersionLatest)
 				gui.lbVersionCurrent.SetText(UI.VersionCurrent)
+				gui.lbVersionUpdatesAvail.SetText("-")
+				if !UI.VersionUpToDate {
+					gui.lbVersionUpdatesAvail.SetText(`<a id="upgrade">Yes !</a> - click to see details`)
+				}
 
 			case ModalStateInstallNeeded:
 				enableMenu(false)
@@ -231,4 +237,79 @@ func (g *Gui) SetImage() {
 		return
 	}
 	gui.iv.SetImage(img)
+}
+
+func (g *Gui) Ask() {
+	var (
+		dialog             *walk.Dialog
+		acceptPB, cancelPB *walk.PushButton
+		lbVersionCurrent   *walk.Label
+		lbVersionLatest    *walk.Label
+	)
+
+	err := Dialog{
+		AssignTo:      &dialog,
+		Title:         "Do you want to upgrade?",
+		DefaultButton: &acceptPB,
+		CancelButton:  &cancelPB,
+		MinSize:       Size{400, 175},
+		Icon:          UI.icon,
+
+		Layout: Grid{
+			Columns: 2,
+		},
+		Children: []Widget{
+			VSpacer{ColumnSpan: 2},
+			Label{
+				Text: "Docker Hub image name",
+			},
+			Label{
+				Text: UI.app.GetImageName(),
+			},
+			Label{
+				Text: "Node version installed",
+			},
+			Label{
+				Text:     "-",
+				AssignTo: &lbVersionCurrent,
+			},
+			Label{
+				Text: "Node version latest",
+			},
+			Label{
+				Text:     "-",
+				AssignTo: &lbVersionLatest,
+			},
+			VSpacer{ColumnSpan: 2},
+			Composite{
+				ColumnSpan: 2,
+				Layout:     HBox{},
+				Children: []Widget{
+					PushButton{
+						AssignTo: &acceptPB,
+						Text:     "Yes",
+						OnClicked: func() {
+							dialog.Accept()
+							UI.app.TriggerAction("upgrade")
+						},
+					},
+					PushButton{
+						AssignTo: &cancelPB,
+						Text:     "No",
+						OnClicked: func() {
+							dialog.Cancel()
+						},
+					},
+				},
+			},
+		},
+	}.Create(UI.dlg)
+	if err != nil {
+		fmt.Println(err)
+	}
+	lbVersionCurrent.SetText(UI.VersionCurrent)
+	lbVersionLatest.SetText(UI.VersionLatest)
+
+	dialog.Show()
+	dialog.SetX(UI.dlg.X() + 300)
 }

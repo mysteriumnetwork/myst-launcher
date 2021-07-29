@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Config struct {
 	AutoStart bool `json:"auto_start"`
@@ -19,6 +22,7 @@ func (c *Config) RefreshLastUpgradeCheck() {
 // Check if 24 hours passed since last upgrade check
 func (c *Config) NeedToCheckUpgrade() bool {
 	t := time.Unix(c.LastUpgradeCheck, 0)
+	fmt.Println("t", t, t.Add(24*time.Hour))
 	return t.Add(24 * time.Hour).Before(time.Now())
 }
 

@@ -12,14 +12,14 @@ import (
 
 var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
 
-func CheckUpdates(imageDigest string) {
+func CheckUpdates(imageDigest string) bool {
 	url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=30"
 	resp, err := http.Get(url)
 	if err != nil {
-		return
+		return false
 	}
 	if resp.StatusCode != 200 {
-		return
+		return false
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
 
@@ -62,4 +62,6 @@ func CheckUpdates(imageDigest string) {
 	gui.UI.VersionCurrent = currentVersion
 	gui.UI.VersionLatest = latestVersion
 	gui.UI.Update()
+
+	return true
 }
