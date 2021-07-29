@@ -48,7 +48,7 @@ func (s *AppState) SuperviseDockerNode() {
 			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
 			checkVMSettings, needSetup, err := false, false, error(nil)
 			err = Retry(3, time.Second, func() error {
-				checkVMSettings, err = hasVMWithoutVirtualization()
+				checkVMSettings, err = isUnderVm()
 				if err != nil {
 					return err
 				}
@@ -75,10 +75,14 @@ func (s *AppState) SuperviseDockerNode() {
 				gui.UI.ErrorModal("Application error", err.Error())
 				return true
 			}
-			if checkVMSettings {
-				gui.UI.ConfirmModal("Requirements checker", "VM has been detected, but no hypervisor applications. \r\n\r\nPlease enable hypervisor applications for this VM \r\n(VT-x / EPT and IOMMU) and restart your VM.")
-				gui.UI.ExitApp()
-				return true
+			if checkVMSettings && !s.Config.CheckVMSettingsConfirm {
+				ret := gui.UI.YesNoModal("Requirements checker", "VM has been detected. \r\n\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
+				if ret == win.IDNO {
+					gui.UI.ExitApp()
+					return true
+				}
+				s.Config.CheckVMSettingsConfirm = true
+				s.SaveConfig()
 			}
 			if needSetup {
 				didInstall = true

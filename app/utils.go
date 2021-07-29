@@ -263,7 +263,7 @@ func isWindowsUpdateEnabled() bool {
 	return disableWUfBSafeguards == 1
 }
 
-func hasVMWithoutVirtualization() (bool, error) {
+func isUnderVm() (bool, error) {
 	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	defer unknown.Release()
 
@@ -302,39 +302,7 @@ func hasVMWithoutVirtualization() (bool, error) {
 			break
 		}
 	}
-	if !isVM {
-		return false, nil
-	}
-
-	// has SLAT
-	{
-		hasSlat := false
-		resultRaw, err := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_Processor")
-		if err != nil {
-			return false, err
-		}
-		result := resultRaw.ToIDispatch()
-		defer result.Release()
-		countVar, err := oleutil.GetProperty(result, "Count")
-		if err != nil {
-			return false, err
-		}
-		count := int(countVar.Val)
-
-		if count > 0 {
-			itemRaw, _ := oleutil.CallMethod(result, "ItemIndex", 0)
-			item := itemRaw.ToIDispatch()
-			defer item.Release()
-
-			variantSLAT, err := oleutil.GetProperty(item, "SecondLevelAddressTranslationExtensions")
-			if err != nil {
-				return false, err
-			}
-
-			hasSlat = variantSLAT.Value().(bool)
-		}
-		return !hasSlat, nil
-	}
+	return isVM, nil
 }
 
 // We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
