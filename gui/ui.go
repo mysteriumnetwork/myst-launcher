@@ -30,11 +30,12 @@ type UIModel struct {
 	wantExit bool
 
 	// common
-	StateDocker     RunnableState
-	StateContainer  RunnableState
-	VersionLatest   string
-	VersionCurrent  string
-	VersionUpToDate bool
+	StateDocker      RunnableState
+	StateContainer   RunnableState
+	VersionLatest    string
+	VersionCurrent   string
+	VersionUpToDate  bool
+	CurrentImgDigest string
 
 	// inst
 	CheckWindowsVersion  bool
@@ -114,7 +115,7 @@ func (m *UIModel) BtnFinishOnClick() {
 }
 
 func (m *UIModel) BtnUpgradeOnClick() {
-	m.app.TriggerAction("upgrade:i")
+	m.AskDlg()
 }
 
 func (m *UIModel) BtnDisableOnClick() {
@@ -210,4 +211,8 @@ func (m *UIModel) SetStateContainer(r RunnableState) {
 	UI.StateContainer = r
 	m.app.Publish("model-change")
 	m.app.Publish("container-state")
+}
+
+func (m *UIModel) AskDlg() {
+	gui.Ask()
 }

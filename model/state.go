@@ -6,26 +6,34 @@ import (
 )
 
 type Config struct {
-	AutoStart bool `json:"auto_start"`
-	Enabled   bool `json:"enabled"`
+	AutoStart              bool `json:"auto_start"`
+	Enabled                bool `json:"enabled"`
 	CheckVMSettingsConfirm bool `json:"check_vm_settings_confirm"`
 
 	// allow auto-upgrades
 	AutoUpgrade bool `json:"auto_upgrade"`
 	// the last time we checked for upgrade, Unix timestamp, [second]
-	LastUpgradeCheck int64  `json:"last_upgrade_check"`
-	LastSeenUpgrade  string `json:"last_seen_upgrade"`
+	LastUpgradeCheck int64 `json:"last_upgrade_check"` // once a day
+
+	//CurrentImgDigest string `json:"current_img_digest"`
+	//CurrentImgVersion string `json:"current_img_version"`
+	//LastSeenUpgradeNotification  string `json:"last_seen_upgrade"` //once per week
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {
 	c.LastUpgradeCheck = time.Now().Unix()
 }
 
+const upgradeCheckPeriod = 24 * time.Hour
+
+//const upgradeCheckPeriod = 2 * time.Minute
+
 // Check if 24 hours passed since last upgrade check
 func (c *Config) NeedToCheckUpgrade() bool {
+	fmt.Println("NeedToCheckUpgrade", c.LastUpgradeCheck)
+
 	t := time.Unix(c.LastUpgradeCheck, 0)
-	fmt.Println("t", t, t.Add(24*time.Hour))
-	return t.Add(24 * time.Hour).Before(time.Now())
+	return t.Add(upgradeCheckPeriod).Before(time.Now())
 }
 
 type AppInterface interface {

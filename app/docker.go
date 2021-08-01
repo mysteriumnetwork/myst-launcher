@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strings"
 	"syscall"
 	"time"
 
@@ -32,7 +31,6 @@ func (s *AppState) SuperviseDockerNode() {
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
 	defer s.WaitGroup.Done()
 
-	var err error
 	mystManager, err := myst.NewManagerWithDefaults()
 	if err != nil {
 		panic(err) // TODO handle gracefully
@@ -41,7 +39,9 @@ func (s *AppState) SuperviseDockerNode() {
 	t1 := time.Tick(15 * time.Second)
 	tryStartCount := 0
 	didDockerInstall := false
-	countStarted := 0
+
+	s.ReadConfig()
+	gui.UI.Update()
 
 	for {
 		tryStartOrInstallDocker := func() bool {
@@ -113,69 +113,50 @@ func (s *AppState) SuperviseDockerNode() {
 		// check for image updates before starting container, offer upgrade interactively
 		// start container
 		func() {
-			if s.Config.Enabled {
-				// check version after first try to Start() container
-				if countStarted == 0 || s.Config.NeedToCheckUpgrade() {
-					fmt.Println("Check >")
+			imageDigest := mystManager.GetCurrentImageDigest()
 
-					ok := myst.CheckUpdates(mystManager.GetCurrentImageDigest())
-					if ok {
-						s.Config.RefreshLastUpgradeCheck()
-						s.SaveConfig()
+			if gui.UI.CurrentImgDigest != imageDigest || gui.UI.VersionCurrent == "" || s.Config.NeedToCheckUpgrade() {
+				gui.UI.CurrentImgDigest = imageDigest
 
-						if !gui.UI.VersionUpToDate {
-							gui.UI.LastNotificationID = gui.NotificationUpgrade
-							gui.UI.ShowNotificationUpgrade()
-						}
-					}
+				ok := myst.CheckVersionAndUpgrades(imageDigest, &s.Config)
+				if ok {
+					s.SaveConfig()
 				}
+			}
+			if s.Config.AutoUpgrade && !gui.UI.VersionUpToDate {
+				s.upgrade(mystManager)
+			}
+
+			if s.Config.Enabled {
 				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
 				containerAlreadyRunning, err := mystManager.Start()
 				if err != nil {
 					return
 				}
-				if !containerAlreadyRunning {
-					countStarted = 0
-				}
-
 				gui.UI.SetStateContainer(gui.RunnableStateRunning)
 				gui.UI.Update()
+
 				if !containerAlreadyRunning && didDockerInstall {
 					didDockerInstall = false
-
 					gui.UI.LastNotificationID = gui.NotificationContainerStarted
 					gui.UI.ShowNotificationInstalled()
 				}
-				countStarted++
 			}
 		}()
 
 		select {
 		case act := <-s.Action:
-			params := strings.Split(act, ":")
-
-			switch params[0] {
-			case "upgrade":
-				isInteractive := len(params) > 1 && params[1] == "i" // check and upgrade
-				fmt.Println("act", act, isInteractive)
-
-				if isInteractive {
-					ok := myst.CheckUpdates(mystManager.GetCurrentImageDigest())
-					if !ok {
-						break
-					}
-					s.Config.RefreshLastUpgradeCheck()
-					s.SaveConfig()
-
-					if gui.UI.VersionUpToDate {
-						s.Bus.Publish("show-dlg", "is-up-to-date", nil)
-						break
-					}
+			switch act {
+			case "check":
+				ok := myst.CheckVersionAndUpgrades(mystManager.GetCurrentImageDigest(), &s.Config)
+				if !ok {
+					break
 				}
-				//gui.UI.SetStateContainer(gui.RunnableStateUnknown)
-				//mystManager.Stop()
-				//gui.UI.SetStateContainer(gui.RunnableStateInstalling)
-				//mystManager.Update()
+				s.SaveConfig()
+				gui.UI.Update()
+
+			case "upgrade":
+				s.upgrade(mystManager)
 
 			case "enable":
 				s.Config.Enabled = true
@@ -196,7 +177,6 @@ func (s *AppState) SuperviseDockerNode() {
 
 		// wait for ticker event if no action
 		case <-t1:
-			fmt.Println("tick >")
 		}
 	}
 }
@@ -424,4 +404,17 @@ func (s *AppState) tryInstall() bool {
 
 	gui.UI.SwitchState(gui.ModalStateInitial)
 	return false
+}
+
+func (s *AppState) upgrade(mystManager *myst.Manager) {
+	gui.UI.SetStateContainer(gui.RunnableStateUnknown)
+	mystManager.Stop()
+	gui.UI.SetStateContainer(gui.RunnableStateInstalling)
+	mystManager.Update()
+
+	gui.UI.CurrentImgDigest = mystManager.GetCurrentImageDigest()
+	ok := myst.CheckVersionAndUpgrades(gui.UI.CurrentImgDigest, &s.Config)
+	if ok {
+		s.SaveConfig()
+	}
 }

@@ -21,6 +21,8 @@ import (
 
 var imageTag = "latest"
 
+//var imageTag = "0.52.0-alpine"
+
 const (
 	imageName     = "mysteriumnetwork/myst"
 	containerName = "myst"
@@ -251,6 +253,7 @@ func (m *Manager) GetCurrentImageDigest() string {
 
 	imageDigest := ""
 	for _, image := range images {
+		fmt.Println("image>", image)
 		if c.ImageID == image.ID {
 			for _, rd := range image.RepoDigests {
 				digestArr := strings.Split(rd, "@")

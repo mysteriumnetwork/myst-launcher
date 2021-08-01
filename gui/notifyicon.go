@@ -32,10 +32,10 @@ func CreateNotifyIcon() {
 	UI.app.Subscribe("container-state", func() {
 		if UI.StateContainer == RunnableStateRunning {
 			UI.ni.SetIcon(UI.iconActive)
-			UI.dlg.SetIcon(UI.iconActive)
+			UI.dlg.Synchronize(func() { UI.dlg.SetIcon(UI.iconActive) })
 		} else {
 			UI.ni.SetIcon(UI.icon)
-			UI.dlg.SetIcon(UI.icon)
+			UI.dlg.Synchronize(func() { UI.dlg.SetIcon(UI.icon) })
 		}
 	})
 

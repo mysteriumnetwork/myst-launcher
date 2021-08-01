@@ -192,13 +192,6 @@ func (mw *Gui) stateDlg() Widget {
 						Text:     "-",
 						AssignTo: &mw.lbVersionCurrent,
 					},
-					//Label{
-					//	Text: "Node version latest",
-					//},
-					//Label{
-					//	Text:     "-",
-					//	AssignTo: &mw.lbVersionLatest,
-					//},
 					Label{
 						Text: "Upgrade available",
 					},
@@ -206,11 +199,23 @@ func (mw *Gui) stateDlg() Widget {
 						AssignTo: &mw.lbVersionUpdatesAvail,
 						Text:     `-`,
 						OnLinkActivated: func(link *walk.LinkLabelLink) {
-							if link.Id() == "upgrade" {
-								gui.Ask()
-							}
+							UI.BtnUpgradeOnClick()
 						},
 					},
+
+					CheckBox{
+						Text:           "Upgrade automatically",
+						TextOnLeftSide: true,
+						AssignTo:       &mw.autoUpgrade,
+						OnCheckedChanged: func() {
+							UI.app.GetConfig().AutoUpgrade = mw.autoUpgrade.Checked()
+							UI.app.SaveConfig()
+						},
+						//ColumnSpan: 2,
+						MaxSize: Size{Height: 15},
+					},
+					HSpacer{Size: 1},
+
 					VSpacer{
 						ColumnSpan: 2,
 						Size:       20,
@@ -230,21 +235,22 @@ func (mw *Gui) stateDlg() Widget {
 						Text:     "-",
 						AssignTo: &mw.lbContainer,
 					},
-					CheckBox{
-						Text:     "Start automatically",
-						AssignTo: &mw.autoStart,
-						OnCheckedChanged: func() {
-							UI.app.GetConfig().AutoStart = mw.autoStart.Checked()
-							UI.app.SaveConfig()
-						},
-						ColumnSpan: 2,
-					},
+					//CheckBox{
+					//	Text:     "Start automatically",
+					//	AssignTo: &mw.autoStart,
+					//	OnCheckedChanged: func() {
+					//		UI.app.GetConfig().AutoStart = mw.autoStart.Checked()
+					//		UI.app.SaveConfig()
+					//	},
+					//	ColumnSpan: 2,
+					//},
 					VSpacer{
 						ColumnSpan: 2,
 						Size:       20,
 					},
 
 					PushButton{
+						//Visible:  false,
 						Enabled:  false,
 						AssignTo: &mw.btnOpenNodeUI,
 						Text:     "Open Node UI",
@@ -253,7 +259,14 @@ func (mw *Gui) stateDlg() Widget {
 						},
 						ColumnSpan: 2,
 					},
+
+					//VSpacer{
+					//	ColumnSpan: 2,
+					//	Size:       8,
+					//},
+
 					VSpacer{ColumnSpan: 2},
+					HSpacer{},
 				},
 			},
 		},

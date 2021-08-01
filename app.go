@@ -8,16 +8,16 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-	"log"
-	"os"
 )
 
 func main() {
-	//time.Now().Unix()
 	a := app.NewApp()
 
 	if len(os.Args) > 1 {
@@ -34,7 +34,6 @@ func main() {
 			return
 		}
 	}
-
 	if utils.IsAlreadyRunning() {
 		return
 	}

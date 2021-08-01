@@ -37,7 +37,8 @@ type Gui struct {
 	lbVersionCurrent      *walk.Label
 	lbVersionUpdatesAvail *walk.LinkLabel
 
-	autoStart     *walk.CheckBox
+	//autoStart     *walk.CheckBox
+	autoUpgrade   *walk.CheckBox
 	btnOpenNodeUI *walk.PushButton
 
 	// install
@@ -70,8 +71,8 @@ func CreateDialogue() {
 		Visible:   false,
 		AssignTo:  &UI.dlg,
 		Title:     "Mysterium Exit Node Launcher",
-		MinSize:   Size{420, 640},
-		Size:      Size{420, 640},
+		MinSize:   Size{380, 640},
+		Size:      Size{380, 640},
 		Icon:      UI.icon,
 		MenuItems: gui.menu(),
 		Layout:    VBox{},
@@ -107,7 +108,9 @@ func CreateDialogue() {
 	}
 	gui.SetImage()
 	UI.app.Subscribe("container-state", func() {
-		gui.SetImage()
+		UI.dlg.Synchronize(func() {
+			gui.SetImage()
+		})
 	})
 
 	// Events
@@ -163,21 +166,20 @@ func CreateDialogue() {
 				enableMenu(true)
 				changeView(frameState)
 
-				gui.autoStart.SetChecked(UI.app.GetConfig().AutoStart)
-
+				gui.autoUpgrade.SetChecked(UI.app.GetConfig().AutoUpgrade)
 				gui.lbDocker.SetText(UI.StateDocker.String())
 				gui.lbContainer.SetText(UI.StateContainer.String())
 				if !UI.app.GetConfig().Enabled {
 					gui.lbContainer.SetText("Disabled")
 				}
-
 				gui.btnOpenNodeUI.SetEnabled(UI.IsRunning())
 				//gui.lbVersionLatest.SetText(UI.VersionLatest)
 				gui.lbVersionCurrent.SetText(UI.VersionCurrent)
 				gui.lbVersionUpdatesAvail.SetText("-")
-				if !UI.VersionUpToDate {
+				if UI.VersionLatest != "" && !UI.VersionUpToDate {
 					gui.lbVersionUpdatesAvail.SetText(`<a id="upgrade">Yes !</a> - click to see details`)
 				}
+				gui.btnOpenNodeUI.SetFocus()
 
 			case ModalStateInstallNeeded:
 				enableMenu(false)
@@ -213,8 +215,13 @@ func CreateDialogue() {
 				gui.installWSLUpdate.SetChecked(UI.InstallWSLUpdate)
 				gui.installDocker.SetChecked(UI.InstallDocker)
 				gui.checkGroupMembership.SetChecked(UI.CheckGroupMembership)
+
 			}
 		})
+	})
+
+	UI.dlg.Starting().Attach(func() {
+
 	})
 
 	// prevent closing the app
@@ -307,9 +314,15 @@ func (g *Gui) Ask() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	lbVersionCurrent.SetText(UI.VersionCurrent)
-	lbVersionLatest.SetText(UI.VersionLatest)
+	refresh := func() {
+		lbVersionCurrent.SetText(UI.VersionCurrent)
+		lbVersionLatest.SetText(UI.VersionLatest)
+		acceptPB.SetEnabled(!UI.VersionUpToDate)
+	}
 
 	dialog.Show()
 	dialog.SetX(UI.dlg.X() + 300)
+	refresh()
+
+	UI.app.Subscribe("model-change", refresh)
 }
