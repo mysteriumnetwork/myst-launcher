@@ -13,10 +13,6 @@ type Config struct {
 	AutoUpgrade bool `json:"auto_upgrade"`
 	// the last time we checked for upgrade, Unix timestamp, [second]
 	LastUpgradeCheck int64 `json:"last_upgrade_check"` // once a day
-
-	//CurrentImgDigest string `json:"current_img_digest"`
-	//CurrentImgVersion string `json:"current_img_version"`
-	//LastSeenUpgradeNotification  string `json:"last_seen_upgrade"` //once per week
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {
