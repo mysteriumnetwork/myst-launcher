@@ -37,7 +37,6 @@ type Gui struct {
 	lbVersionCurrent      *walk.Label
 	lbVersionUpdatesAvail *walk.LinkLabel
 
-	//autoStart     *walk.CheckBox
 	autoUpgrade   *walk.CheckBox
 	btnOpenNodeUI *walk.PushButton
 
@@ -128,90 +127,24 @@ func CreateDialogue() {
 			})
 		}
 	})
-
-	enableMenu := func(enable bool) {
-		//actionMainMenu.SetEnabled(enable)
-		gui.actionEnable.SetEnabled(enable)
-		gui.actionDisable.SetEnabled(enable)
-		gui.actionUpgrade.SetEnabled(enable)
-	}
 	gui.currentView = frameState
+	gui.changeView(frameState)
 
-	changeView := func(state modalState) {
-		prev := gui.currentView
-		gui.currentView = state
-		if prev != state {
-			UI.dlg.Children().At(int(prev)).SetVisible(false)
+	UI.dlg.Activating().Attach(func() {
+		if UI.dlg.Visible() {
+			// refresh on window restore
+			UI.dlg.Synchronize(func() {
+				gui.refresh()
+			})
 		}
-		UI.dlg.Children().At(int(state)).SetVisible(true)
-		UI.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(true)
-		UI.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(false)
-	}
-	changeView(frameState)
-
-	UI.app.Subscribe("model-change", func() {
-		UI.dlg.Synchronize(func() {
-			switch UI.state {
-			case ModalStateInitial:
-				enableMenu(true)
-				changeView(frameState)
-
-				gui.autoUpgrade.SetChecked(UI.app.GetConfig().AutoUpgrade)
-				gui.lbDocker.SetText(UI.StateDocker.String())
-				gui.lbContainer.SetText(UI.StateContainer.String())
-				if !UI.app.GetConfig().Enabled {
-					gui.lbContainer.SetText("Disabled")
-				}
-				gui.btnOpenNodeUI.SetEnabled(UI.IsRunning())
-				//gui.lbVersionLatest.SetText(UI.VersionLatest)
-				gui.lbVersionCurrent.SetText(UI.VersionCurrent)
-				gui.lbVersionUpdatesAvail.SetText("-")
-				if UI.VersionLatest != "" && !UI.VersionUpToDate {
-					gui.lbVersionUpdatesAvail.SetText(`<a id="upgrade">Yes !</a> - click to see details`)
-				}
-				gui.btnOpenNodeUI.SetFocus()
-
-			case ModalStateInstallNeeded:
-				enableMenu(false)
-				changeView(frameInsNeed)
-				gui.btnBegin.SetEnabled(true)
-
-			case ModalStateInstallInProgress:
-				enableMenu(false)
-				changeView(frameIns)
-				gui.btnFinish.SetEnabled(false)
-
-			case ModalStateInstallFinished:
-				enableMenu(false)
-				changeView(frameIns)
-				gui.btnFinish.SetEnabled(true)
-				gui.btnFinish.SetText("Finish")
-
-			case ModalStateInstallError:
-				changeView(frameIns)
-				gui.btnFinish.SetEnabled(true)
-				gui.btnFinish.SetText("Exit installer")
-			}
-
-			switch UI.state {
-			case ModalStateInstallInProgress, ModalStateInstallFinished, ModalStateInstallError:
-				gui.checkWindowsVersion.SetChecked(UI.CheckWindowsVersion)
-				gui.checkVTx.SetChecked(UI.CheckVTx)
-				gui.enableWSL.SetChecked(UI.EnableWSL)
-				gui.enableHyperV.SetChecked(UI.EnableHyperV)
-				gui.installExecutable.SetChecked(UI.InstallExecutable)
-				gui.rebootAfterWSLEnable.SetChecked(UI.RebootAfterWSLEnable)
-				gui.downloadFiles.SetChecked(UI.DownloadFiles)
-				gui.installWSLUpdate.SetChecked(UI.InstallWSLUpdate)
-				gui.installDocker.SetChecked(UI.InstallDocker)
-				gui.checkGroupMembership.SetChecked(UI.CheckGroupMembership)
-
-			}
-		})
 	})
-
-	UI.dlg.Starting().Attach(func() {
-
+	UI.app.Subscribe("model-change", func() {
+		if !UI.dlg.Visible() {
+			return
+		}
+		UI.dlg.Synchronize(func() {
+			gui.refresh()
+		})
 	})
 
 	// prevent closing the app
@@ -222,6 +155,82 @@ func CreateDialogue() {
 		*canceled = true
 		UI.dlg.Hide()
 	})
+}
+
+func (g *Gui) enableMenu(enable bool) {
+	//actionMainMenu.SetEnabled(enable)
+	gui.actionEnable.SetEnabled(enable)
+	gui.actionDisable.SetEnabled(enable)
+	gui.actionUpgrade.SetEnabled(enable)
+}
+
+func (g *Gui) changeView(state modalState) {
+	prev := gui.currentView
+	gui.currentView = state
+	if prev != state {
+		UI.dlg.Children().At(int(prev)).SetVisible(false)
+	}
+	UI.dlg.Children().At(int(state)).SetVisible(true)
+	UI.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(true)
+	UI.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(false)
+}
+
+func (g *Gui) refresh() {
+	switch UI.state {
+	case ModalStateInitial:
+		g.enableMenu(true)
+		g.changeView(frameState)
+
+		gui.autoUpgrade.SetChecked(UI.app.GetConfig().AutoUpgrade)
+		gui.lbDocker.SetText(UI.StateDocker.String())
+		gui.lbContainer.SetText(UI.StateContainer.String())
+		if !UI.app.GetConfig().Enabled {
+			gui.lbContainer.SetText("Disabled")
+		}
+		gui.btnOpenNodeUI.SetEnabled(UI.IsRunning())
+		//gui.lbVersionLatest.SetText(UI.VersionLatest)
+		gui.lbVersionCurrent.SetText(UI.VersionCurrent)
+		gui.lbVersionUpdatesAvail.SetText("-")
+		if UI.VersionLatest != "" && !UI.VersionUpToDate {
+			gui.lbVersionUpdatesAvail.SetText(`<a id="upgrade">Yes !</a> - click to see details`)
+		}
+		gui.btnOpenNodeUI.SetFocus()
+
+	case ModalStateInstallNeeded:
+		g.enableMenu(false)
+		g.changeView(frameInsNeed)
+		gui.btnBegin.SetEnabled(true)
+
+	case ModalStateInstallInProgress:
+		g.enableMenu(false)
+		g.changeView(frameIns)
+		gui.btnFinish.SetEnabled(false)
+
+	case ModalStateInstallFinished:
+		g.enableMenu(false)
+		g.changeView(frameIns)
+		gui.btnFinish.SetEnabled(true)
+		gui.btnFinish.SetText("Finish")
+
+	case ModalStateInstallError:
+		g.changeView(frameIns)
+		gui.btnFinish.SetEnabled(true)
+		gui.btnFinish.SetText("Exit installer")
+	}
+
+	switch UI.state {
+	case ModalStateInstallInProgress, ModalStateInstallFinished, ModalStateInstallError:
+		gui.checkWindowsVersion.SetChecked(UI.CheckWindowsVersion)
+		gui.checkVTx.SetChecked(UI.CheckVTx)
+		gui.enableWSL.SetChecked(UI.EnableWSL)
+		gui.enableHyperV.SetChecked(UI.EnableHyperV)
+		gui.installExecutable.SetChecked(UI.InstallExecutable)
+		gui.rebootAfterWSLEnable.SetChecked(UI.RebootAfterWSLEnable)
+		gui.downloadFiles.SetChecked(UI.DownloadFiles)
+		gui.installWSLUpdate.SetChecked(UI.InstallWSLUpdate)
+		gui.installDocker.SetChecked(UI.InstallDocker)
+		gui.checkGroupMembership.SetChecked(UI.CheckGroupMembership)
+	}
 }
 
 func (g *Gui) SetImage() {
