@@ -321,7 +321,7 @@ func (s *AppState) tryInstall() bool {
 	CreateDesktopShortcut("")
 	CreateStartMenuShortcut("")
 
-	err = Retry(10, 10*time.Second, func() error {
+	download := func() error {
 		list := []struct{ url, name string }{
 			{"https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe", "DockerDesktopInstaller.exe"},
 			{"https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi", "wsl_update_x64.msi"},
@@ -341,9 +341,18 @@ func (s *AppState) tryInstall() bool {
 			}
 		}
 		return nil
-	})
-	if err != nil {
+	}
+
+	for {
+		if err = download(); err == nil {
+			break
+		}
 		log.Println("Download failed")
+		ret := gui.UI.YesNoModal("Download failed", "Retry download?")
+		if ret == win.IDYES {
+			continue
+		}
+
 		gui.UI.SwitchState(gui.ModalStateInstallError)
 		return true
 	}
