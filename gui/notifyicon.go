@@ -8,6 +8,7 @@
 package gui
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lxn/walk"
@@ -31,10 +32,10 @@ func CreateNotifyIcon() {
 	UI.app.Subscribe("container-state", func() {
 		if UI.StateContainer == RunnableStateRunning {
 			UI.ni.SetIcon(UI.iconActive)
-			UI.dlg.SetIcon(UI.iconActive)
+			UI.dlg.Synchronize(func() { UI.dlg.SetIcon(UI.iconActive) })
 		} else {
 			UI.ni.SetIcon(UI.icon)
-			UI.dlg.SetIcon(UI.icon)
+			UI.dlg.Synchronize(func() { UI.dlg.SetIcon(UI.icon) })
 		}
 	})
 
@@ -53,7 +54,13 @@ func CreateNotifyIcon() {
 		UI.ShowMain()
 	})
 	UI.ni.MessageClicked().Attach(func() {
-		UI.OpenNodeUI()
+		fmt.Println("MessageClicked", UI.LastNotificationID)
+		switch UI.LastNotificationID {
+		case NotificationUpgrade:
+			gui.Ask()
+		case NotificationContainerStarted:
+			UI.OpenNodeUI()
+		}
 	})
 
 	exitAction := walk.NewAction()

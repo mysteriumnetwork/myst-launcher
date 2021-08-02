@@ -3,25 +3,43 @@ package myst
 import (
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/buger/jsonparser"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/model"
 )
 
 var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
 
-func CheckUpdates(imageDigest string) {
-	url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=30"
-	resp, err := http.Get(url)
-	if err != nil {
-		return
+const checkPeriod = 12 * time.Hour
+
+func CheckVersionAndUpgrades(imageDigest string, c *model.Config) bool {
+	var data []byte
+	f := os.Getenv("TMP") + "/myst_docker_hub_cache.txt"
+	i, err := os.Stat(f)
+	if err == nil {
+		if i.ModTime().Add(checkPeriod).After(time.Now()) {
+			data, err = os.ReadFile(f)
+		}
 	}
-	if resp.StatusCode != 200 {
-		return
+	if len(data) == 0 {
+		url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=30"
+		resp, err := http.Get(url)
+		if err != nil {
+			return false
+		}
+		if resp.StatusCode != 200 {
+			return false
+		}
+		data, _ := ioutil.ReadAll(resp.Body)
+		os.WriteFile(f, data, 0777)
+
+		c.RefreshLastUpgradeCheck()
 	}
-	data, _ := ioutil.ReadAll(resp.Body)
 
 	// results
 	latestDigest := ""
@@ -62,4 +80,6 @@ func CheckUpdates(imageDigest string) {
 	gui.UI.VersionCurrent = currentVersion
 	gui.UI.VersionLatest = latestVersion
 	gui.UI.Update()
+
+	return true
 }

@@ -30,11 +30,12 @@ type UIModel struct {
 	wantExit bool
 
 	// common
-	StateDocker     RunnableState
-	StateContainer  RunnableState
-	VersionLatest   string
-	VersionCurrent  string
-	VersionUpToDate bool
+	StateDocker      RunnableState
+	StateContainer   RunnableState
+	VersionLatest    string
+	VersionCurrent   string
+	VersionUpToDate  bool
+	CurrentImgDigest string
 
 	// inst
 	CheckWindowsVersion  bool
@@ -48,8 +49,16 @@ type UIModel struct {
 	InstallDocker        bool
 	CheckGroupMembership bool
 
-	app model.AppInterface
+	app                model.AppInterface
+	LastNotificationID NotificationTypeID
 }
+
+type NotificationTypeID int
+
+const (
+	NotificationUpgrade          = NotificationTypeID(1)
+	NotificationContainerStarted = NotificationTypeID(2)
+)
 
 var UI UIModel
 
@@ -103,11 +112,10 @@ func (m *UIModel) BtnFinishOnClick() {
 	case m.waitClick <- 0:
 	default:
 	}
-
 }
 
 func (m *UIModel) BtnUpgradeOnClick() {
-	m.app.TriggerAction("upgrade")
+	m.AskDlg()
 }
 
 func (m *UIModel) BtnDisableOnClick() {
@@ -170,10 +178,20 @@ func (m *UIModel) Run() {
 	m.mw.Run()
 }
 
-func (m *UIModel) ShowNotification() {
+func (m *UIModel) ShowNotificationInstalled() {
 	err := m.ni.ShowCustom(
 		"Mysterium Node successfully installed!",
 		"Click this notification to open Node UI in browser",
+		m.icon)
+
+	if err != nil {
+	}
+}
+
+func (m *UIModel) ShowNotificationUpgrade() {
+	err := m.ni.ShowCustom(
+		"Upgrade available",
+		"Click this notification to see details.",
 		m.icon)
 
 	if err != nil {
@@ -193,4 +211,8 @@ func (m *UIModel) SetStateContainer(r RunnableState) {
 	UI.StateContainer = r
 	m.app.Publish("model-change")
 	m.app.Publish("container-state")
+}
+
+func (m *UIModel) AskDlg() {
+	gui.Ask()
 }

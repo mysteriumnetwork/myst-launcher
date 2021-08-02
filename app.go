@@ -34,7 +34,6 @@ func main() {
 			return
 		}
 	}
-
 	if utils.IsAlreadyRunning() {
 		return
 	}

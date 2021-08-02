@@ -7,6 +7,7 @@
 package gui
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lxn/walk"
@@ -30,12 +31,14 @@ type Gui struct {
 	actionDisable *walk.Action
 
 	// common
-	lbDocker         *walk.Label
-	lbContainer      *walk.Label
-	lbVersionLatest  *walk.Label
-	lbVersionCurrent *walk.Label
+	lbDocker              *walk.Label
+	lbContainer           *walk.Label
+	lbVersionLatest       *walk.Label
+	lbVersionCurrent      *walk.Label
+	lbVersionUpdatesAvail *walk.LinkLabel
 
-	autoStart     *walk.CheckBox
+	//autoStart     *walk.CheckBox
+	autoUpgrade   *walk.CheckBox
 	btnOpenNodeUI *walk.PushButton
 
 	// install
@@ -68,8 +71,8 @@ func CreateDialogue() {
 		Visible:   false,
 		AssignTo:  &UI.dlg,
 		Title:     "Mysterium Exit Node Launcher",
-		MinSize:   Size{420, 640},
-		Size:      Size{420, 640},
+		MinSize:   Size{380, 640},
+		Size:      Size{380, 640},
 		Icon:      UI.icon,
 		MenuItems: gui.menu(),
 		Layout:    VBox{},
@@ -105,7 +108,9 @@ func CreateDialogue() {
 	}
 	gui.SetImage()
 	UI.app.Subscribe("container-state", func() {
-		gui.SetImage()
+		UI.dlg.Synchronize(func() {
+			gui.SetImage()
+		})
 	})
 
 	// Events
@@ -121,16 +126,6 @@ func CreateDialogue() {
 			UI.dlg.Synchronize(func() {
 				gui.lbInstallationStatus.AppendText(string(p) + "\r\n")
 			})
-		}
-	})
-	UI.app.Subscribe("show-dlg", func(d string, err error) {
-		switch d {
-		case "is-up-to-date":
-			walk.MsgBox(UI.dlg, "Update", "Node is up to date.", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconInformation)
-
-		case "error":
-			txt := err.Error() + "\r\n" + "Application will exit now"
-			walk.MsgBox(UI.dlg, "Application error", txt, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
 		}
 	})
 
@@ -161,17 +156,20 @@ func CreateDialogue() {
 				enableMenu(true)
 				changeView(frameState)
 
-				gui.autoStart.SetChecked(UI.app.GetConfig().AutoStart)
-
+				gui.autoUpgrade.SetChecked(UI.app.GetConfig().AutoUpgrade)
 				gui.lbDocker.SetText(UI.StateDocker.String())
 				gui.lbContainer.SetText(UI.StateContainer.String())
 				if !UI.app.GetConfig().Enabled {
 					gui.lbContainer.SetText("Disabled")
 				}
-
 				gui.btnOpenNodeUI.SetEnabled(UI.IsRunning())
-				gui.lbVersionLatest.SetText(UI.VersionLatest)
+				//gui.lbVersionLatest.SetText(UI.VersionLatest)
 				gui.lbVersionCurrent.SetText(UI.VersionCurrent)
+				gui.lbVersionUpdatesAvail.SetText("-")
+				if UI.VersionLatest != "" && !UI.VersionUpToDate {
+					gui.lbVersionUpdatesAvail.SetText(`<a id="upgrade">Yes !</a> - click to see details`)
+				}
+				gui.btnOpenNodeUI.SetFocus()
 
 			case ModalStateInstallNeeded:
 				enableMenu(false)
@@ -207,8 +205,13 @@ func CreateDialogue() {
 				gui.installWSLUpdate.SetChecked(UI.InstallWSLUpdate)
 				gui.installDocker.SetChecked(UI.InstallDocker)
 				gui.checkGroupMembership.SetChecked(UI.CheckGroupMembership)
+
 			}
 		})
+	})
+
+	UI.dlg.Starting().Attach(func() {
+
 	})
 
 	// prevent closing the app
@@ -231,4 +234,85 @@ func (g *Gui) SetImage() {
 		return
 	}
 	gui.iv.SetImage(img)
+}
+
+func (g *Gui) Ask() {
+	var (
+		dialog             *walk.Dialog
+		acceptPB, cancelPB *walk.PushButton
+		lbVersionCurrent   *walk.Label
+		lbVersionLatest    *walk.Label
+	)
+
+	err := Dialog{
+		AssignTo:      &dialog,
+		Title:         "Would you like to upgrade?",
+		DefaultButton: &acceptPB,
+		CancelButton:  &cancelPB,
+		MinSize:       Size{400, 175},
+		Icon:          UI.icon,
+
+		Layout: Grid{
+			Columns: 2,
+		},
+		Children: []Widget{
+			VSpacer{ColumnSpan: 2},
+			Label{
+				Text: "Docker Hub image name",
+			},
+			Label{
+				Text: UI.app.GetImageName(),
+			},
+			Label{
+				Text: "Node version installed",
+			},
+			Label{
+				Text:     "-",
+				AssignTo: &lbVersionCurrent,
+			},
+			Label{
+				Text: "Node version latest",
+			},
+			Label{
+				Text:     "-",
+				AssignTo: &lbVersionLatest,
+			},
+			VSpacer{ColumnSpan: 2},
+			Composite{
+				ColumnSpan: 2,
+				Layout:     HBox{},
+				Children: []Widget{
+					PushButton{
+						AssignTo: &acceptPB,
+						Text:     "Yes",
+						OnClicked: func() {
+							dialog.Accept()
+							UI.app.TriggerAction("upgrade")
+						},
+					},
+					PushButton{
+						AssignTo: &cancelPB,
+						Text:     "No",
+						OnClicked: func() {
+							dialog.Cancel()
+						},
+					},
+				},
+			},
+		},
+	}.Create(UI.dlg)
+	if err != nil {
+		fmt.Println(err)
+	}
+	refresh := func() {
+		lbVersionCurrent.SetText(UI.VersionCurrent)
+		lbVersionLatest.SetText(UI.VersionLatest)
+		acceptPB.SetEnabled(!UI.VersionUpToDate)
+	}
+
+	dialog.Show()
+	dialog.SetX(UI.dlg.X() + 300)
+	refresh()
+
+	UI.app.Subscribe("model-change", refresh)
 }
