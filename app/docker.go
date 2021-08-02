@@ -31,6 +31,17 @@ func (s *AppState) SuperviseDockerNode() {
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
 	defer s.WaitGroup.Done()
 
+	if LauncherUpgradeAvailable() {
+		ret := gui.UI.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\n\r\nUpgrade launcher installation ?")
+		if ret == win.IDYES {
+			exePath, _ := os.Executable()
+			err := native.ShellExecuteAndWait(0, "runas", exePath, FlagInstall, "", syscall.SW_NORMAL)
+			if err != nil {
+				log.Println("Failed to install exe", err)
+			}
+		}
+	}
+
 	mystManager, err := myst.NewManagerWithDefaults()
 	if err != nil {
 		panic(err) // TODO handle gracefully

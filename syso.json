@@ -17,22 +17,22 @@
     {
       "ID": 1,
       "Fixed": {
-        "FileVersion": "0.0.1.24",
-        "ProductVersion": "0.0.1.24"
+        "FileVersion": "0.0.1.25",
+        "ProductVersion": "0.0.1.25"
       },
       "StringTables": [
         {
           "Language": "0409",
           "Charset": "04b0",
           "Strings": {
-            "CompanyName": "Mysterium Network",
+            "FileVersion": "0.0.1-preview25",
+            "ProductVersion": "0.0.1-preview25",
             "FileDescription": "Mysterium Network Node Launcher",
-            "FileVersion": "0.0.1-preview24",
-            "InternalName": "",
-            "LegalCopyright": "Copyright \u00a9 2021 Mysterium Network",
-            "OriginalFilename": "",
             "ProductName": "Mysterium Network Node Launcher",
-            "ProductVersion": "0.0.1-preview24"
+            "CompanyName": "Mysterium Network",
+            "LegalCopyright": "Copyright \u00a9 2021 Mysterium Network",
+            "InternalName": "",
+            "OriginalFilename": ""
           }
         }
       ],

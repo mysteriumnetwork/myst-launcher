@@ -132,6 +132,25 @@ func checkExe() bool {
 	return true
 }
 
+func LauncherUpgradeAvailable() bool {
+	verToStr := func(f fileversion.FileVersion) string {
+		return fmt.Sprintf("%.3d.%.3d.%.3d.%.3d", f.Major, f.Minor, f.Patch, f.Build)
+	}
+
+	fullExe_, _ := os.Executable()
+	ver, err := fileversion.New(fullExe_)
+	if err != nil {
+		return false
+	}
+
+	verDst, err := fileversion.New(MystNodeLauncherExePath())
+	if err != nil {
+		return false
+	}
+
+	return strings.Compare(verToStr(ver.FixedInfo().FileVersion), verToStr(verDst.FixedInfo().FileVersion)) > 0
+}
+
 func InstallExe() error {
 	fullExe_, _ := os.Executable()
 	ver, err := fileversion.New(fullExe_)
@@ -179,8 +198,7 @@ func UninstallExe() error {
 }
 
 func MystNodeLauncherExePath() string {
-	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	return dst + "\\" + launcherExe
+	return os.Getenv("ProgramFiles") + "\\MystNodeLauncher" + "\\" + launcherExe
 }
 
 func CreateAutostartShortcut(args string) {
