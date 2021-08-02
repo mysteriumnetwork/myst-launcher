@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -26,12 +25,8 @@ func (c *Config) RefreshLastUpgradeCheck() {
 
 const upgradeCheckPeriod = 24 * time.Hour
 
-//const upgradeCheckPeriod = 2 * time.Minute
-
 // Check if 24 hours passed since last upgrade check
 func (c *Config) NeedToCheckUpgrade() bool {
-	fmt.Println("NeedToCheckUpgrade", c.LastUpgradeCheck)
-
 	t := time.Unix(c.LastUpgradeCheck, 0)
 	return t.Add(upgradeCheckPeriod).Before(time.Now())
 }

@@ -1,7 +1,6 @@
 package myst
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -9,22 +8,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/model"
-
 	"github.com/buger/jsonparser"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/model"
 )
 
 var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
 
-func CheckVersionAndUpgrades(imageDigest string, c *model.Config) bool { //, c *model.Config
-	fmt.Println(" CheckVersionAndUpgrades >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+const checkPeriod = 12 * time.Hour
+
+func CheckVersionAndUpgrades(imageDigest string, c *model.Config) bool {
 	var data []byte
 	f := os.Getenv("TMP") + "/myst_docker_hub_cache.txt"
 	i, err := os.Stat(f)
 	if err == nil {
-		fmt.Println("CheckVersionAndUpgrades >", i.ModTime())
-		if i.ModTime().Add(1 * time.Hour).After(time.Now()) {
+		if i.ModTime().Add(checkPeriod).After(time.Now()) {
 			data, err = os.ReadFile(f)
 		}
 	}
@@ -83,6 +81,5 @@ func CheckVersionAndUpgrades(imageDigest string, c *model.Config) bool { //, c *
 	gui.UI.VersionLatest = latestVersion
 	gui.UI.Update()
 
-	//fmt.Println("v>", latestVersion, currentVersion)
 	return true
 }
