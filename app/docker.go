@@ -134,7 +134,7 @@ func (s *AppState) SuperviseDockerNode() {
 					s.SaveConfig()
 				}
 			}
-			if s.Config.AutoUpgrade && !gui.UI.VersionUpToDate {
+			if s.Config.AutoUpgrade && gui.UI.HasUpdate {
 				s.upgrade(mystManager)
 			}
 
