@@ -76,7 +76,10 @@ func CheckVersionAndUpgrades(imageDigest string, c *model.Config) bool {
 		}, "images")
 	}, "results")
 
-	gui.UI.VersionUpToDate = latestDigest == imageDigest
+	gui.UI.HasUpdate = false
+	if (latestDigest != "" && imageDigest != "") && latestDigest != imageDigest {
+		gui.UI.HasUpdate = true
+	}
 	gui.UI.VersionCurrent = currentVersion
 	gui.UI.VersionLatest = latestVersion
 	gui.UI.Update()

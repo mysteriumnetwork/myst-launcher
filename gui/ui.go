@@ -34,7 +34,7 @@ type UIModel struct {
 	StateContainer   RunnableState
 	VersionLatest    string
 	VersionCurrent   string
-	VersionUpToDate  bool
+	HasUpdate        bool
 	CurrentImgDigest string
 
 	// inst

@@ -191,7 +191,7 @@ func (g *Gui) refresh() {
 		//gui.lbVersionLatest.SetText(UI.VersionLatest)
 		gui.lbVersionCurrent.SetText(UI.VersionCurrent)
 		gui.lbVersionUpdatesAvail.SetText("-")
-		if UI.VersionLatest != "" && !UI.VersionUpToDate {
+		if UI.HasUpdate {
 			gui.lbVersionUpdatesAvail.SetText(`<a id="upgrade">Yes !</a> - click to see details`)
 		}
 		gui.btnOpenNodeUI.SetFocus()
@@ -316,7 +316,7 @@ func (g *Gui) Ask() {
 	refresh := func() {
 		lbVersionCurrent.SetText(UI.VersionCurrent)
 		lbVersionLatest.SetText(UI.VersionLatest)
-		acceptPB.SetEnabled(!UI.VersionUpToDate)
+		acceptPB.SetEnabled(UI.HasUpdate)
 	}
 
 	dialog.Show()
