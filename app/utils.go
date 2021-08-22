@@ -359,8 +359,9 @@ func hasVTx() bool {
 }
 
 const (
-	FeatureWSL    = "Microsoft-Windows-Subsystem-Linux"
-	FeatureHyperV = "Microsoft-Hyper-V"
+	FeatureWSL        = "Microsoft-Windows-Subsystem-Linux"
+	FeatureHyperV     = "Microsoft-Hyper-V"
+	FeatureVMPlatform = "VirtualMachinePlatform"
 )
 
 // Returns: featureExists, featureEnabled, error

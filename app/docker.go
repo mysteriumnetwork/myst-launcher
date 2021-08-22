@@ -256,18 +256,36 @@ func (s *AppState) tryInstall() bool {
 	if !s.InstallStage2 {
 		_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
 		if err != nil {
-			log.Println("Failed to get model: Microsoft-Windows-Subsystem-Linux")
+			log.Println("Failed to get model:", FeatureWSL)
 			gui.UI.SwitchState(gui.ModalStateInstallError)
 			return true
 		}
 		hyperVExists, hyperVEnabled, err := QueryWindowsFeature(FeatureHyperV)
 		if err != nil {
-			log.Println("Failed to get model: Microsoft-Hyper-V")
+			log.Println("Failed to get model:", FeatureHyperV)
 			gui.UI.SwitchState(gui.ModalStateInstallError)
 			return true
 		}
 		needEnableHyperV := hyperVExists && !hyperVEnabled
+		_, vmPlatformEnabled, err := QueryWindowsFeature(FeatureVMPlatform)
+		if err != nil {
+			log.Println("Failed to get model:", FeatureVMPlatform)
+			gui.UI.SwitchState(gui.ModalStateInstallError)
+			return true
+		}
 
+		if !vmPlatformEnabled {
+			log.Println("Enable VM Platform..")
+			exe := "dism.exe"
+			cmdArgs := "/online /enable-feature /featurename:VirtualMachinePlatform /all /norestart"
+			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+			if err != nil {
+				log.Println("Command failed: failed to enable VirtualMachinePlatform")
+
+				gui.UI.SwitchState(gui.ModalStateInstallError)
+				return true
+			}
+		}
 		if !wslEnabled {
 			log.Println("Enable WSL..")
 			exe := "dism.exe"
