@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mysteriumnetwork/myst-launcher/model"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -86,13 +88,13 @@ func (m *Manager) CanPingDocker() bool {
 }
 
 // Returns: alreadyRunning, error
-func (m *Manager) Start() (bool, error) {
+func (m *Manager) Start(c *model.Config) (bool, error) {
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
 		if err := m.pullMystLatest(); err != nil {
 			return false, err
 		}
-		if err := m.createMystContainer(); err != nil {
+		if err := m.createMystContainer(c); err != nil {
 			return false, err
 		}
 		mystContainer, err = m.findMystContainer()
@@ -120,9 +122,7 @@ func (m *Manager) Stop() error {
 	return nil
 }
 
-func (m *Manager) Update() error {
-	fmt.Println("Manager > Update >")
-
+func (m *Manager) Update(c *model.Config) error {
 	mystContainer, err := m.findMystContainer()
 	if err != nil && err != ErrContainerNotFound {
 		return err
@@ -139,7 +139,7 @@ func (m *Manager) Update() error {
 		return err
 	}
 
-	err = m.createMystContainer()
+	err = m.createMystContainer(c)
 	if err != nil {
 		return err
 	}
@@ -194,26 +194,30 @@ func (m *Manager) pullMystLatest() error {
 	return nil
 }
 
-// cfg *model.Config
-func (m *Manager) createMystContainer() error {
-	exposedPorts, portBindings, err := nat.ParsePortSpecs([]string{
-		"0.0.0.0:42100-42102:42100-42102/udp",
+func (m *Manager) createMystContainer(c *model.Config) error {
+	portSpecs := []string{
 		"4449/tcp",
-	})
+	}
+	cmdArgs := []string{
+		"service", "--agreed-terms-and-conditions",
+	}
+
+	if c.EnablePortForwarding {
+		p := fmt.Sprintf("%d-%d:%d-%d/udp", c.PortRangeFrom, c.PortRangeFrom+c.PortRangeSize-1, c.PortRangeFrom, c.PortRangeFrom+c.PortRangeSize-1)
+		portSpecs = append(portSpecs, p)
+
+		portsArg := fmt.Sprintf("--udp.ports=%d:%d", c.PortRangeFrom, c.PortRangeFrom+c.PortRangeSize-1)
+		cmdArgs = append([]string{portsArg}, cmdArgs...)
+	}
+
+	exposedPorts, _, err := nat.ParsePortSpecs(portSpecs)
 	if err != nil {
 		return err
 	}
-	fmt.Println(exposedPorts, portBindings)
-
 	config := &container.Config{
 		Image:        GetImageName(),
 		ExposedPorts: nat.PortSet(exposedPorts),
-
-		Cmd: strslice.StrSlice{
-			"--udp.ports=42100:42200",
-			"service",
-			"--agreed-terms-and-conditions",
-		},
+		Cmd:          strslice.StrSlice(cmdArgs),
 	}
 
 	hostConfig := &container.HostConfig{

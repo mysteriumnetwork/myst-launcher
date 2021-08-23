@@ -8,7 +8,6 @@
 package gui
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/lxn/walk"
@@ -54,7 +53,6 @@ func CreateNotifyIcon() {
 		UI.ShowMain()
 	})
 	UI.ni.MessageClicked().Attach(func() {
-		fmt.Println("MessageClicked", UI.LastNotificationID)
 		switch UI.LastNotificationID {
 		case NotificationUpgrade:
 			gui.UpgradeDlg(UI.dlg)

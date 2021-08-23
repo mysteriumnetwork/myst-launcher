@@ -38,9 +38,6 @@ func main() {
 		return
 	}
 
-	f := os.Getenv("TMP") + "/myst_docker_hub_cache.txt"
-	os.Remove(f)
-
 	log.SetOutput(a)
 	a.ReadConfig()
 	a.ImageName = myst.GetImageName()

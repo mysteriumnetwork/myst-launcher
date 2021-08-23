@@ -143,7 +143,7 @@ func (s *AppState) SuperviseDockerNode() {
 
 			if s.Config.Enabled {
 				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
-				containerAlreadyRunning, err := mystManager.Start()
+				containerAlreadyRunning, err := mystManager.Start(s.GetConfig())
 				if err != nil {
 					return
 				}
@@ -176,7 +176,7 @@ func (s *AppState) SuperviseDockerNode() {
 				s.Config.Enabled = true
 				s.SaveConfig()
 				gui.UI.SetStateContainer(gui.RunnableStateRunning)
-				mystManager.Start()
+				mystManager.Start(s.GetConfig())
 
 			case "disable":
 				s.Config.Enabled = false
@@ -456,7 +456,7 @@ func (s *AppState) upgrade(mystManager *myst.Manager) {
 	gui.UI.SetStateContainer(gui.RunnableStateUnknown)
 	mystManager.Stop()
 	gui.UI.SetStateContainer(gui.RunnableStateInstalling)
-	mystManager.Update()
+	mystManager.Update(s.GetConfig())
 
 	gui.UI.CurrentImgDigest = mystManager.GetCurrentImageDigest()
 	ok := myst.CheckVersionAndUpgrades(gui.UI.CurrentImgDigest, &s.Config)

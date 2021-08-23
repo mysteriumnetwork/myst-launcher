@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/lxn/walk"
@@ -13,11 +12,10 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 		dialog             *walk.Dialog
 		acceptPB, cancelPB *walk.PushButton
 
-		manualPortForwarding  *walk.CheckBox
-		lbRedirectionPortSize *walk.TextEdit
-		lbRedirectionPortFrom *walk.TextEdit
+		manualPortForwarding    *walk.CheckBox
+		editRedirectionPortSize *walk.TextEdit
+		editRedirectionPortFrom *walk.TextEdit
 
-		//lbVersionLatest       *walk.Label
 		canSave bool
 	)
 	loaded := false
@@ -27,32 +25,39 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 			return
 		}
 		canSave = false
-		fmt.Println("refresh >>", manualPortForwarding.Checked(), UI.app.GetConfig().EnablePortForwarding)
 
-		lbRedirectionPortFrom.SetEnabled(manualPortForwarding.Checked())
-		lbRedirectionPortSize.SetEnabled(manualPortForwarding.Checked())
+		editRedirectionPortFrom.SetEnabled(manualPortForwarding.Checked())
+		editRedirectionPortSize.SetEnabled(manualPortForwarding.Checked())
 
 		if manualPortForwarding.Checked() != UI.app.GetConfig().EnablePortForwarding {
 			canSave = true
 		}
-
-		fmt.Println("refresh 2>>", lbRedirectionPortSize.Text(), strconv.Itoa(UI.app.GetConfig().PortRangeSize))
-		if lbRedirectionPortSize.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeSize) {
+		if editRedirectionPortSize.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeSize) {
 			canSave = true
 		}
-
-		fmt.Println("refresh 3>>", lbRedirectionPortFrom.Text(), strconv.Itoa(UI.app.GetConfig().PortRangeFrom))
-		if lbRedirectionPortFrom.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeFrom) {
+		if editRedirectionPortFrom.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeFrom) {
 			canSave = true
 		}
-
-		fmt.Println("refresh >>>", canSave)
 		acceptPB.SetEnabled(canSave)
 	}
 
+	validatePortRange := func(portRangeFrom, len int) bool {
+		if portRangeFrom < 1000 || len <= 1 {
+			return false
+		}
+		if portRangeFrom > 65535 {
+			return false
+		}
+		if portRangeFrom+len > 65535 {
+			return false
+		}
+		return true
+	}
+
 	d := Dialog{
+		Functions:     map[string]func(args ...interface{}) (interface{}, error){},
 		AssignTo:      &dialog,
-		Title:         "Networking settings",
+		Title:         "Networking settings (advanced settings)",
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		MinSize:       Size{400, 175},
@@ -76,10 +81,15 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 
 			VSpacer{ColumnSpan: 2, Size: 10},
 			Label{
-				Text: "Redirection port range [from]",
+				Text:       "Redirection port range",
+				ColumnSpan: 2,
+				MinSize:    Size{Height: 20},
+			},
+			Label{
+				Text: "Range begin",
 			},
 			TextEdit{
-				AssignTo:  &lbRedirectionPortFrom,
+				AssignTo:  &editRedirectionPortFrom,
 				MaxLength: 5,
 				MaxSize:   Size{Width: 50},
 				OnTextChanged: func() {
@@ -87,10 +97,10 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 				},
 			},
 			Label{
-				Text: "Redirection port range [size]",
+				Text: "Number of ports",
 			},
 			TextEdit{
-				AssignTo:  &lbRedirectionPortSize,
+				AssignTo:  &editRedirectionPortSize,
 				MaxLength: 5,
 				OnTextChanged: func() {
 					refreshState()
@@ -106,19 +116,22 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 						AssignTo: &acceptPB,
 						Text:     "OK",
 						OnClicked: func() {
-							fmt.Println(">>", manualPortForwarding.Checked())
+							portRangeFrom, err := strconv.Atoi(editRedirectionPortFrom.Text())
+							if err != nil {
+								return
+							}
+							portRangeLen, err := strconv.Atoi(editRedirectionPortSize.Text())
+							if err != nil {
+								return
+							}
 
+							if !validatePortRange(portRangeFrom, portRangeLen) {
+								walk.MsgBox(dialog, "Port range", "Wrong port range.\nPorts should be in range of 1000..65535", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+								return
+							}
 							UI.app.GetConfig().EnablePortForwarding = manualPortForwarding.Checked()
-							s, err := strconv.Atoi(lbRedirectionPortSize.Text())
-							if err != nil {
-								return
-							}
-							UI.app.GetConfig().PortRangeSize = s
-							s, err = strconv.Atoi(lbRedirectionPortFrom.Text())
-							if err != nil {
-								return
-							}
-							UI.app.GetConfig().PortRangeFrom = s
+							UI.app.GetConfig().PortRangeFrom = portRangeFrom
+							UI.app.GetConfig().PortRangeSize = portRangeLen
 
 							dialog.Accept()
 							UI.app.TriggerAction("upgrade")
@@ -143,11 +156,10 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 	dialog.SetX(UI.dlg.X() + 150)
 
 	manualPortForwarding.SetChecked(UI.app.GetConfig().EnablePortForwarding)
-	lbRedirectionPortSize.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeSize))
-	lbRedirectionPortFrom.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeFrom))
+	editRedirectionPortSize.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeSize))
+	editRedirectionPortFrom.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeFrom))
 	acceptPB.SetEnabled(canSave)
 	loaded = true
 
-	//refreshState()
-	//UI.app.Subscribe("model-change", refreshState)
+	refreshState()
 }

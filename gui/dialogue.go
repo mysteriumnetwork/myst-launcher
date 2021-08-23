@@ -186,7 +186,7 @@ func (g *Gui) refresh() {
 
 		gui.autoUpgrade.SetChecked(UI.app.GetConfig().AutoUpgrade)
 		if !UI.app.GetConfig().EnablePortForwarding {
-			gui.lbNetworkMode.SetText(`<a id="net">Symmetric NAT</a>`)
+			gui.lbNetworkMode.SetText(`<a id="net">Port restricted cone NAT</a>`)
 		} else {
 			gui.lbNetworkMode.SetText(`<a id="net">Manual port forwarding</a>`)
 		}

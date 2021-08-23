@@ -1,8 +1,6 @@
 package gui
 
 import (
-	"fmt"
-
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
@@ -15,7 +13,13 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 		lbVersionLatest    *walk.Label
 	)
 
-	_, err := Dialog{
+	refresh := func() {
+		lbVersionCurrent.SetText(UI.VersionCurrent)
+		lbVersionLatest.SetText(UI.VersionLatest)
+		acceptPB.SetEnabled(UI.HasUpdate)
+	}
+
+	err := Dialog{
 		AssignTo:      &dialog,
 		Title:         "Would you like to upgrade?",
 		DefaultButton: &acceptPB,
@@ -71,18 +75,18 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 				},
 			},
 		},
-	}.Run(UI.dlg)
+	}.Create(UI.dlg)
 	if err != nil {
-		fmt.Println(err)
+		return
 	}
-	refresh := func() {
-		lbVersionCurrent.SetText(UI.VersionCurrent)
-		lbVersionLatest.SetText(UI.VersionLatest)
-		acceptPB.SetEnabled(UI.HasUpdate)
-	}
+	dialog.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
+		UI.app.Unsubscribe("model-change", refresh)
+	})
+	dialog.Disposing()
 
-	//dialog.Show()
-	//dialog.SetX(UI.dlg.X() + 300)
+	dialog.Show()
+	dialog.SetX(UI.dlg.X() + 300)
 	refresh()
+
 	UI.app.Subscribe("model-change", refresh)
 }

@@ -86,6 +86,10 @@ func (s *AppState) Subscribe(topic string, fn interface{}) error {
 	return s.Bus.Subscribe(topic, fn)
 }
 
+func (s *AppState) Unsubscribe(topic string, fn interface{}) error {
+	return s.Bus.Unsubscribe(topic, fn)
+}
+
 func (s *AppState) TriggerAction(action string) {
 	s.Action <- action
 }
