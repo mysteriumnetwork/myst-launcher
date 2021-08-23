@@ -121,6 +121,8 @@ func (m *Manager) Stop() error {
 }
 
 func (m *Manager) Update() error {
+	fmt.Println("Manager > Update >")
+
 	mystContainer, err := m.findMystContainer()
 	if err != nil && err != ErrContainerNotFound {
 		return err

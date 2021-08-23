@@ -84,6 +84,5 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 	//dialog.Show()
 	//dialog.SetX(UI.dlg.X() + 300)
 	refresh()
-
 	UI.app.Subscribe("model-change", refresh)
 }
