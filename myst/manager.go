@@ -122,12 +122,16 @@ func (m *Manager) Stop() error {
 
 func (m *Manager) Update() error {
 	mystContainer, err := m.findMystContainer()
-	if err == nil {
+	if err != nil && err != ErrContainerNotFound {
+		return err
+	}
+	if !errors.Is(err, ErrContainerNotFound) {
 		err = m.dockerAPI.ContainerRemove(m.ctx(), mystContainer.ID, types.ContainerRemoveOptions{})
 		if err != nil {
 			return wrap(err, ErrCouldNotRemoveImage)
 		}
 	}
+
 	err = m.pullMystLatest()
 	if err != nil {
 		return err
@@ -188,17 +192,28 @@ func (m *Manager) pullMystLatest() error {
 	return nil
 }
 
+// cfg *model.Config
 func (m *Manager) createMystContainer() error {
+	exposedPorts, portBindings, err := nat.ParsePortSpecs([]string{
+		"0.0.0.0:42100-42102:42100-42102/udp",
+		"4449/tcp",
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Println(exposedPorts, portBindings)
+
 	config := &container.Config{
-		Image: GetImageName(),
-		ExposedPorts: nat.PortSet{
-			"4449/tcp": struct{}{},
-		},
+		Image:        GetImageName(),
+		ExposedPorts: nat.PortSet(exposedPorts),
+
 		Cmd: strslice.StrSlice{
+			"--udp.ports=42100:42200",
 			"service",
 			"--agreed-terms-and-conditions",
 		},
 	}
+
 	hostConfig := &container.HostConfig{
 		CapAdd: strslice.StrSlice{
 			"NET_ADMIN",
@@ -220,7 +235,7 @@ func (m *Manager) createMystContainer() error {
 		},
 	}
 
-	_, err := m.dockerAPI.ContainerCreate(m.ctx(),
+	_, err = m.dockerAPI.ContainerCreate(m.ctx(),
 		config,
 		hostConfig,
 		nil,

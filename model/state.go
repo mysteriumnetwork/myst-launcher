@@ -13,6 +13,11 @@ type Config struct {
 	AutoUpgrade bool `json:"auto_upgrade"`
 	// the last time we checked for upgrade, Unix timestamp, [second]
 	LastUpgradeCheck int64 `json:"last_upgrade_check"` // once a day
+
+	// Networking mode
+	EnablePortForwarding bool `json:"enable_port_forwarding"`
+	PortRangeFrom        int  `json:"port_range_from"`
+	PortRangeSize        int  `json:"port_range_size"`
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {

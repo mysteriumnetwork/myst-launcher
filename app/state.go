@@ -49,6 +49,10 @@ func (s *AppState) ReadConfig() {
 
 	// default value
 	s.Config.Enabled = true
+	s.Config.EnablePortForwarding = false
+	s.Config.PortRangeFrom = 42000
+	s.Config.PortRangeSize = 100
+
 	json.NewDecoder(file).Decode(&s.Config)
 }
 

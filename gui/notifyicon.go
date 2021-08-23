@@ -57,7 +57,7 @@ func CreateNotifyIcon() {
 		fmt.Println("MessageClicked", UI.LastNotificationID)
 		switch UI.LastNotificationID {
 		case NotificationUpgrade:
-			gui.Ask()
+			gui.UpgradeDlg(UI.dlg)
 		case NotificationContainerStarted:
 			UI.OpenNodeUI()
 		}

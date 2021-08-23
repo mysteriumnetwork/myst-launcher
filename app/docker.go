@@ -50,7 +50,7 @@ func (s *AppState) SuperviseDockerNode() {
 	t1 := time.Tick(15 * time.Second)
 	tryStartCount := 0
 	didDockerInstall := false
-
+	canPingDocker := false
 	s.ReadConfig()
 	gui.UI.Update()
 
@@ -100,7 +100,7 @@ func (s *AppState) SuperviseDockerNode() {
 				return s.tryInstall()
 			}
 
-			canPingDocker := mystManager.CanPingDocker()
+			canPingDocker = mystManager.CanPingDocker()
 			if !canPingDocker {
 				tryStartCount++
 
@@ -118,7 +118,10 @@ func (s *AppState) SuperviseDockerNode() {
 			gui.UI.SetWantExit()
 			return
 		}
-		gui.UI.SetStateDocker(gui.RunnableStateRunning)
+
+		if canPingDocker {
+			gui.UI.SetStateDocker(gui.RunnableStateRunning)
+		}
 
 		// docker is running now
 		// check for image updates before starting container, offer upgrade interactively

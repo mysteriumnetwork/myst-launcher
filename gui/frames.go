@@ -5,6 +5,18 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
+type Species struct {
+	Id   int
+	Name string
+}
+
+func KnownSpecies() []*Species {
+	return []*Species{
+		{1, "Symmetric NAT"},
+		{2, "Manual port forwarding"},
+	}
+}
+
 func (mw *Gui) installationWelcome() Widget {
 	return Composite{
 		Visible: false,
@@ -235,6 +247,29 @@ func (mw *Gui) stateDlg() Widget {
 						Text:     "-",
 						AssignTo: &mw.lbContainer,
 					},
+					VSpacer{
+						ColumnSpan: 2,
+						Size:       20,
+					},
+
+					Label{
+						Text: "Networking mode",
+					},
+					LinkLabel{
+						Text:     "-",
+						AssignTo: &mw.lbNetworkMode,
+						OnLinkActivated: func(link *walk.LinkLabelLink) {
+							gui.NetworkingDlg(UI.dlg)
+						},
+					},
+					//ComboBox{
+					//	//Value:         Bind("SpeciesId", SelRequired{}),
+					//	BindingMember: "Id",
+					//	DisplayMember: "Name",
+					//	//AssignTo: &mw.cbNetworkMode,
+					//	Model: KnownSpecies(),
+					//},
+
 					VSpacer{
 						ColumnSpan: 2,
 						Size:       20,

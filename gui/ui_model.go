@@ -214,5 +214,5 @@ func (m *UIModel) SetStateContainer(r RunnableState) {
 }
 
 func (m *UIModel) AskDlg() {
-	gui.Ask()
+	gui.UpgradeDlg(UI.dlg)
 }
