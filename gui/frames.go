@@ -262,14 +262,6 @@ func (mw *Gui) stateDlg() Widget {
 							gui.NetworkingDlg(UI.dlg)
 						},
 					},
-					//ComboBox{
-					//	//Value:         Bind("SpeciesId", SelRequired{}),
-					//	BindingMember: "Id",
-					//	DisplayMember: "Name",
-					//	//AssignTo: &mw.cbNetworkMode,
-					//	Model: KnownSpecies(),
-					//},
-
 					VSpacer{
 						ColumnSpan: 2,
 						Size:       20,

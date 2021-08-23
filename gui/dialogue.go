@@ -39,9 +39,7 @@ type Gui struct {
 	autoUpgrade          *walk.CheckBox
 	manualPortForwarding *walk.CheckBox
 	lbNetworkMode        *walk.LinkLabel
-	//cbNetworkMode        *walk.ComboBox
-
-	btnOpenNodeUI *walk.PushButton
+	btnOpenNodeUI        *walk.PushButton
 
 	// install
 	lbInstallationStatus *walk.TextEdit
