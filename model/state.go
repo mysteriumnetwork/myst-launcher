@@ -16,8 +16,8 @@ type Config struct {
 
 	// Networking mode
 	EnablePortForwarding bool `json:"enable_port_forwarding"`
-	PortRangeFrom        int  `json:"port_range_from"`
-	PortRangeSize        int  `json:"port_range_size"`
+	PortRangeBegin       int  `json:"port_range_begin"`
+	PortRangeEnd         int  `json:"port_range_end"`
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {

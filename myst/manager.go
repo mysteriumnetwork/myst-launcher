@@ -203,10 +203,10 @@ func (m *Manager) createMystContainer(c *model.Config) error {
 	}
 
 	if c.EnablePortForwarding {
-		p := fmt.Sprintf("%d-%d:%d-%d/udp", c.PortRangeFrom, c.PortRangeFrom+c.PortRangeSize-1, c.PortRangeFrom, c.PortRangeFrom+c.PortRangeSize-1)
+		p := fmt.Sprintf("%d-%d:%d-%d/udp", c.PortRangeBegin, c.PortRangeEnd, c.PortRangeBegin, c.PortRangeEnd)
 		portSpecs = append(portSpecs, p)
 
-		portsArg := fmt.Sprintf("--udp.ports=%d:%d", c.PortRangeFrom, c.PortRangeFrom+c.PortRangeSize-1)
+		portsArg := fmt.Sprintf("--udp.ports=%d:%d", c.PortRangeBegin, c.PortRangeEnd)
 		cmdArgs = append([]string{portsArg}, cmdArgs...)
 	}
 

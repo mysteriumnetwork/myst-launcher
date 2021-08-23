@@ -13,7 +13,7 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 		acceptPB, cancelPB *walk.PushButton
 
 		manualPortForwarding    *walk.CheckBox
-		editRedirectionPortSize *walk.TextEdit
+		editRedirectionPortEnd  *walk.TextEdit
 		editRedirectionPortFrom *walk.TextEdit
 
 		canSave bool
@@ -27,28 +27,28 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 		canSave = false
 
 		editRedirectionPortFrom.SetEnabled(manualPortForwarding.Checked())
-		editRedirectionPortSize.SetEnabled(manualPortForwarding.Checked())
+		editRedirectionPortEnd.SetEnabled(manualPortForwarding.Checked())
 
 		if manualPortForwarding.Checked() != UI.app.GetConfig().EnablePortForwarding {
 			canSave = true
 		}
-		if editRedirectionPortSize.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeSize) {
+		if editRedirectionPortEnd.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeEnd) {
 			canSave = true
 		}
-		if editRedirectionPortFrom.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeFrom) {
+		if editRedirectionPortFrom.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeBegin) {
 			canSave = true
 		}
 		acceptPB.SetEnabled(canSave)
 	}
 
-	validatePortRange := func(portRangeFrom, len int) bool {
-		if portRangeFrom < 1000 || len <= 1 {
+	validatePortRange := func(portRangeFrom, portRangeEnd int) bool {
+		if portRangeEnd <= portRangeFrom {
 			return false
 		}
 		if portRangeFrom > 65535 {
 			return false
 		}
-		if portRangeFrom+len > 65535 {
+		if portRangeEnd > 65535 {
 			return false
 		}
 		return true
@@ -81,7 +81,7 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 
 			VSpacer{ColumnSpan: 2, Size: 10},
 			Label{
-				Text:       "Redirection port range",
+				Text:       "Redirection port range (UDP)",
 				ColumnSpan: 2,
 				MinSize:    Size{Height: 20},
 			},
@@ -97,10 +97,10 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 				},
 			},
 			Label{
-				Text: "Number of ports",
+				Text: "Range end",
 			},
 			TextEdit{
-				AssignTo:  &editRedirectionPortSize,
+				AssignTo:  &editRedirectionPortEnd,
 				MaxLength: 5,
 				OnTextChanged: func() {
 					refreshState()
@@ -116,22 +116,22 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 						AssignTo: &acceptPB,
 						Text:     "OK",
 						OnClicked: func() {
-							portRangeFrom, err := strconv.Atoi(editRedirectionPortFrom.Text())
+							portRangeBegin, err := strconv.Atoi(editRedirectionPortFrom.Text())
 							if err != nil {
 								return
 							}
-							portRangeLen, err := strconv.Atoi(editRedirectionPortSize.Text())
+							portRangeLen, err := strconv.Atoi(editRedirectionPortEnd.Text())
 							if err != nil {
 								return
 							}
 
-							if !validatePortRange(portRangeFrom, portRangeLen) {
+							if !validatePortRange(portRangeBegin, portRangeLen) {
 								walk.MsgBox(dialog, "Port range", "Wrong port range.\nPorts should be in range of 1000..65535", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 								return
 							}
 							UI.app.GetConfig().EnablePortForwarding = manualPortForwarding.Checked()
-							UI.app.GetConfig().PortRangeFrom = portRangeFrom
-							UI.app.GetConfig().PortRangeSize = portRangeLen
+							UI.app.GetConfig().PortRangeBegin = portRangeBegin
+							UI.app.GetConfig().PortRangeEnd = portRangeLen
 
 							dialog.Accept()
 							UI.app.TriggerAction("upgrade")
@@ -156,8 +156,8 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 	dialog.SetX(UI.dlg.X() + 150)
 
 	manualPortForwarding.SetChecked(UI.app.GetConfig().EnablePortForwarding)
-	editRedirectionPortSize.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeSize))
-	editRedirectionPortFrom.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeFrom))
+	editRedirectionPortFrom.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeBegin))
+	editRedirectionPortEnd.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeEnd))
 	acceptPB.SetEnabled(canSave)
 	loaded = true
 
