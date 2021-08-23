@@ -42,7 +42,7 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 	}
 
 	validatePortRange := func(portRangeFrom, portRangeEnd int) bool {
-		if portRangeEnd <= portRangeFrom {
+		if portRangeEnd-portRangeFrom+1 < 100 {
 			return false
 		}
 		if portRangeFrom > 65535 {
@@ -126,7 +126,10 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 							}
 
 							if !validatePortRange(portRangeBegin, portRangeLen) {
-								walk.MsgBox(dialog, "Port range", "Wrong port range.\nPorts should be in range of 1000..65535", walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+								walk.MsgBox(dialog,
+									"Port range",
+									"Wrong port range.\nPorts shall be in range of 1000..65535.\nNumber of ports in the range shall be at least 100.",
+									walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 								return
 							}
 							UI.app.GetConfig().EnablePortForwarding = manualPortForwarding.Checked()
