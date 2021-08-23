@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mysteriumnetwork/myst-launcher/model"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -86,13 +88,13 @@ func (m *Manager) CanPingDocker() bool {
 }
 
 // Returns: alreadyRunning, error
-func (m *Manager) Start() (bool, error) {
+func (m *Manager) Start(c *model.Config) (bool, error) {
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
 		if err := m.pullMystLatest(); err != nil {
 			return false, err
 		}
-		if err := m.createMystContainer(); err != nil {
+		if err := m.createMystContainer(c); err != nil {
 			return false, err
 		}
 		mystContainer, err = m.findMystContainer()
@@ -120,20 +122,24 @@ func (m *Manager) Stop() error {
 	return nil
 }
 
-func (m *Manager) Update() error {
+func (m *Manager) Update(c *model.Config) error {
 	mystContainer, err := m.findMystContainer()
-	if err == nil {
+	if err != nil && err != ErrContainerNotFound {
+		return err
+	}
+	if !errors.Is(err, ErrContainerNotFound) {
 		err = m.dockerAPI.ContainerRemove(m.ctx(), mystContainer.ID, types.ContainerRemoveOptions{})
 		if err != nil {
 			return wrap(err, ErrCouldNotRemoveImage)
 		}
 	}
+
 	err = m.pullMystLatest()
 	if err != nil {
 		return err
 	}
 
-	err = m.createMystContainer()
+	err = m.createMystContainer(c)
 	if err != nil {
 		return err
 	}
@@ -188,17 +194,32 @@ func (m *Manager) pullMystLatest() error {
 	return nil
 }
 
-func (m *Manager) createMystContainer() error {
-	config := &container.Config{
-		Image: GetImageName(),
-		ExposedPorts: nat.PortSet{
-			"4449/tcp": struct{}{},
-		},
-		Cmd: strslice.StrSlice{
-			"service",
-			"--agreed-terms-and-conditions",
-		},
+func (m *Manager) createMystContainer(c *model.Config) error {
+	portSpecs := []string{
+		"4449/tcp",
 	}
+	cmdArgs := []string{
+		"service", "--agreed-terms-and-conditions",
+	}
+
+	if c.EnablePortForwarding {
+		p := fmt.Sprintf("%d-%d:%d-%d/udp", c.PortRangeBegin, c.PortRangeEnd, c.PortRangeBegin, c.PortRangeEnd)
+		portSpecs = append(portSpecs, p)
+
+		portsArg := fmt.Sprintf("--udp.ports=%d:%d", c.PortRangeBegin, c.PortRangeEnd)
+		cmdArgs = append([]string{portsArg}, cmdArgs...)
+	}
+
+	exposedPorts, _, err := nat.ParsePortSpecs(portSpecs)
+	if err != nil {
+		return err
+	}
+	config := &container.Config{
+		Image:        GetImageName(),
+		ExposedPorts: nat.PortSet(exposedPorts),
+		Cmd:          strslice.StrSlice(cmdArgs),
+	}
+
 	hostConfig := &container.HostConfig{
 		CapAdd: strslice.StrSlice{
 			"NET_ADMIN",
@@ -220,7 +241,7 @@ func (m *Manager) createMystContainer() error {
 		},
 	}
 
-	_, err := m.dockerAPI.ContainerCreate(m.ctx(),
+	_, err = m.dockerAPI.ContainerCreate(m.ctx(),
 		config,
 		hostConfig,
 		nil,

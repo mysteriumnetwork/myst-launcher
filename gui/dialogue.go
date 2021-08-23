@@ -7,7 +7,6 @@
 package gui
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/lxn/walk"
@@ -37,8 +36,10 @@ type Gui struct {
 	lbVersionCurrent      *walk.Label
 	lbVersionUpdatesAvail *walk.LinkLabel
 
-	autoUpgrade   *walk.CheckBox
-	btnOpenNodeUI *walk.PushButton
+	autoUpgrade          *walk.CheckBox
+	manualPortForwarding *walk.CheckBox
+	lbNetworkMode        *walk.LinkLabel
+	btnOpenNodeUI        *walk.PushButton
 
 	// install
 	lbInstallationStatus *walk.TextEdit
@@ -182,6 +183,12 @@ func (g *Gui) refresh() {
 		g.changeView(frameState)
 
 		gui.autoUpgrade.SetChecked(UI.app.GetConfig().AutoUpgrade)
+		if !UI.app.GetConfig().EnablePortForwarding {
+			gui.lbNetworkMode.SetText(`<a id="net">Port restricted cone NAT</a>`)
+		} else {
+			gui.lbNetworkMode.SetText(`<a id="net">Manual port forwarding</a>`)
+		}
+
 		gui.lbDocker.SetText(UI.StateDocker.String())
 		gui.lbContainer.SetText(UI.StateContainer.String())
 		if !UI.app.GetConfig().Enabled {
@@ -243,85 +250,4 @@ func (g *Gui) SetImage() {
 		return
 	}
 	gui.iv.SetImage(img)
-}
-
-func (g *Gui) Ask() {
-	var (
-		dialog             *walk.Dialog
-		acceptPB, cancelPB *walk.PushButton
-		lbVersionCurrent   *walk.Label
-		lbVersionLatest    *walk.Label
-	)
-
-	err := Dialog{
-		AssignTo:      &dialog,
-		Title:         "Would you like to upgrade?",
-		DefaultButton: &acceptPB,
-		CancelButton:  &cancelPB,
-		MinSize:       Size{400, 175},
-		Icon:          UI.icon,
-
-		Layout: Grid{
-			Columns: 2,
-		},
-		Children: []Widget{
-			VSpacer{ColumnSpan: 2},
-			Label{
-				Text: "Docker Hub image name",
-			},
-			Label{
-				Text: UI.app.GetImageName(),
-			},
-			Label{
-				Text: "Node version installed",
-			},
-			Label{
-				Text:     "-",
-				AssignTo: &lbVersionCurrent,
-			},
-			Label{
-				Text: "Node version latest",
-			},
-			Label{
-				Text:     "-",
-				AssignTo: &lbVersionLatest,
-			},
-			VSpacer{ColumnSpan: 2},
-			Composite{
-				ColumnSpan: 2,
-				Layout:     HBox{},
-				Children: []Widget{
-					PushButton{
-						AssignTo: &acceptPB,
-						Text:     "Yes",
-						OnClicked: func() {
-							dialog.Accept()
-							UI.app.TriggerAction("upgrade")
-						},
-					},
-					PushButton{
-						AssignTo: &cancelPB,
-						Text:     "No",
-						OnClicked: func() {
-							dialog.Cancel()
-						},
-					},
-				},
-			},
-		},
-	}.Create(UI.dlg)
-	if err != nil {
-		fmt.Println(err)
-	}
-	refresh := func() {
-		lbVersionCurrent.SetText(UI.VersionCurrent)
-		lbVersionLatest.SetText(UI.VersionLatest)
-		acceptPB.SetEnabled(UI.HasUpdate)
-	}
-
-	dialog.Show()
-	dialog.SetX(UI.dlg.X() + 300)
-	refresh()
-
-	UI.app.Subscribe("model-change", refresh)
 }

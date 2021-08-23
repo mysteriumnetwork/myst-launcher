@@ -240,6 +240,21 @@ func (mw *Gui) stateDlg() Widget {
 						Size:       20,
 					},
 
+					Label{
+						Text: "Networking mode",
+					},
+					LinkLabel{
+						Text:     "-",
+						AssignTo: &mw.lbNetworkMode,
+						OnLinkActivated: func(link *walk.LinkLabelLink) {
+							gui.NetworkingDlg(UI.dlg)
+						},
+					},
+					VSpacer{
+						ColumnSpan: 2,
+						Size:       20,
+					},
+
 					PushButton{
 						Enabled:  false,
 						AssignTo: &mw.btnOpenNodeUI,

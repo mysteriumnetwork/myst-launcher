@@ -49,6 +49,10 @@ func (s *AppState) ReadConfig() {
 
 	// default value
 	s.Config.Enabled = true
+	s.Config.EnablePortForwarding = false
+	s.Config.PortRangeBegin = 42000
+	s.Config.PortRangeEnd = 42100
+
 	json.NewDecoder(file).Decode(&s.Config)
 }
 
@@ -80,6 +84,10 @@ func (s *AppState) Publish(topic string, args ...interface{}) {
 
 func (s *AppState) Subscribe(topic string, fn interface{}) error {
 	return s.Bus.Subscribe(topic, fn)
+}
+
+func (s *AppState) Unsubscribe(topic string, fn interface{}) error {
+	return s.Bus.Unsubscribe(topic, fn)
 }
 
 func (s *AppState) TriggerAction(action string) {

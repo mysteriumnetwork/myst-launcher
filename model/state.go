@@ -13,6 +13,11 @@ type Config struct {
 	AutoUpgrade bool `json:"auto_upgrade"`
 	// the last time we checked for upgrade, Unix timestamp, [second]
 	LastUpgradeCheck int64 `json:"last_upgrade_check"` // once a day
+
+	// Networking mode
+	EnablePortForwarding bool `json:"enable_port_forwarding"`
+	PortRangeBegin       int  `json:"port_range_begin"`
+	PortRangeEnd         int  `json:"port_range_end"`
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {
@@ -33,6 +38,7 @@ type AppInterface interface {
 
 	Publish(topic string, args ...interface{})
 	Subscribe(topic string, fn interface{}) error
+	Unsubscribe(topic string, fn interface{}) error
 	TriggerAction(action string)
 
 	GetInTray() bool
