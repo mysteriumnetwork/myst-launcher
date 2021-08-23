@@ -5,18 +5,6 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
-type Species struct {
-	Id   int
-	Name string
-}
-
-func KnownSpecies() []*Species {
-	return []*Species{
-		{1, "Symmetric NAT"},
-		{2, "Manual port forwarding"},
-	}
-}
-
 func (mw *Gui) installationWelcome() Widget {
 	return Composite{
 		Visible: false,
