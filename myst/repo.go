@@ -17,6 +17,7 @@ var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
 const checkPeriod = 12 * time.Hour
 
 type ImageVersionInfo struct {
+	ImageName        string
 	CurrentImgDigest string // in
 
 	HasUpdate      bool

@@ -19,14 +19,14 @@ type AppState struct {
 	WaitGroup sync.WaitGroup
 	Action    chan string
 
-	ImageName string
-	ImgVer    myst.ImageVersionInfo
+	ImgVer myst.ImageVersionInfo
 }
 
 func NewApp() *AppState {
 	s := &AppState{}
 	s.Action = make(chan string, 1)
 	s.Bus = EventBus.New()
+	s.ImgVer.ImageName = myst.GetImageName()
 	return s
 }
 
@@ -64,5 +64,5 @@ func (s *AppState) GetConfig() *model.Config {
 }
 
 func (s *AppState) GetImageName() string {
-	return s.ImageName
+	return s.ImgVer.ImageName
 }

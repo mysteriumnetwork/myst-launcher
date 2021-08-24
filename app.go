@@ -13,7 +13,6 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
 )
 
 func main() {
@@ -39,7 +38,6 @@ func main() {
 
 	log.SetOutput(a)
 	a.Config.Read()
-	a.ImageName = myst.GetImageName()
 
 	gui.UI.SetImageVersionInfo(&a.ImgVer)
 	gui.UI.SetApp(a)
