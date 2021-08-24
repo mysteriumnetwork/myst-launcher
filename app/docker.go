@@ -50,14 +50,16 @@ func (s *AppState) SuperviseDockerNode() {
 	docker := NewDockerMonitor(mystManager)
 
 	t1 := time.Tick(15 * time.Second)
-	//tryStartCount := 0
-	didDockerInstall := false
-	canPingDocker := false
 	s.Config.Read()
 	gui.UI.Update()
 
 	for {
 		tryStartOrInstallDocker := func() bool {
+			if docker.IsRunning() {
+				gui.UI.SetStateDocker(gui.RunnableStateRunning)
+				return false
+			}
+
 			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
 			checkVMSettings, needSetup, err := false, false, error(nil)
 			err = Retry(3, time.Second, func() error {
@@ -65,29 +67,22 @@ func (s *AppState) SuperviseDockerNode() {
 				if err != nil {
 					return err
 				}
-				_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
+				features, err := QueryFeatures()
 				if err != nil {
 					return err
 				}
-				if !wslEnabled {
+				if len(features) > 0 {
 					needSetup = true
 					return nil
 				}
-				hyperVExists, hyperVEnabled, err := QueryWindowsFeature(FeatureHyperV)
-				if err != nil {
-					return err
-				}
-				if hyperVExists && !hyperVEnabled {
-					needSetup = true
-					return nil
-				}
-				return err
+				return nil
 			})
 			if err != nil {
 				log.Println("error", err)
 				gui.UI.ErrorModal("Application error", err.Error())
 				return true
 			}
+
 			if checkVMSettings && !s.Config.CheckVMSettingsConfirm {
 				ret := gui.UI.YesNoModal("Requirements checker", "VM has been detected. \r\n\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
 				if ret == win.IDNO {
@@ -98,15 +93,14 @@ func (s *AppState) SuperviseDockerNode() {
 				s.Config.Save()
 			}
 			if needSetup {
-				didDockerInstall = true
 				return s.tryInstall()
 			}
 
 			if docker.IsRunning() {
+				gui.UI.SetStateDocker(gui.RunnableStateRunning)
 				return false
 			}
 			if docker.CouldNotStart() {
-				didDockerInstall = true
 				return s.tryInstall()
 			}
 
@@ -118,45 +112,8 @@ func (s *AppState) SuperviseDockerNode() {
 			return
 		}
 
-		if canPingDocker {
-			gui.UI.SetStateDocker(gui.RunnableStateRunning)
-		}
-
 		// docker is running now
-		// check for image updates before starting container, offer upgrade interactively
-		// start container
-		func() {
-			imageDigest := mystManager.GetCurrentImageDigest()
-
-			if s.ImgVer.CurrentImgDigest != imageDigest || s.ImgVer.VersionCurrent == "" || s.Config.NeedToCheckUpgrade() {
-				// docker has a new image (in result the of external command)
-				s.ImgVer.CurrentImgDigest = imageDigest
-				ok := myst.CheckVersionAndUpgrades(&s.ImgVer, &s.Config)
-				if ok {
-					s.Config.Save()
-				}
-				gui.UI.Update()
-			}
-			if s.Config.AutoUpgrade && s.ImgVer.HasUpdate {
-				s.upgrade(mystManager)
-			}
-
-			if s.Config.Enabled {
-				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
-				containerAlreadyRunning, err := mystManager.Start(s.GetConfig())
-				if err != nil {
-					return
-				}
-				gui.UI.SetStateContainer(gui.RunnableStateRunning)
-				gui.UI.Update()
-
-				if !containerAlreadyRunning && didDockerInstall {
-					didDockerInstall = false
-					gui.UI.LastNotificationID = gui.NotificationContainerStarted
-					gui.UI.ShowNotificationInstalled()
-				}
-			}
-		}()
+		s.upgradeImageAndRun(mystManager)
 
 		select {
 		case act := <-s.Action:
@@ -234,67 +191,25 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.Update()
 
 	if !s.InstallStage2 {
-		_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
+		features, err := QueryFeatures()
 		if err != nil {
 			log.Println("Failed to get model:", FeatureWSL)
 			gui.UI.SwitchState(gui.ModalStateInstallError)
 			return true
 		}
-		hyperVExists, hyperVEnabled, err := QueryWindowsFeature(FeatureHyperV)
+		err = InstallFeatures(features, func(feature int, name string) {
+			switch feature {
+			case FeatureWSL_:
+				gui.UI.EnableWSL = true
+			case FeatureHyperV_:
+				gui.UI.EnableHyperV = true
+			}
+			gui.UI.Update()
+		})
 		if err != nil {
-			log.Println("Failed to get model:", FeatureHyperV)
 			gui.UI.SwitchState(gui.ModalStateInstallError)
 			return true
 		}
-		needEnableHyperV := hyperVExists && !hyperVEnabled
-		_, vmPlatformEnabled, err := QueryWindowsFeature(FeatureVMPlatform)
-		if err != nil {
-			log.Println("Failed to get model:", FeatureVMPlatform)
-			gui.UI.SwitchState(gui.ModalStateInstallError)
-			return true
-		}
-
-		if !vmPlatformEnabled {
-			log.Println("Enable VM Platform..")
-			exe := "dism.exe"
-			cmdArgs := "/online /enable-feature /featurename:VirtualMachinePlatform /all /norestart"
-			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
-			if err != nil {
-				log.Println("Command failed: failed to enable VirtualMachinePlatform")
-
-				gui.UI.SwitchState(gui.ModalStateInstallError)
-				return true
-			}
-		}
-		if !wslEnabled {
-			log.Println("Enable WSL..")
-			exe := "dism.exe"
-			cmdArgs := "/online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart"
-			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
-			if err != nil {
-				log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
-
-				gui.UI.SwitchState(gui.ModalStateInstallError)
-				return true
-			}
-		}
-		gui.UI.EnableWSL = true
-		gui.UI.Update()
-
-		if needEnableHyperV {
-			log.Println("Enable Hyper-V..")
-			exe := "dism.exe"
-			cmdArgs := "/online /enable-feature /featurename:Microsoft-Hyper-V /all /norestart"
-			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
-			if err != nil {
-				log.Println("Command failed: failed to enable Microsoft-Hyper-V")
-
-				gui.UI.SwitchState(gui.ModalStateInstallError)
-				return true
-			}
-		}
-		gui.UI.EnableHyperV = true
-		gui.UI.Update()
 
 		log.Println("Install executable")
 		fullExe, _ := os.Executable()
@@ -310,14 +225,14 @@ func (s *AppState) tryInstall() bool {
 		gui.UI.InstallExecutable = true
 		gui.UI.Update()
 
-		if !wslEnabled || needEnableHyperV {
-			ret := gui.UI.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+
-				"Click Yes to reboot now")
+		if len(features) > 0 {
+			ret := gui.UI.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+"Click Yes to reboot now")
 			if ret == win.IDYES {
 				native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
 			}
 			return true
 		}
+
 	} else {
 		// proceeding install after reboot
 		gui.UI.EnableWSL = true
@@ -418,6 +333,7 @@ func (s *AppState) tryInstall() bool {
 	s.Config.AutoStart = true
 	s.Config.Save()
 	log.Println("Installation succeeded")
+	s.didInstallation = true
 
 	gui.UI.SwitchState(gui.ModalStateInstallFinished)
 	ok := gui.UI.WaitDialogueComplete()
@@ -441,4 +357,41 @@ func (s *AppState) upgrade(mystManager *myst.Manager) {
 		s.Config.Save()
 	}
 	gui.UI.Update()
+}
+
+// check for image updates before starting container, offer upgrade interactively
+func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
+	imageDigest := mystManager.GetCurrentImageDigest()
+
+	if s.ImgVer.CurrentImgDigest != imageDigest || s.ImgVer.VersionCurrent == "" || s.Config.NeedToCheckUpgrade() {
+		// docker has a new image (in result the of external command)
+
+		s.ImgVer.CurrentImgDigest = imageDigest
+		ok := myst.CheckVersionAndUpgrades(&s.ImgVer, &s.Config)
+		if ok {
+			s.Config.Save()
+		}
+		gui.UI.Update()
+	}
+	if s.Config.AutoUpgrade && s.ImgVer.HasUpdate {
+		s.upgrade(mystManager)
+	}
+
+	if s.Config.Enabled {
+		gui.UI.SetStateContainer(gui.RunnableStateUnknown)
+		containerAlreadyRunning, err := mystManager.Start(s.GetConfig())
+		if err != nil {
+			return
+		}
+
+		gui.UI.SetStateContainer(gui.RunnableStateRunning)
+		gui.UI.Update()
+
+		if !containerAlreadyRunning && s.didInstallation {
+			s.didInstallation = false
+
+			gui.UI.LastNotificationID = gui.NotificationContainerStarted
+			gui.UI.ShowNotificationInstalled()
+		}
+	}
 }

@@ -41,6 +41,7 @@ func main() {
 
 	gui.UI.SetImageVersionInfo(&a.ImgVer)
 	gui.UI.SetApp(a)
+
 	gui.CreateNotifyIcon()
 	gui.CreateDialogue()
 

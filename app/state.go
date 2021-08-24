@@ -22,6 +22,9 @@ type AppState struct {
 	ImgVer myst.ImageVersionInfo
 	//mystManager *myst.Manager
 	//mon         *DockerMonitor
+
+	// state
+	didInstallation bool
 }
 
 func NewApp() *AppState {
