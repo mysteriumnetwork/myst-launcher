@@ -20,6 +20,8 @@ type AppState struct {
 	Action    chan string
 
 	ImgVer myst.ImageVersionInfo
+	//mystManager *myst.Manager
+	//mon         *DockerMonitor
 }
 
 func NewApp() *AppState {
@@ -27,6 +29,7 @@ func NewApp() *AppState {
 	s.Action = make(chan string, 1)
 	s.Bus = EventBus.New()
 	s.ImgVer.ImageName = myst.GetImageName()
+
 	return s
 }
 

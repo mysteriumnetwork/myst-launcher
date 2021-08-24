@@ -242,7 +242,7 @@ func IsWindowsVersionCompatible() bool {
 // unsafe.Sizeof(windows.ProcessEntry32{})
 const processEntrySize = 568
 
-func isProcessRunning(name string) bool {
+func IsProcessRunning(name string) bool {
 	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if e != nil {
 		return false
@@ -355,12 +355,6 @@ func hasVTx() bool {
 	}
 	return false
 }
-
-const (
-	FeatureWSL        = "Microsoft-Windows-Subsystem-Linux"
-	FeatureHyperV     = "Microsoft-Hyper-V"
-	FeatureVMPlatform = "VirtualMachinePlatform"
-)
 
 // Returns: featureExists, featureEnabled, error
 func QueryWindowsFeature(feature string) (bool, bool, error) {

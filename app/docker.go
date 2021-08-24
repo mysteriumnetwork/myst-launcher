@@ -10,10 +10,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"runtime"
 	"syscall"
 	"time"
+
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/go-ole/go-ole"
 	"github.com/lxn/win"
@@ -46,9 +47,10 @@ func (s *AppState) SuperviseDockerNode() {
 	if err != nil {
 		panic(err) // TODO handle gracefully
 	}
+	docker := NewDockerMonitor(mystManager)
 
 	t1 := time.Tick(15 * time.Second)
-	tryStartCount := 0
+	//tryStartCount := 0
 	didDockerInstall := false
 	canPingDocker := false
 	s.Config.Read()
@@ -100,17 +102,14 @@ func (s *AppState) SuperviseDockerNode() {
 				return s.tryInstall()
 			}
 
-			canPingDocker = mystManager.CanPingDocker()
-			if !canPingDocker {
-				tryStartCount++
-
-				// try starting docker for 10 times, else try install
-				if !tryStartDocker() || tryStartCount == 10 {
-					tryStartCount = 0
-					didDockerInstall = true
-					return s.tryInstall()
-				}
+			if docker.IsRunning() {
+				return false
 			}
+			if docker.CouldNotStart() {
+				didDockerInstall = true
+				return s.tryInstall()
+			}
+
 			return false
 		}
 		wantExit := tryStartOrInstallDocker()
@@ -195,30 +194,6 @@ func (s *AppState) SuperviseDockerNode() {
 		case <-t1:
 		}
 	}
-}
-
-func tryStartDocker() bool {
-	gui.UI.SetStateContainer(gui.RunnableStateUnknown)
-	gui.UI.SetStateDocker(gui.RunnableStateStarting)
-
-	if isProcessRunning("Docker Desktop.exe") {
-		return true
-	}
-	if err := startDocker(); err != nil {
-		log.Printf("Failed to start cmd: %v", err)
-		return false
-	}
-	return true
-}
-
-func startDocker() error {
-	dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
-	cmd := exec.Command(dd, "-Autostart")
-	if err := cmd.Start(); err != nil {
-		log.Printf("Failed to start cmd: %v", err)
-		return err
-	}
-	return nil
 }
 
 // returns exit model: true means exit
@@ -364,7 +339,7 @@ func (s *AppState) tryInstall() bool {
 			log.Println(fmt.Sprintf("Downloading %d of %d: %s", fi+1, len(list), v.name))
 			if _, err := os.Stat(os.Getenv("TMP") + "\\" + v.name); err != nil {
 
-				err := DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, func(progress int) {
+				err := utils.DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, func(progress int) {
 					if progress%10 == 0 {
 						log.Println(fmt.Sprintf("%s - %d%%", v.name, progress))
 					}
