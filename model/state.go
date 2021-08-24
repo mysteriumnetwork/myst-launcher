@@ -1,6 +1,9 @@
 package model
 
 import (
+	"encoding/json"
+	"log"
+	"os"
 	"time"
 )
 
@@ -32,10 +35,47 @@ func (c *Config) NeedToCheckUpgrade() bool {
 	return t.Add(upgradeCheckPeriod).Before(time.Now())
 }
 
-type AppInterface interface {
-	ReadConfig()
-	SaveConfig()
+func (c *Config) ReadConfig() {
+	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
+	_, err := os.Stat(f)
+	if os.IsNotExist(err) {
+		// create default settings
+		c.AutoStart = true
+		c.Enabled = true
+		c.SaveConfig()
+		return
+	}
 
+	file, err := os.Open(f)
+	if err != nil {
+		return
+	}
+
+	// default value
+	//c.Enabled = true
+	c.Enabled = true
+	c.EnablePortForwarding = false
+	c.PortRangeBegin = 42000
+	c.PortRangeEnd = 42100
+
+	json.NewDecoder(file).Decode(&c)
+}
+
+func (c *Config) SaveConfig() {
+	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
+	file, err := os.Create(f)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer file.Close()
+
+	enc := json.NewEncoder(file)
+	enc.SetIndent("", " ")
+	enc.Encode(&c)
+}
+
+type AppInterface interface {
 	Publish(topic string, args ...interface{})
 	Subscribe(topic string, fn interface{}) error
 	Unsubscribe(topic string, fn interface{}) error

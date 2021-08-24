@@ -20,12 +20,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mysteriumnetwork/go-fileversion"
-	"github.com/mysteriumnetwork/myst-launcher/native"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
-
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
+	"github.com/mysteriumnetwork/go-fileversion"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
@@ -180,7 +178,7 @@ func InstallExe() error {
 }
 
 func UninstallExe() error {
-	utils.StopApp()
+	StopApp()
 	registry.DeleteKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`)
 
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", launcherLnk)

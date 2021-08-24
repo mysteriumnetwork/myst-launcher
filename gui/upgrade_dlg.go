@@ -14,9 +14,9 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 	)
 
 	refresh := func() {
-		lbVersionCurrent.SetText(UI.VersionCurrent)
-		lbVersionLatest.SetText(UI.VersionLatest)
-		acceptPB.SetEnabled(UI.HasUpdate)
+		lbVersionCurrent.SetText(UI.ivi.VersionCurrent)
+		lbVersionLatest.SetText(UI.ivi.VersionLatest)
+		acceptPB.SetEnabled(UI.ivi.HasUpdate)
 	}
 
 	err := Dialog{

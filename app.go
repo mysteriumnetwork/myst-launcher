@@ -14,7 +14,6 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func main() {
@@ -34,14 +33,15 @@ func main() {
 			return
 		}
 	}
-	if utils.IsAlreadyRunning() {
+	if app.IsAlreadyRunning() {
 		return
 	}
 
 	log.SetOutput(a)
-	a.ReadConfig()
+	a.Config.ReadConfig()
 	a.ImageName = myst.GetImageName()
 
+	gui.UI.SetImageVersionInfo(&a.Ivi)
 	gui.UI.SetApp(a)
 	gui.CreateNotifyIcon()
 	gui.CreateDialogue()
@@ -49,7 +49,7 @@ func main() {
 	a.WaitGroup.Add(1)
 	go a.SuperviseDockerNode()
 
-	utils.CreatePipeAndListen(&gui.UI)
+	app.CreatePipeAndListen(&gui.UI)
 
 	// Run the message loop
 	gui.UI.Run()
