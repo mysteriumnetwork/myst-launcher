@@ -51,7 +51,7 @@ func (s *AppState) SuperviseDockerNode() {
 	tryStartCount := 0
 	didDockerInstall := false
 	canPingDocker := false
-	s.Config.ReadConfig()
+	s.Config.Read()
 	gui.UI.Update()
 
 	for {
@@ -93,7 +93,7 @@ func (s *AppState) SuperviseDockerNode() {
 					return true
 				}
 				s.Config.CheckVMSettingsConfirm = true
-				s.Config.SaveConfig()
+				s.Config.Save()
 			}
 			if needSetup {
 				didDockerInstall = true
@@ -129,16 +129,16 @@ func (s *AppState) SuperviseDockerNode() {
 		func() {
 			imageDigest := mystManager.GetCurrentImageDigest()
 
-			if s.Ivi.CurrentImgDigest != imageDigest || s.Ivi.VersionCurrent == "" || s.Config.NeedToCheckUpgrade() {
+			if s.ImgVer.CurrentImgDigest != imageDigest || s.ImgVer.VersionCurrent == "" || s.Config.NeedToCheckUpgrade() {
 				// docker has a new image (in result the of external command)
-				s.Ivi.CurrentImgDigest = imageDigest
-				ok := myst.CheckVersionAndUpgrades(&s.Ivi, &s.Config)
+				s.ImgVer.CurrentImgDigest = imageDigest
+				ok := myst.CheckVersionAndUpgrades(&s.ImgVer, &s.Config)
 				if ok {
-					s.Config.SaveConfig()
+					s.Config.Save()
 				}
 				gui.UI.Update()
 			}
-			if s.Config.AutoUpgrade && s.Ivi.HasUpdate {
+			if s.Config.AutoUpgrade && s.ImgVer.HasUpdate {
 				s.upgrade(mystManager)
 			}
 
@@ -163,12 +163,12 @@ func (s *AppState) SuperviseDockerNode() {
 		case act := <-s.Action:
 			switch act {
 			case "check":
-				s.Ivi.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-				ok := myst.CheckVersionAndUpgrades(&s.Ivi, &s.Config)
+				s.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
+				ok := myst.CheckVersionAndUpgrades(&s.ImgVer, &s.Config)
 				if !ok {
 					break
 				}
-				s.Config.SaveConfig()
+				s.Config.Save()
 				gui.UI.Update()
 
 			case "upgrade":
@@ -176,13 +176,13 @@ func (s *AppState) SuperviseDockerNode() {
 
 			case "enable":
 				s.Config.Enabled = true
-				s.Config.SaveConfig()
+				s.Config.Save()
 				gui.UI.SetStateContainer(gui.RunnableStateRunning)
 				mystManager.Start(s.GetConfig())
 
 			case "disable":
 				s.Config.Enabled = false
-				s.Config.SaveConfig()
+				s.Config.Save()
 				gui.UI.SetStateContainer(gui.RunnableStateUnknown)
 				mystManager.Stop()
 
@@ -439,9 +439,9 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.CheckGroupMembership = true
 	gui.UI.Update()
 
-	s.Config.ReadConfig()
+	s.Config.Read()
 	s.Config.AutoStart = true
-	s.Config.SaveConfig()
+	s.Config.Save()
 	log.Println("Installation succeeded")
 
 	gui.UI.SwitchState(gui.ModalStateInstallFinished)
@@ -460,10 +460,10 @@ func (s *AppState) upgrade(mystManager *myst.Manager) {
 	gui.UI.SetStateContainer(gui.RunnableStateInstalling)
 	mystManager.Update(s.GetConfig())
 
-	s.Ivi.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-	ok := myst.CheckVersionAndUpgrades(&s.Ivi, &s.Config)
+	s.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
+	ok := myst.CheckVersionAndUpgrades(&s.ImgVer, &s.Config)
 	if ok {
-		s.Config.SaveConfig()
+		s.Config.Save()
 	}
 	gui.UI.Update()
 }

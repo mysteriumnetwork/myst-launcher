@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 type Config struct {
@@ -35,14 +37,14 @@ func (c *Config) NeedToCheckUpgrade() bool {
 	return t.Add(upgradeCheckPeriod).Before(time.Now())
 }
 
-func (c *Config) ReadConfig() {
-	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
+func (c *Config) Read() {
+	f := utils.GetUserProfileDir() + "/.myst_node_launcher"
 	_, err := os.Stat(f)
 	if os.IsNotExist(err) {
 		// create default settings
 		c.AutoStart = true
 		c.Enabled = true
-		c.SaveConfig()
+		c.Save()
 		return
 	}
 
@@ -52,7 +54,6 @@ func (c *Config) ReadConfig() {
 	}
 
 	// default value
-	//c.Enabled = true
 	c.Enabled = true
 	c.EnablePortForwarding = false
 	c.PortRangeBegin = 42000
@@ -61,8 +62,8 @@ func (c *Config) ReadConfig() {
 	json.NewDecoder(file).Decode(&c)
 }
 
-func (c *Config) SaveConfig() {
-	f := os.Getenv("USERPROFILE") + "\\.myst_node_launcher"
+func (c *Config) Save() {
+	f := utils.GetUserProfileDir() + "/.myst_node_launcher"
 	file, err := os.Create(f)
 	if err != nil {
 		log.Println(err)

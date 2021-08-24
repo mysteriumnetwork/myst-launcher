@@ -38,10 +38,10 @@ func main() {
 	}
 
 	log.SetOutput(a)
-	a.Config.ReadConfig()
+	a.Config.Read()
 	a.ImageName = myst.GetImageName()
 
-	gui.UI.SetImageVersionInfo(&a.Ivi)
+	gui.UI.SetImageVersionInfo(&a.ImgVer)
 	gui.UI.SetApp(a)
 	gui.CreateNotifyIcon()
 	gui.CreateDialogue()

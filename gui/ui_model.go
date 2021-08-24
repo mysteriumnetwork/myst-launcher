@@ -46,8 +46,8 @@ type UIModel struct {
 	InstallDocker        bool
 	CheckGroupMembership bool
 
-	app model.AppInterface
-	ivi *myst.ImageVersionInfo
+	app    model.AppInterface
+	imgVer *myst.ImageVersionInfo
 
 	LastNotificationID NotificationTypeID
 }
@@ -68,7 +68,7 @@ func init() {
 }
 
 func (m *UIModel) SetImageVersionInfo(ivi *myst.ImageVersionInfo) {
-	UI.ivi = ivi
+	UI.imgVer = ivi
 }
 
 func (m *UIModel) SetApp(app model.AppInterface) {

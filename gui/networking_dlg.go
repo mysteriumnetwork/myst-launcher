@@ -9,14 +9,12 @@ import (
 
 func (g *Gui) NetworkingDlg(owner walk.Form) {
 	var (
-		dialog             *walk.Dialog
-		acceptPB, cancelPB *walk.PushButton
-
+		dialog                  *walk.Dialog
+		acceptPB, cancelPB      *walk.PushButton
 		manualPortForwarding    *walk.CheckBox
 		editRedirectionPortEnd  *walk.TextEdit
 		editRedirectionPortFrom *walk.TextEdit
-
-		canSave bool
+		canSave                 bool
 	)
 	loaded := false
 

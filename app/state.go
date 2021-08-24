@@ -3,11 +3,10 @@ package app
 import (
 	"sync"
 
-	"github.com/mysteriumnetwork/myst-launcher/myst"
-
 	"github.com/asaskevich/EventBus"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/myst"
 )
 
 type AppState struct {
@@ -21,7 +20,7 @@ type AppState struct {
 	Action    chan string
 
 	ImageName string
-	Ivi       myst.ImageVersionInfo
+	ImgVer    myst.ImageVersionInfo
 }
 
 func NewApp() *AppState {
