@@ -28,7 +28,7 @@ func (r *DockerMonitor) IsRunning() bool {
 		r.tryStartCount++
 
 		// try starting docker for 10 times, else try install
-		if !r.tryStartDocker() || r.tryStartCount == 10 {
+		if !r.tryStartDockerDesktop() || r.tryStartCount == 10 {
 			r.tryStartCount = 0
 			r.couldNotStart = true
 		}
@@ -49,7 +49,7 @@ func (r *DockerMonitor) CouldNotStart() bool {
 	return val
 }
 
-func (r *DockerMonitor) tryStartDocker() bool {
+func (r *DockerMonitor) tryStartDockerDesktop() bool {
 	gui.UI.SetStateContainer(gui.RunnableStateUnknown)
 	gui.UI.SetStateDocker(gui.RunnableStateStarting)
 
@@ -67,7 +67,6 @@ func startDocker() error {
 	dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
 	cmd := exec.Command(dd, "-Autostart")
 	if err := cmd.Start(); err != nil {
-		log.Printf("Failed to start cmd: %v", err)
 		return err
 	}
 	return nil
