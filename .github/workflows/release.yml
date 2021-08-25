@@ -41,6 +41,6 @@ jobs:
       with:
         files: |
           build/myst-launcher-amd64.exe
-          build/myst-launcher-testnet3-amd64.exe
+          build/myst-launcher-testnet2-amd64.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
