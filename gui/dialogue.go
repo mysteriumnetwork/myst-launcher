@@ -70,7 +70,7 @@ func CreateDialogue() {
 	if err := (MainWindow{
 		Visible:   false,
 		AssignTo:  &UI.dlg,
-		Title:     "Mysterium Exit Node Launcher",
+		Title:     "Mysterium Node Launcher",
 		MinSize:   Size{380, 640},
 		Size:      Size{380, 640},
 		Icon:      UI.icon,
