@@ -230,12 +230,13 @@ func IsWindowsVersionCompatible() bool {
 		log.Fatal(err)
 	}
 	releaseId, _ := strconv.Atoi(releaseIdStr)
+	_ = releaseId
 
 	// https://docs.docker.com/docker-for-windows/install/#wsl-2-backend
+	//releaseId >= 2004 - home & professional
+	//releaseId >= 1909 - Enterprise or Education
 	v := windows.RtlGetVersion()
-	if v.MajorVersion == 10 && releaseId >= 2004 {
-		return true
-	} else if v.MajorVersion > 10 {
+	if v.MajorVersion >= 10 {
 		return true
 	}
 	return false
