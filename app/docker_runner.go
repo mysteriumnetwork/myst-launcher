@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 )
 
@@ -50,8 +49,8 @@ func (r *DockerMonitor) CouldNotStart() bool {
 }
 
 func (r *DockerMonitor) tryStartDockerDesktop() bool {
-	gui.UI.SetStateContainer(gui.RunnableStateUnknown)
-	gui.UI.SetStateDocker(gui.RunnableStateStarting)
+	//gui.UI.SetStateContainer(gui.RunnableStateUnknown)
+	//gui.UI.SetStateDocker(gui.RunnableStateStarting)
 
 	if IsProcessRunning("Docker Desktop.exe") {
 		return true
