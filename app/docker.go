@@ -17,6 +17,7 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/lxn/win"
+	"github.com/winlabs/gowin32"
 	"golang.org/x/sys/windows"
 
 	"github.com/mysteriumnetwork/myst-launcher/gui"
@@ -391,9 +392,8 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.DownloadFiles = true
 
 	log.Println("Installing wsl_update_x64.msi")
-	exe := "msiexec.exe"
-	cmdArgs := "/i " + os.Getenv("TMP") + "\\wsl_update_x64.msi /quiet"
-	err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, os.Getenv("TMP"), syscall.SW_NORMAL)
+	gowin32.SetInstallerInternalUI(gowin32.InstallUILevelProgressOnly) // UI Level for a prompt
+	err = gowin32.InstallProduct(os.Getenv("TMP")+"\\wsl_update_x64.msi", "ACTION=INSTALL")
 	if err != nil {
 		log.Println("Command failed: msiexec.exe /i wsl_update_x64.msi /quiet")
 
@@ -404,7 +404,7 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.Update()
 
 	log.Println("Installing docker desktop (wait ~5 minutes)")
-	exe = os.Getenv("TMP") + "\\DockerDesktopInstaller.exe"
+	exe := os.Getenv("TMP") + "\\DockerDesktopInstaller.exe"
 	err = native.ShellExecuteAndWait(0, "runas", exe, "install --quiet", os.Getenv("TMP"), syscall.SW_NORMAL)
 	if err != nil {
 		log.Println("DockerDesktopInstaller failed:", err)

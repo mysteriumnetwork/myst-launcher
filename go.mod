@@ -17,6 +17,7 @@ require (
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mysteriumnetwork/go-fileversion v1.0.0-fix1
+	github.com/winlabs/gowin32 v0.0.0-20210302152218-c9e40aa88058 // indirect
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 	google.golang.org/grpc v1.39.0 // indirect
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
