@@ -1,20 +1,20 @@
-package app
+package myst
 
 import (
 	"log"
 	"os"
 	"os/exec"
 
-	"github.com/mysteriumnetwork/myst-launcher/myst"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 type DockerMonitor struct {
 	tryStartCount int
-	m             *myst.Manager
+	m             *Manager
 	couldNotStart bool
 }
 
-func NewDockerMonitor(m *myst.Manager) *DockerMonitor {
+func NewDockerMonitor(m *Manager) *DockerMonitor {
 	return &DockerMonitor{
 		tryStartCount: 0,
 		m:             m,
@@ -52,17 +52,17 @@ func (r *DockerMonitor) tryStartDockerDesktop() bool {
 	//gui.UI.SetStateContainer(gui.RunnableStateUnknown)
 	//gui.UI.SetStateDocker(gui.RunnableStateStarting)
 
-	if IsProcessRunning("Docker Desktop.exe") {
+	if utils.IsProcessRunning("Docker Desktop.exe") {
 		return true
 	}
-	if err := startDocker(); err != nil {
+	if err := StartDockerDesktop(); err != nil {
 		log.Printf("Failed to start cmd: %v", err)
 		return false
 	}
 	return true
 }
 
-func startDocker() error {
+func StartDockerDesktop() error {
 	dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
 	cmd := exec.Command(dd, "-Autostart")
 	if err := cmd.Start(); err != nil {

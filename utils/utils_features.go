@@ -1,4 +1,6 @@
-package app
+// +build windows
+
+package utils
 
 import (
 	"fmt"

@@ -14,8 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/utils"
-
 	"github.com/go-ole/go-ole"
 	"github.com/lxn/win"
 	"github.com/winlabs/gowin32"
@@ -24,6 +22,7 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/native"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 const group = "docker-users"
@@ -33,7 +32,7 @@ func (s *AppState) SuperviseDockerNode() {
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
 	defer s.WaitGroup.Done()
 
-	if LauncherUpgradeAvailable() {
+	if utils.LauncherUpgradeAvailable() {
 		ret := gui.UI.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\n\r\nUpgrade launcher installation ?")
 		if ret == win.IDYES {
 			exePath, _ := os.Executable()
@@ -48,7 +47,7 @@ func (s *AppState) SuperviseDockerNode() {
 	if err != nil {
 		panic(err) // TODO handle gracefully
 	}
-	docker := NewDockerMonitor(mystManager)
+	docker := myst.NewDockerMonitor(mystManager)
 
 	t1 := time.Tick(15 * time.Second)
 	s.Config.Read()
@@ -62,13 +61,13 @@ func (s *AppState) SuperviseDockerNode() {
 			}
 
 			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
-			checkVMSettings, needSetup, err := false, false, error(nil)
-			err = Retry(3, time.Second, func() error {
-				checkVMSettings, err = isUnderVm()
+			isUnderVM, needSetup, err := false, false, error(nil)
+			err = utils.Retry(3, time.Second, func() error {
+				isUnderVM, err = utils.SystemUnderVm()
 				if err != nil {
 					return err
 				}
-				features, err := QueryFeatures()
+				features, err := utils.QueryFeatures()
 				if err != nil {
 					return err
 				}
@@ -84,7 +83,7 @@ func (s *AppState) SuperviseDockerNode() {
 				return true
 			}
 
-			if checkVMSettings && !s.Config.CheckVMSettingsConfirm {
+			if isUnderVM && !s.Config.CheckVMSettingsConfirm {
 				ret := gui.UI.YesNoModal("Requirements checker", "VM has been detected. \r\n\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
 				if ret == win.IDNO {
 					gui.UI.ExitApp()
@@ -168,7 +167,7 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.SwitchState(gui.ModalStateInstallInProgress)
 
 	log.Println("Checking Windows version")
-	if !IsWindowsVersionCompatible() {
+	if !utils.IsWindowsVersionCompatible() {
 		gui.UI.SwitchState(gui.ModalStateInstallError)
 
 		log.Println("You must run Windows 10 version 2004 or above.")
@@ -181,7 +180,7 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.Update()
 
 	log.Println("Checking VT-x / EPT")
-	if !hasVTx() {
+	if !utils.HasVTx() {
 		log.Println("Please Enable virtualization in BIOS")
 		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS / Hypervisor: VT-x and EPT (Intel), SVM (AMD)")
 
@@ -192,17 +191,17 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.Update()
 
 	if !s.InstallStage2 {
-		features, err := QueryFeatures()
+		features, err := utils.QueryFeatures()
 		if err != nil {
-			log.Println("Failed to get model:", FeatureWSL)
+			log.Println("Failed to get model:", utils.FeatureWSL)
 			gui.UI.SwitchState(gui.ModalStateInstallError)
 			return true
 		}
-		err = InstallFeatures(features, func(feature int, name string) {
+		err = utils.InstallFeatures(features, func(feature int, name string) {
 			switch feature {
-			case FeatureWSL_:
+			case utils.FeatureWSL_:
 				gui.UI.EnableWSL = true
-			case FeatureHyperV_:
+			case utils.FeatureHyperV_:
 				gui.UI.EnableHyperV = true
 			}
 			gui.UI.Update()
@@ -222,7 +221,7 @@ func (s *AppState) tryInstall() bool {
 			gui.UI.SwitchState(gui.ModalStateInstallError)
 			return true
 		}
-		CreateAutostartShortcut(FlagInstallStage2)
+		utils.CreateAutostartShortcut(FlagInstallStage2)
 		gui.UI.InstallExecutable = true
 		gui.UI.Update()
 
@@ -242,9 +241,9 @@ func (s *AppState) tryInstall() bool {
 		gui.UI.RebootAfterWSLEnable = true
 		gui.UI.Update()
 	}
-	CreateAutostartShortcut(FlagTray)
-	CreateDesktopShortcut("")
-	CreateStartMenuShortcut("")
+	utils.CreateAutostartShortcut(FlagTray)
+	utils.CreateDesktopShortcut("")
+	utils.CreateStartMenuShortcut("")
 
 	download := func() error {
 		list := []struct{ url, name string }{
@@ -304,7 +303,7 @@ func (s *AppState) tryInstall() bool {
 		gui.UI.SwitchState(gui.ModalStateInstallError)
 		return true
 	}
-	if err := startDocker(); err != nil {
+	if err := myst.StartDockerDesktop(); err != nil {
 		log.Println("Failed starting docker:", err)
 
 		gui.UI.SwitchState(gui.ModalStateInstallError)
@@ -314,7 +313,7 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.Update()
 
 	log.Println("Checking current group membership")
-	if !CurrentGroupMembership(group) {
+	if !utils.CurrentGroupMembership(group) {
 		// request a logout //
 		log.Println("Log of from the current session to finish the installation.")
 

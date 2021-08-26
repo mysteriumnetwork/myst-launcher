@@ -11,6 +11,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/mysteriumnetwork/myst-launcher/utils"
+
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 )
@@ -24,11 +26,12 @@ func main() {
 
 		switch os.Args[1] {
 		case app.FlagInstall:
-			app.InstallExe()
+			utils.InstallExe()
 			return
 
 		case app.FlagUninstall:
-			app.UninstallExe()
+			app.StopApp()
+			utils.UninstallExe()
 			return
 		}
 	}

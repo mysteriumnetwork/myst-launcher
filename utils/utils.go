@@ -1,10 +1,6 @@
-/**
- * Copyright (c) 2021 BlockDev AG
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-package app
+// +build windows
+
+package utils
 
 import (
 	"bufio"
@@ -178,7 +174,6 @@ func InstallExe() error {
 }
 
 func UninstallExe() error {
-	StopApp()
 	registry.DeleteKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`)
 
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", launcherLnk)
@@ -279,7 +274,7 @@ func isWindowsUpdateEnabled() bool {
 	return disableWUfBSafeguards == 1
 }
 
-func isUnderVm() (bool, error) {
+func SystemUnderVm() (bool, error) {
 	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	defer unknown.Release()
 
@@ -323,7 +318,7 @@ func isUnderVm() (bool, error) {
 
 // We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
 // see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
-func hasVTx() bool {
+func HasVTx() bool {
 	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	defer unknown.Release()
 
