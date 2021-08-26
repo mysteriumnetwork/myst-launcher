@@ -3,16 +3,16 @@
 package utils
 
 import (
-	"os/exec"
+	"fmt"
+	"syscall"
 )
 
+func getSysProcAttrs() syscall.SysProcAttr {
+	return syscall.SysProcAttr{}
+}
+
 func IsProcessRunning(name string) bool {
-	cmd := exec.Command("pgrep", "-xq", "--", `"^Docker"`)
-	_, err := cmd.Output()
-	if werr, ok := err.(*exec.ExitError); ok {
-		if s := werr.Error(); s != "0" {
-			return true
-		}
-	}
+	res := CmdRun("pgrep", "-xq", "--", `^`+name)
+	fmt.Println("IsProcessRunning>", res)
 	return false
 }

@@ -1,9 +1,12 @@
 package myst
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -49,10 +52,12 @@ func (r *DockerMonitor) CouldNotStart() bool {
 }
 
 func (r *DockerMonitor) tryStartDockerDesktop() bool {
-	//gui.UI.SetStateContainer(gui.RunnableStateUnknown)
-	//gui.UI.SetStateDocker(gui.RunnableStateStarting)
+	exe := "Docker Desktop.exe"
+	if runtime.GOOS == "darwin" {
+		exe = "Docker"
+	}
 
-	if utils.IsProcessRunning("Docker Desktop.exe") {
+	if utils.IsProcessRunning(exe) {
 		return true
 	}
 	if err := StartDockerDesktop(); err != nil {
@@ -63,9 +68,20 @@ func (r *DockerMonitor) tryStartDockerDesktop() bool {
 }
 
 func StartDockerDesktop() error {
-	dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
-	cmd := exec.Command(dd, "-Autostart")
+	var cmd *exec.Cmd
+	fmt.Println("StartDockerDesktop>", runtime.GOOS)
+	switch runtime.GOOS {
+	case "windows":
+		dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
+		cmd = exec.Command(dd, "-Autostart")
+	case "darwin":
+		cmd = exec.Command("open", "/Applications/Docker.app/")
+	default:
+		return errors.New("unsupported OS: " + runtime.GOOS)
+	}
+
 	if err := cmd.Start(); err != nil {
+		fmt.Println("err>", err)
 		return err
 	}
 	return nil

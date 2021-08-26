@@ -100,7 +100,9 @@ func (s *AppState) SuperviseDockerNode() {
 				gui.UI.SetStateDocker(gui.RunnableStateRunning)
 				return false
 			}
+			gui.UI.SetStateDocker(gui.RunnableStateStarting)
 			if docker.CouldNotStart() {
+				gui.UI.SetStateDocker(gui.RunnableStateUnknown)
 				return s.tryInstall()
 			}
 

@@ -20,8 +20,6 @@ type AppState struct {
 	Action    chan string
 
 	ImgVer myst.ImageVersionInfo
-	//mystManager *myst.Manager
-	//mon         *DockerMonitor
 
 	// state
 	didInstallation bool
