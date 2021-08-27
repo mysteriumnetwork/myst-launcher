@@ -80,6 +80,14 @@ func (s *AppState) SuperviseDockerNode() {
 					needSetup = true
 					return nil
 				}
+				_, vmPlatformEnabled, err := QueryWindowsFeature(FeatureVMPlatform)
+				if err != nil {
+					return err
+				}
+				if !vmPlatformEnabled {
+					needSetup = true
+					return nil
+				}
 				return err
 			})
 			if err != nil {
@@ -105,8 +113,8 @@ func (s *AppState) SuperviseDockerNode() {
 			if !canPingDocker {
 				tryStartCount++
 
-				// try starting docker for 10 times, else try install
-				if !tryStartDocker() || tryStartCount == 10 {
+				// try starting docker, it may take a few minutes, else try (re)install
+				if !tryStartDocker() || tryStartCount == 100 {
 					tryStartCount = 0
 					didDockerInstall = true
 					return s.tryInstall()
@@ -246,80 +254,7 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.CheckWindowsVersion = true
 	gui.UI.Update()
 
-	log.Println("Checking VT-x / EPT")
-	if !hasVTx() {
-		log.Println("Please Enable virtualization in BIOS")
-		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS / Hypervisor: VT-x and EPT (Intel), SVM (AMD)")
-
-		gui.UI.SwitchState(gui.ModalStateInstallError)
-		return true
-	}
-	gui.UI.CheckVTx = true
-	gui.UI.Update()
-
 	if !s.InstallStage2 {
-		_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
-		if err != nil {
-			log.Println("Failed to get model:", FeatureWSL)
-			gui.UI.SwitchState(gui.ModalStateInstallError)
-			return true
-		}
-		hyperVExists, hyperVEnabled, err := QueryWindowsFeature(FeatureHyperV)
-		if err != nil {
-			log.Println("Failed to get model:", FeatureHyperV)
-			gui.UI.SwitchState(gui.ModalStateInstallError)
-			return true
-		}
-		needEnableHyperV := hyperVExists && !hyperVEnabled
-		_, vmPlatformEnabled, err := QueryWindowsFeature(FeatureVMPlatform)
-		if err != nil {
-			log.Println("Failed to get model:", FeatureVMPlatform)
-			gui.UI.SwitchState(gui.ModalStateInstallError)
-			return true
-		}
-
-		if !vmPlatformEnabled {
-			log.Println("Enable VM Platform..")
-			exe := "dism.exe"
-			cmdArgs := "/online /enable-feature /featurename:VirtualMachinePlatform /all /norestart"
-			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
-			if err != nil {
-				log.Println("Command failed: failed to enable VirtualMachinePlatform")
-
-				gui.UI.SwitchState(gui.ModalStateInstallError)
-				return true
-			}
-		}
-		if !wslEnabled {
-			log.Println("Enable WSL..")
-			exe := "dism.exe"
-			cmdArgs := "/online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart"
-			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
-			if err != nil {
-				log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
-
-				gui.UI.SwitchState(gui.ModalStateInstallError)
-				return true
-			}
-		}
-		gui.UI.EnableWSL = true
-		gui.UI.Update()
-
-		if needEnableHyperV {
-			log.Println("Enable Hyper-V..")
-			exe := "dism.exe"
-			cmdArgs := "/online /enable-feature /featurename:Microsoft-Hyper-V /all /norestart"
-			err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
-			if err != nil {
-				log.Println("Command failed: failed to enable Microsoft-Hyper-V")
-
-				gui.UI.SwitchState(gui.ModalStateInstallError)
-				return true
-			}
-		}
-		gui.UI.EnableHyperV = true
-		gui.UI.Update()
-
 		log.Println("Install executable")
 		fullExe, _ := os.Executable()
 		cmdArgs := FlagInstall
@@ -333,23 +268,102 @@ func (s *AppState) tryInstall() bool {
 		CreateAutostartShortcut(FlagInstallStage2)
 		gui.UI.InstallExecutable = true
 		gui.UI.Update()
+	}
 
-		if !wslEnabled || needEnableHyperV {
-			ret := gui.UI.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+
-				"Click Yes to reboot now")
-			if ret == win.IDYES {
-				native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
-			}
+	// Don't check VT-x / EPT as it's just enough to check VMPlatform WSL and vmcompute
+
+	_, wslEnabled, err := QueryWindowsFeature(FeatureWSL)
+	if err != nil {
+		log.Println("Failed to get model:", FeatureWSL)
+		gui.UI.SwitchState(gui.ModalStateInstallError)
+		return true
+	}
+	hyperVExists, hyperVEnabled, err := QueryWindowsFeature(FeatureHyperV)
+	if err != nil {
+		log.Println("Failed to get model:", FeatureHyperV)
+		gui.UI.SwitchState(gui.ModalStateInstallError)
+		return true
+	}
+	needEnableHyperV := hyperVExists && !hyperVEnabled
+	_, vmPlatformEnabled, err := QueryWindowsFeature(FeatureVMPlatform)
+	if err != nil {
+		log.Println("Failed to get model:", FeatureVMPlatform)
+		gui.UI.SwitchState(gui.ModalStateInstallError)
+		return true
+	}
+
+	if !vmPlatformEnabled {
+		log.Println("Enable VM Platform..")
+		exe := "dism.exe"
+		cmdArgs := "/online /enable-feature /featurename:VirtualMachinePlatform /all /norestart"
+		err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+		if err != nil {
+			log.Println("Command failed: failed to enable VirtualMachinePlatform")
+
+			gui.UI.SwitchState(gui.ModalStateInstallError)
 			return true
 		}
-	} else {
-		// proceeding install after reboot
-		gui.UI.EnableWSL = true
-		gui.UI.EnableHyperV = true
+	}
+	if !wslEnabled {
+		log.Println("Enable WSL..")
+		exe := "dism.exe"
+		cmdArgs := "/online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart"
+		err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+		if err != nil {
+			log.Println("Command failed: failed to enable Microsoft-Windows-Subsystem-Linux")
+
+			gui.UI.SwitchState(gui.ModalStateInstallError)
+			return true
+		}
+	}
+	gui.UI.EnableWSL = true
+	gui.UI.Update()
+
+	if needEnableHyperV {
+		log.Println("Enable Hyper-V..")
+		exe := "dism.exe"
+		cmdArgs := "/online /enable-feature /featurename:Microsoft-Hyper-V /all /norestart"
+		err = native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+		if err != nil {
+			log.Println("Command failed: failed to enable Microsoft-Hyper-V")
+
+			gui.UI.SwitchState(gui.ModalStateInstallError)
+			return true
+		}
+	}
+	gui.UI.EnableHyperV = true
+	gui.UI.Update()
+
+	if !wslEnabled || needEnableHyperV || !vmPlatformEnabled {
+		ret := gui.UI.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+
+			"Click Yes to reboot now")
+		if ret == win.IDYES {
+			native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
+		}
+		return true
+	}
+
+	// proceeding install after reboot
+	if s.InstallStage2 {
 		gui.UI.InstallExecutable = true
 		gui.UI.RebootAfterWSLEnable = true
 		gui.UI.Update()
 	}
+
+	// Instead of chechking VT-x check vmcompute service is running
+	log.Println("Checking vmcompute (Hyper-V Host Compute Service)")
+	isVMComputeRunning := IsVMComputeRunning()
+	if !isVMComputeRunning {
+		log.Println("Vmcompute (Hyper-V Host Compute Service) is not running")
+		gui.UI.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service)")
+
+		gui.UI.SwitchState(gui.ModalStateInstallError)
+		return true
+	}
+
+	gui.UI.CheckVTx = true
+	gui.UI.Update()
+
 	CreateAutostartShortcut(FlagTray)
 	CreateDesktopShortcut("")
 	CreateStartMenuShortcut("")

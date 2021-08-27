@@ -359,6 +359,42 @@ func hasVTx() bool {
 	return false
 }
 
+func IsVMComputeRunning() bool {
+	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
+	defer unknown.Release()
+
+	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
+	defer wmi.Release()
+
+	// service is a SWbemServices
+	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
+	service := serviceRaw.ToIDispatch()
+	defer service.Release()
+
+	// result is a SWBemObjectSet
+	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
+	result := resultRaw.ToIDispatch()
+	defer result.Release()
+
+	countVar, _ := oleutil.GetProperty(result, "Count")
+	count := int(countVar.Val)
+
+	for i := 0; i < count; i++ {
+		itemRaw, _ := oleutil.CallMethod(result, "ItemIndex", i)
+		item := itemRaw.ToIDispatch()
+		defer item.Release()
+
+		variantHypervisorPresent, err := oleutil.GetProperty(item, "State")
+		if err == nil {
+			state := variantHypervisorPresent.Value().(string)
+			if state == "Running" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 const (
 	FeatureWSL        = "Microsoft-Windows-Subsystem-Linux"
 	FeatureHyperV     = "Microsoft-Hyper-V"
