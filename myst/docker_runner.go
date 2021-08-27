@@ -2,7 +2,6 @@ package myst
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -24,31 +23,19 @@ func NewDockerMonitor(m *Manager) *DockerMonitor {
 	}
 }
 
-func (r *DockerMonitor) IsRunning() bool {
+// return values: isRunning, couldNotStart
+func (r *DockerMonitor) IsRunning() (bool, bool) {
 	canPingDocker := r.m.CanPingDocker()
 	if !canPingDocker {
 		r.tryStartCount++
 
-		// try starting docker for 10 times, else try install
-		if !r.tryStartDockerDesktop() || r.tryStartCount == 10 {
+		if !r.tryStartDockerDesktop() || r.tryStartCount == 100 {
 			r.tryStartCount = 0
-			r.couldNotStart = true
+			return false, true
 		}
-
-		return false // not running or still starting
+		return false, false
 	}
-
-	return true
-}
-
-func (r *DockerMonitor) CouldNotStart() bool {
-	val := r.couldNotStart
-
-	if val {
-		r.couldNotStart = false
-		r.tryStartCount = 0
-	}
-	return val
+	return true, false
 }
 
 func (r *DockerMonitor) tryStartDockerDesktop() bool {
@@ -69,7 +56,7 @@ func (r *DockerMonitor) tryStartDockerDesktop() bool {
 
 func StartDockerDesktop() error {
 	var cmd *exec.Cmd
-	fmt.Println("StartDockerDesktop>", runtime.GOOS)
+	log.Println("StartDockerDesktop >")
 	switch runtime.GOOS {
 	case "windows":
 		dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
@@ -81,7 +68,7 @@ func StartDockerDesktop() error {
 	}
 
 	if err := cmd.Start(); err != nil {
-		fmt.Println("err>", err)
+		log.Println("err>", err)
 		return err
 	}
 	return nil

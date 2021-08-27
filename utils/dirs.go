@@ -5,7 +5,7 @@ package utils
 import "os"
 
 func GetTmpDir() string {
-	return "/tmp"
+	return os.Getenv("TEMPDIR")
 }
 
 func GetUserProfileDir() string {

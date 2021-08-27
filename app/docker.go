@@ -55,7 +55,7 @@ func (s *AppState) SuperviseDockerNode() {
 
 	for {
 		tryStartOrInstallDocker := func() bool {
-			if docker.IsRunning() {
+			if isRunning, _ := docker.IsRunning(); isRunning {
 				gui.UI.SetStateDocker(gui.RunnableStateRunning)
 				return false
 			}
@@ -96,12 +96,13 @@ func (s *AppState) SuperviseDockerNode() {
 				return s.tryInstall()
 			}
 
-			if docker.IsRunning() {
+			isRunning, couldNotStart := docker.IsRunning()
+			if isRunning {
 				gui.UI.SetStateDocker(gui.RunnableStateRunning)
 				return false
 			}
 			gui.UI.SetStateDocker(gui.RunnableStateStarting)
-			if docker.CouldNotStart() {
+			if couldNotStart {
 				gui.UI.SetStateDocker(gui.RunnableStateUnknown)
 				return s.tryInstall()
 			}
@@ -201,15 +202,15 @@ func (s *AppState) tryInstall() bool {
 
 	features, err := utils.QueryFeatures()
 	if err != nil {
-		log.Println("Failed to get model:", utils.FeatureWSL)
+		log.Println("Failed to query feature:", utils.FeatureWSL)
 		gui.UI.SwitchState(gui.ModalStateInstallError)
 		return true
 	}
 	err = utils.InstallFeatures(features, func(feature int, name string) {
 		switch feature {
-		case utils.FeatureWSL_:
+		case utils.IDFeatureWSL:
 			gui.UI.EnableWSL = true
-		case utils.FeatureHyperV_:
+		case utils.IDFeatureHyperV:
 			gui.UI.EnableHyperV = true
 		}
 		gui.UI.Update()

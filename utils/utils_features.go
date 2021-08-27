@@ -15,15 +15,15 @@ const (
 	FeatureHyperV     = "Microsoft-Hyper-V"
 	FeatureVMPlatform = "VirtualMachinePlatform"
 
-	FeatureWSL_        = 1
-	FeatureHyperV_     = 2
-	FeatureVMPlatform_ = 3
+	IDFeatureWSL        = 1
+	IDFeatureHyperV     = 2
+	IDFeatureVMPlatform = 3
 )
 
 var featureDict = map[int]string{
-	FeatureWSL_:        FeatureWSL,
-	FeatureHyperV_:     FeatureHyperV,
-	FeatureVMPlatform_: FeatureVMPlatform,
+	IDFeatureWSL:        FeatureWSL,
+	IDFeatureHyperV:     FeatureHyperV,
+	IDFeatureVMPlatform: FeatureVMPlatform,
 }
 
 // query if there are features to be enabled
@@ -36,7 +36,6 @@ func QueryFeatures() ([]int, error) {
 			return nil, err
 		}
 
-		fmt.Println("QueryFeatures >", featureExists, v)
 		if featureExists && !featureEnabled {
 			f = append(f, k)
 		}
@@ -48,7 +47,7 @@ func InstallFeatures(features []int, onFeatureReady func(int, string)) error {
 	for _, feature := range features {
 		featureName := featureDict[feature]
 
-		log.Println("Enable" + featureName)
+		log.Println("Enable " + featureName)
 		exe := "dism.exe"
 		cmdArgs := fmt.Sprintf("/online /enable-feature /featurename:%s /all /norestart", featureName)
 		err := native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)

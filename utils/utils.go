@@ -1,9 +1,8 @@
 package utils
 
 import (
-	"bufio"
+	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os/exec"
 	"strings"
@@ -13,56 +12,32 @@ import (
 
 var a = getSysProcAttrs()
 
-func CmdRun(name string, args ...string) int {
+// returns: exit status, error
+func CmdRun(name string, args ...string) (int, error) {
 	log.Print(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
 
 	cmd := exec.Command(name, args...)
-	//cmd.SysProcAttr = &a
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Println(err)
-		return -1
-	}
-	defer stdout.Close()
-
-	if err = cmd.Start(); err != nil {
-		log.Println(err)
-		return -1
-	}
-	r := bufio.NewReader(stdout)
-	for {
-		var line []byte
-		line, _, e := r.ReadLine()
-		if e == io.EOF {
-			break
-		}
-		_ = line
-
-		log.Println(string(line))
-	}
-
-	var exitCode int
-	const defaultFailedCode = 1
+	cmd.SysProcAttr = &a
 
 	if err := cmd.Wait(); err != nil {
 		// try to get the exit code
 		if exitError, ok := err.(*exec.ExitError); ok {
-			ws := exitError.Sys().(syscall.WaitStatus)
-			exitCode = ws.ExitStatus()
+			if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
+				return waitStatus.ExitStatus(), nil
+			} else {
+				return 0, errors.New("Type assertion failed: syscall.WaitStatus")
+			}
 		} else {
-			log.Printf("Could not get exit code for failed program: %v, %v \r\n", name, args)
-			exitCode = defaultFailedCode
-
-			log.Printf(">>>> %+v, \r\n", err)
+			log.Printf("error> %+v, \r\n", err)
+			return 0, errors.New("Type assertion failed: *exec.ExitError")
 		}
 	} else {
-		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
-		exitCode = ws.ExitStatus()
+		if waitStatus, ok := cmd.ProcessState.Sys().(syscall.WaitStatus); ok {
+			return waitStatus.ExitStatus(), nil
+		} else {
+			return 0, errors.New("Type assertion failed: syscall.WaitStatus")
+		}
 	}
-
-	log.Printf("command exitCode: %v \r\n", exitCode)
-	return exitCode
 }
 
 func Retry(attempts int, sleep time.Duration, fn func() error) error {

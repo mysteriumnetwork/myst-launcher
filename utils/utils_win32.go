@@ -200,9 +200,7 @@ func IsProcessRunning(name string) bool {
 			break
 		}
 		s := windows.UTF16ToString(p.ExeFile[:])
-
 		if s == name {
-			println(s)
 			return true
 		}
 	}
