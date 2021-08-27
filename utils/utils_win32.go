@@ -171,12 +171,13 @@ func IsWindowsVersionCompatible() bool {
 		log.Fatal(err)
 	}
 	releaseId, _ := strconv.Atoi(releaseIdStr)
+	_ = releaseId
 
 	// https://docs.docker.com/docker-for-windows/install/#wsl-2-backend
+	//releaseId >= 2004 - home & professional
+	//releaseId >= 1909 - Enterprise or Education
 	v := windows.RtlGetVersion()
-	if v.MajorVersion == 10 && releaseId >= 2004 {
-		return true
-	} else if v.MajorVersion > 10 {
+	if v.MajorVersion >= 10 {
 		return true
 	}
 	return false
@@ -294,6 +295,42 @@ func HasVTx() bool {
 		variantHypervisorPresent, err := oleutil.GetProperty(item, "HypervisorPresent")
 		if err == nil {
 			return variantHypervisorPresent.Value().(bool)
+		}
+	}
+	return false
+}
+
+func IsVMComputeRunning() bool {
+	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
+	defer unknown.Release()
+
+	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
+	defer wmi.Release()
+
+	// service is a SWbemServices
+	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
+	service := serviceRaw.ToIDispatch()
+	defer service.Release()
+
+	// result is a SWBemObjectSet
+	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
+	result := resultRaw.ToIDispatch()
+	defer result.Release()
+
+	countVar, _ := oleutil.GetProperty(result, "Count")
+	count := int(countVar.Val)
+
+	for i := 0; i < count; i++ {
+		itemRaw, _ := oleutil.CallMethod(result, "ItemIndex", i)
+		item := itemRaw.ToIDispatch()
+		defer item.Release()
+
+		variantHypervisorPresent, err := oleutil.GetProperty(item, "State")
+		if err == nil {
+			state := variantHypervisorPresent.Value().(string)
+			if state == "Running" {
+				return true
+			}
 		}
 	}
 	return false

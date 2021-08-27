@@ -181,38 +181,7 @@ func (s *AppState) tryInstall() bool {
 	gui.UI.CheckWindowsVersion = true
 	gui.UI.Update()
 
-	log.Println("Checking VT-x / EPT")
-	if !utils.HasVTx() {
-		log.Println("Please Enable virtualization in BIOS")
-		gui.UI.ConfirmModal("Installation", "Please Enable virtualization in BIOS / Hypervisor: VT-x and EPT (Intel), SVM (AMD)")
-
-		gui.UI.SwitchState(gui.ModalStateInstallError)
-		return true
-	}
-	gui.UI.CheckVTx = true
-	gui.UI.Update()
-
 	if !s.InstallStage2 {
-		features, err := utils.QueryFeatures()
-		if err != nil {
-			log.Println("Failed to get model:", utils.FeatureWSL)
-			gui.UI.SwitchState(gui.ModalStateInstallError)
-			return true
-		}
-		err = utils.InstallFeatures(features, func(feature int, name string) {
-			switch feature {
-			case utils.FeatureWSL_:
-				gui.UI.EnableWSL = true
-			case utils.FeatureHyperV_:
-				gui.UI.EnableHyperV = true
-			}
-			gui.UI.Update()
-		})
-		if err != nil {
-			gui.UI.SwitchState(gui.ModalStateInstallError)
-			return true
-		}
-
 		log.Println("Install executable")
 		fullExe, _ := os.Executable()
 		cmdArgs := FlagInstall
@@ -226,23 +195,58 @@ func (s *AppState) tryInstall() bool {
 		utils.CreateAutostartShortcut(FlagInstallStage2)
 		gui.UI.InstallExecutable = true
 		gui.UI.Update()
+	}
 
-		if len(features) > 0 {
-			ret := gui.UI.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+"Click Yes to reboot now")
-			if ret == win.IDYES {
-				native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
-			}
-			return true
+	// Don't check VT-x / EPT as it's just enough to check VMPlatform WSL and vmcompute
+
+	features, err := utils.QueryFeatures()
+	if err != nil {
+		log.Println("Failed to get model:", utils.FeatureWSL)
+		gui.UI.SwitchState(gui.ModalStateInstallError)
+		return true
+	}
+	err = utils.InstallFeatures(features, func(feature int, name string) {
+		switch feature {
+		case utils.FeatureWSL_:
+			gui.UI.EnableWSL = true
+		case utils.FeatureHyperV_:
+			gui.UI.EnableHyperV = true
 		}
+		gui.UI.Update()
+	})
+	if err != nil {
+		gui.UI.SwitchState(gui.ModalStateInstallError)
+		return true
+	}
 
-	} else {
-		// proceeding install after reboot
-		gui.UI.EnableWSL = true
-		gui.UI.EnableHyperV = true
+	if len(features) > 0 {
+		ret := gui.UI.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+"Click Yes to reboot now")
+		if ret == win.IDYES {
+			native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
+		}
+		return true
+	}
+
+	// proceeding install after reboot
+	if s.InstallStage2 {
 		gui.UI.InstallExecutable = true
 		gui.UI.RebootAfterWSLEnable = true
 		gui.UI.Update()
 	}
+
+	// Instead of chechking VT-x check vmcompute service is running
+	log.Println("Checking vmcompute (Hyper-V Host Compute Service)")
+	isVMComputeRunning := utils.IsVMComputeRunning()
+	if !isVMComputeRunning {
+		log.Println("Vmcompute (Hyper-V Host Compute Service) is not running")
+		gui.UI.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service)")
+
+		gui.UI.SwitchState(gui.ModalStateInstallError)
+		return true
+	}
+	gui.UI.CheckVTx = true
+	gui.UI.Update()
+
 	utils.CreateAutostartShortcut(FlagTray)
 	utils.CreateDesktopShortcut("")
 	utils.CreateStartMenuShortcut("")
