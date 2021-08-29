@@ -263,10 +263,7 @@ func (m *Manager) timeout() *time.Duration {
 }
 
 func (m *Manager) GetCurrentImageDigest() string {
-	c, err := m.findMystContainer()
-	if err != nil {
-		return ""
-	}
+	c, _ := m.findMystContainer()
 
 	images, err := m.dockerAPI.ImageList(m.ctx(), types.ImageListOptions{})
 	if err != nil {

@@ -11,10 +11,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/mysteriumnetwork/myst-launcher/utils"
+
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/gui"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func main() {
@@ -26,30 +26,32 @@ func main() {
 
 		switch os.Args[1] {
 		case app.FlagInstall:
-			app.InstallExe()
+			utils.InstallExe()
 			return
 
 		case app.FlagUninstall:
-			app.UninstallExe()
+			app.StopApp()
+			utils.UninstallExe()
 			return
 		}
 	}
-	if utils.IsAlreadyRunning() {
+	if app.IsAlreadyRunning() {
 		return
 	}
 
 	log.SetOutput(a)
-	a.ReadConfig()
-	a.ImageName = myst.GetImageName()
+	a.Config.Read()
 
+	gui.UI.SetImageVersionInfo(&a.ImgVer)
 	gui.UI.SetApp(a)
+
 	gui.CreateNotifyIcon()
 	gui.CreateDialogue()
 
 	a.WaitGroup.Add(1)
 	go a.SuperviseDockerNode()
 
-	utils.CreatePipeAndListen(&gui.UI)
+	app.CreatePipeAndListen(&gui.UI)
 
 	// Run the message loop
 	gui.UI.Run()
