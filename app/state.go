@@ -1,10 +1,12 @@
 package app
 
 import (
+	"fmt"
 	"sync"
 
-	"github.com/asaskevich/EventBus"
+	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 )
@@ -13,11 +15,13 @@ type AppState struct {
 	// flags
 	InTray        bool
 	InstallStage2 bool
-	Config        model.Config
 
-	Bus       EventBus.Bus
-	WaitGroup sync.WaitGroup
-	Action    chan string
+	Config    model.Config
+	WaitGroup sync.WaitGroup // for graceful shutdown
+
+	action chan string
+	mod    gui.UIModelInterface
+	ui     *gui_win32.Gui
 
 	ImgVer myst.ImageVersionInfo
 
@@ -27,11 +31,17 @@ type AppState struct {
 
 func NewApp() *AppState {
 	s := &AppState{}
-	s.Action = make(chan string, 1)
-	s.Bus = EventBus.New()
+	s.action = make(chan string, 1)
 	s.ImgVer.ImageName = myst.GetImageName()
-
 	return s
+}
+
+func (s *AppState) SetModel(ui gui.UIModelInterface) {
+	s.mod = ui
+}
+
+func (s *AppState) SetUI(ui *gui_win32.Gui) {
+	s.ui = ui
 }
 
 func (s *AppState) Write(b []byte) (int, error) {
@@ -40,24 +50,13 @@ func (s *AppState) Write(b []byte) (int, error) {
 	bCopy := make([]byte, len(b))
 	copy(bCopy, b)
 
-	s.Bus.Publish("log", bCopy)
+	s.mod.Publish("log", bCopy)
 	return len(bCopy), nil
 }
 
-func (s *AppState) Publish(topic string, args ...interface{}) {
-	s.Bus.Publish(topic, args...)
-}
-
-func (s *AppState) Subscribe(topic string, fn interface{}) error {
-	return s.Bus.Subscribe(topic, fn)
-}
-
-func (s *AppState) Unsubscribe(topic string, fn interface{}) error {
-	return s.Bus.Unsubscribe(topic, fn)
-}
-
 func (s *AppState) TriggerAction(action string) {
-	s.Action <- action
+	fmt.Println("TriggerAction", action)
+	s.action <- action
 }
 
 func (s *AppState) GetInTray() bool {
@@ -65,8 +64,4 @@ func (s *AppState) GetInTray() bool {
 }
 func (s *AppState) GetConfig() *model.Config {
 	return &s.Config
-}
-
-func (s *AppState) GetImageName() string {
-	return s.ImgVer.ImageName
 }

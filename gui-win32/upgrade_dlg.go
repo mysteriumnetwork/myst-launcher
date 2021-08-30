@@ -1,11 +1,11 @@
-package gui
+package gui_win32
 
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
 
-func (g *Gui) UpgradeDlg(owner walk.Form) {
+func (g *Gui) OpenUpgradeDlg() {
 	var (
 		dialog             *walk.Dialog
 		acceptPB, cancelPB *walk.PushButton
@@ -14,9 +14,9 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 	)
 
 	refresh := func() {
-		lbVersionCurrent.SetText(UI.imgVer.VersionCurrent)
-		lbVersionLatest.SetText(UI.imgVer.VersionLatest)
-		acceptPB.SetEnabled(UI.imgVer.HasUpdate)
+		lbVersionCurrent.SetText(g.model.imgVer.VersionCurrent)
+		lbVersionLatest.SetText(g.model.imgVer.VersionLatest)
+		acceptPB.SetEnabled(g.model.imgVer.HasUpdate)
 	}
 
 	err := Dialog{
@@ -25,7 +25,7 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		MinSize:       Size{400, 175},
-		Icon:          UI.icon,
+		Icon:          g.icon,
 
 		Layout: Grid{
 			Columns: 2,
@@ -36,7 +36,8 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 				Text: "Docker Hub image name",
 			},
 			Label{
-				Text: UI.app.GetImageName(),
+				//Text: g.model.app.GetImageName(),
+				Text: g.model.imgVer.ImageName,
 			},
 			Label{
 				Text: "Node version installed",
@@ -62,7 +63,7 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 						Text:     "Yes",
 						OnClicked: func() {
 							dialog.Accept()
-							UI.app.TriggerAction("upgrade")
+							g.model.app.TriggerAction("upgrade")
 						},
 					},
 					PushButton{
@@ -75,18 +76,18 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 				},
 			},
 		},
-	}.Create(UI.dlg)
+	}.Create(g.dlg)
 	if err != nil {
 		return
 	}
 	dialog.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		UI.app.Unsubscribe("model-change", refresh)
+		g.model.UIBus.Unsubscribe("model-change", refresh)
 	})
 	dialog.Disposing()
 
 	dialog.Show()
-	dialog.SetX(UI.dlg.X() + 300)
+	dialog.SetX(g.dlg.X() + 300)
 	refresh()
 
-	UI.app.Subscribe("model-change", refresh)
+	g.model.UIBus.Subscribe("model-change", refresh)
 }

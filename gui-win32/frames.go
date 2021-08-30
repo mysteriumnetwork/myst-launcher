@@ -1,11 +1,11 @@
-package gui
+package gui_win32
 
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
 
-func (mw *Gui) installationWelcome() Widget {
+func (g *Gui) installationWelcome() Widget {
 	return Composite{
 		Visible: false,
 		Layout: VBox{
@@ -32,10 +32,10 @@ func (mw *Gui) installationWelcome() Widget {
 					},
 					VSpacer{Row: 1},
 					PushButton{
-						AssignTo: &mw.btnBegin,
+						AssignTo: &g.btnBegin,
 						Text:     "Install",
 						OnClicked: func() {
-							UI.BtnFinishOnClick()
+							g.model.BtnFinishOnClick()
 						},
 					},
 				},
@@ -44,7 +44,7 @@ func (mw *Gui) installationWelcome() Widget {
 	}
 }
 
-func (mw *Gui) installationDlg() Widget {
+func (g *Gui) installationDlg() Widget {
 	return Composite{
 		Visible: false,
 		Layout: VBox{
@@ -62,7 +62,7 @@ func (mw *Gui) installationDlg() Widget {
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.checkWindowsVersion,
+						AssignTo: &g.checkWindowsVersion,
 					},
 
 					Label{
@@ -70,21 +70,21 @@ func (mw *Gui) installationDlg() Widget {
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.checkVTx,
+						AssignTo: &g.checkVTx,
 					},
 					Label{
 						Text: "Check WSL",
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.enableWSL,
+						AssignTo: &g.enableWSL,
 					},
 					Label{
 						Text: "Check Hyper-V",
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.enableHyperV,
+						AssignTo: &g.enableHyperV,
 					},
 
 					Label{
@@ -92,42 +92,42 @@ func (mw *Gui) installationDlg() Widget {
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.installExecutable,
+						AssignTo: &g.installExecutable,
 					},
 					Label{
 						Text: "Reboot after WSL enable",
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.rebootAfterWSLEnable,
+						AssignTo: &g.rebootAfterWSLEnable,
 					},
 					Label{
 						Text: "Download files",
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.downloadFiles,
+						AssignTo: &g.downloadFiles,
 					},
 					Label{
 						Text: "Install WSL update",
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.installWSLUpdate,
+						AssignTo: &g.installWSLUpdate,
 					},
 					Label{
 						Text: "Install Docker",
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.installDocker,
+						AssignTo: &g.installDocker,
 					},
 					Label{
 						Text: "Check group membership (docker-users)",
 					},
 					CheckBox{
 						Enabled:  false,
-						AssignTo: &mw.checkGroupMembership,
+						AssignTo: &g.checkGroupMembership,
 					},
 
 					VSpacer{
@@ -143,7 +143,7 @@ func (mw *Gui) installationDlg() Widget {
 					TextEdit{
 						ColumnSpan: 2,
 						RowSpan:    1,
-						AssignTo:   &mw.lbInstallationStatus,
+						AssignTo:   &g.lbInstallationStatus,
 						ReadOnly:   true,
 						MaxSize: Size{
 							Height: 120,
@@ -154,10 +154,10 @@ func (mw *Gui) installationDlg() Widget {
 					VSpacer{ColumnSpan: 2, Row: 1},
 					PushButton{
 						ColumnSpan: 2,
-						AssignTo:   &mw.btnFinish,
+						AssignTo:   &g.btnFinish,
 						Text:       "Finish",
 						OnClicked: func() {
-							UI.BtnFinishOnClick()
+							g.model.BtnFinishOnClick()
 						},
 					},
 				},
@@ -166,7 +166,7 @@ func (mw *Gui) installationDlg() Widget {
 	}
 }
 
-func (mw *Gui) stateDlg() Widget {
+func (g *Gui) stateDlg() Widget {
 	return Composite{
 		Visible: false,
 		Layout: VBox{
@@ -183,33 +183,34 @@ func (mw *Gui) stateDlg() Widget {
 						Text: "Docker Hub image name",
 					},
 					Label{
-						Text: UI.app.GetImageName(),
+						//Text: g.model.app.GetImageName(),
+						Text: g.model.imgVer.ImageName,
 					},
 					Label{
 						Text: "Node version installed",
 					},
 					Label{
 						Text:     "-",
-						AssignTo: &mw.lbVersionCurrent,
+						AssignTo: &g.lbVersionCurrent,
 					},
 					Label{
 						Text: "Upgrade available",
 					},
 					LinkLabel{
-						AssignTo: &mw.lbVersionUpdatesAvail,
+						AssignTo: &g.lbVersionUpdatesAvail,
 						Text:     `-`,
 						OnLinkActivated: func(link *walk.LinkLabelLink) {
-							UI.BtnUpgradeOnClick()
+							g.OpenUpgradeDlg()
 						},
 					},
 
 					CheckBox{
 						Text:           "Upgrade automatically",
 						TextOnLeftSide: true,
-						AssignTo:       &mw.autoUpgrade,
+						AssignTo:       &g.autoUpgrade,
 						OnCheckedChanged: func() {
-							UI.app.GetConfig().AutoUpgrade = mw.autoUpgrade.Checked()
-							UI.app.GetConfig().Save()
+							g.model.app.GetConfig().AutoUpgrade = g.autoUpgrade.Checked()
+							g.model.app.GetConfig().Save()
 						},
 						//ColumnSpan: 2,
 						MaxSize: Size{Height: 15},
@@ -226,14 +227,14 @@ func (mw *Gui) stateDlg() Widget {
 					},
 					Label{
 						Text:     "-",
-						AssignTo: &mw.lbDocker,
+						AssignTo: &g.lbDocker,
 					},
 					Label{
 						Text: "Container",
 					},
 					Label{
 						Text:     "-",
-						AssignTo: &mw.lbContainer,
+						AssignTo: &g.lbContainer,
 					},
 					VSpacer{
 						ColumnSpan: 2,
@@ -245,9 +246,9 @@ func (mw *Gui) stateDlg() Widget {
 					},
 					LinkLabel{
 						Text:     "-",
-						AssignTo: &mw.lbNetworkMode,
+						AssignTo: &g.lbNetworkMode,
 						OnLinkActivated: func(link *walk.LinkLabelLink) {
-							gui.NetworkingDlg(UI.dlg)
+							g.NetworkingDlg()
 						},
 					},
 					VSpacer{
@@ -257,10 +258,10 @@ func (mw *Gui) stateDlg() Widget {
 
 					PushButton{
 						Enabled:  false,
-						AssignTo: &mw.btnOpenNodeUI,
+						AssignTo: &g.btnOpenNodeUI,
 						Text:     "Open Node UI",
 						OnClicked: func() {
-							UI.OpenNodeUI()
+							OpenNodeUI()
 						},
 						ColumnSpan: 2,
 					},

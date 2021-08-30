@@ -11,18 +11,19 @@ import (
 	"log"
 	"os"
 
+	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
+
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
-	"github.com/mysteriumnetwork/myst-launcher/gui"
 )
 
 func main() {
-	a := app.NewApp()
+	ap := app.NewApp()
 
 	if len(os.Args) > 1 {
-		a.InTray = os.Args[1] == app.FlagTray
-		a.InstallStage2 = os.Args[1] == app.FlagInstallStage2
+		ap.InTray = os.Args[1] == app.FlagTray
+		ap.InstallStage2 = os.Args[1] == app.FlagInstallStage2
 
 		switch os.Args[1] {
 		case app.FlagInstall:
@@ -35,30 +36,38 @@ func main() {
 			return
 		}
 	}
+	//if utils.LauncherUpgradeAvailable() {
+	//	fmt.Println("LauncherUpgradeAvailable !")
+	//}
+
 	if app.IsAlreadyRunning() {
 		return
 	}
 
-	log.SetOutput(a)
-	a.Config.Read()
+	log.SetOutput(ap)
+	ap.Config.Read()
 
-	gui.UI.SetImageVersionInfo(&a.ImgVer)
-	gui.UI.SetApp(a)
+	mod := gui_win32.NewUIModel()
+	mod.SetImageVersionInfo(&ap.ImgVer)
+	mod.SetApp(ap)
 
-	gui.CreateNotifyIcon()
-	gui.CreateDialogue()
+	ui := gui_win32.NewGui(mod)
+	ui.CreateNotifyIcon(mod)
+	ui.CreateDialogue()
 
-	a.WaitGroup.Add(1)
-	go a.SuperviseDockerNode()
+	ap.SetModel(mod)
+	ap.SetUI(ui)
+	ap.WaitGroup.Add(1)
 
-	app.CreatePipeAndListen(&gui.UI)
+	go ap.SuperviseDockerNode()
+	app.CreatePipeAndListen(mod, ui)
 
 	// Run the message loop
-	gui.UI.Run()
+	ui.Run()
 
 	// send stop action to SuperviseDockerNode
-	a.TriggerAction("stop")
+	ap.TriggerAction("stop")
 
 	// wait for SuperviseDockerNode to finish its work
-	a.WaitGroup.Wait()
+	ap.WaitGroup.Wait()
 }
