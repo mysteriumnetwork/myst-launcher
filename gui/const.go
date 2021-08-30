@@ -1,14 +1,14 @@
 package gui
 
-type modalState int
+type ModalState int
 
 const (
 	// model
-	ModalStateInitial           modalState = 0
-	ModalStateInstallNeeded     modalState = -1
-	ModalStateInstallInProgress modalState = -2
-	ModalStateInstallFinished   modalState = -3
-	ModalStateInstallError      modalState = -4
+	ModalStateInitial           ModalState = 0
+	ModalStateInstallNeeded     ModalState = -1
+	ModalStateInstallInProgress ModalState = -2
+	ModalStateInstallFinished   ModalState = -3
+	ModalStateInstallError      ModalState = -4
 )
 
 type RunnableState int

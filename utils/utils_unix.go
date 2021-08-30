@@ -19,3 +19,7 @@ func IsProcessRunning(name string) bool {
 	log.Println("CmdRun error:", err)
 	return false
 }
+
+func OLECoInitialize() {
+
+}

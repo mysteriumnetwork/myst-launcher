@@ -386,3 +386,7 @@ func QueryWindowsFeature(feature string) (bool, bool, error) {
 
 	return featureExists, featureEnabled, nil
 }
+
+func Win32Initialize() {
+	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
+}
