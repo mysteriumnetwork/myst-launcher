@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 
 	"github.com/lxn/walk"
@@ -31,8 +30,12 @@ type UIModel struct {
 	wantExit bool
 
 	// common
-	StateDocker    RunnableState
-	StateContainer RunnableState
+	StateDocker      RunnableState
+	StateContainer   RunnableState
+	VersionLatest    string
+	VersionCurrent   string
+	HasUpdate        bool
+	CurrentImgDigest string
 
 	// inst
 	CheckWindowsVersion  bool
@@ -46,9 +49,7 @@ type UIModel struct {
 	InstallDocker        bool
 	CheckGroupMembership bool
 
-	app    model.AppInterface
-	imgVer *myst.ImageVersionInfo
-
+	app                model.AppInterface
 	LastNotificationID NotificationTypeID
 }
 
@@ -65,10 +66,6 @@ func init() {
 	UI.waitClick = make(chan int, 0)
 	UI.icon, _ = walk.NewIconFromResourceId(2)
 	UI.iconActive, _ = walk.NewIconFromResourceId(3)
-}
-
-func (m *UIModel) SetImageVersionInfo(ivi *myst.ImageVersionInfo) {
-	UI.imgVer = ivi
 }
 
 func (m *UIModel) SetApp(app model.AppInterface) {

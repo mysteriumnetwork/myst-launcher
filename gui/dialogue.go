@@ -196,9 +196,9 @@ func (g *Gui) refresh() {
 		}
 		gui.btnOpenNodeUI.SetEnabled(UI.IsRunning())
 		//gui.lbVersionLatest.SetText(UI.VersionLatest)
-		gui.lbVersionCurrent.SetText(UI.imgVer.VersionCurrent)
+		gui.lbVersionCurrent.SetText(UI.VersionCurrent)
 		gui.lbVersionUpdatesAvail.SetText("-")
-		if UI.imgVer.HasUpdate {
+		if UI.HasUpdate {
 			gui.lbVersionUpdatesAvail.SetText(`<a id="upgrade">Yes !</a> - click to see details`)
 		}
 		gui.btnOpenNodeUI.SetFocus()

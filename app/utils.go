@@ -1,31 +1,89 @@
-// +build windows
-
-package utils
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+package app
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
+
+	"github.com/mysteriumnetwork/go-fileversion"
+	"github.com/mysteriumnetwork/myst-launcher/native"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
-	"github.com/mysteriumnetwork/go-fileversion"
-	"github.com/mysteriumnetwork/myst-launcher/native"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
 
 const launcherLnk = "Mysterium Node Launcher.lnk"
 
-func getSysProcAttrs() syscall.SysProcAttr {
-	return syscall.SysProcAttr{
+func cmdRun(name string, args ...string) int {
+	log.Print(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
+
+	cmd := exec.Command(name, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
 		HideWindow: true,
 	}
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Println(err)
+		return -1
+	}
+	defer stdout.Close()
+
+	if err = cmd.Start(); err != nil {
+		log.Println(err)
+		return -1
+	}
+	r := bufio.NewReader(stdout)
+	for {
+		var line []byte
+		line, _, e := r.ReadLine()
+		if e == io.EOF {
+			break
+		}
+		_ = line
+
+		log.Println(string(line))
+	}
+
+	var exitCode int
+	const defaultFailedCode = 1
+
+	if err := cmd.Wait(); err != nil {
+		// try to get the exit code
+		if exitError, ok := err.(*exec.ExitError); ok {
+			ws := exitError.Sys().(syscall.WaitStatus)
+			exitCode = ws.ExitStatus()
+		} else {
+			log.Printf("Could not get exit code for failed program: %v, %v \r\n", name, args)
+			exitCode = defaultFailedCode
+
+			log.Printf(">>>> %+v, \r\n", err)
+		}
+	} else {
+		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
+		exitCode = ws.ExitStatus()
+	}
+
+	log.Printf("command exitCode: %v \r\n", exitCode)
+	return exitCode
 }
 
 func CreateShortcut(dst, target, args string) error {
@@ -122,6 +180,7 @@ func InstallExe() error {
 }
 
 func UninstallExe() error {
+	utils.StopApp()
 	registry.DeleteKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`)
 
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", launcherLnk)
@@ -186,7 +245,7 @@ func IsWindowsVersionCompatible() bool {
 // unsafe.Sizeof(windows.ProcessEntry32{})
 const processEntrySize = 568
 
-func IsProcessRunning(name string) bool {
+func isProcessRunning(name string) bool {
 	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if e != nil {
 		return false
@@ -200,7 +259,9 @@ func IsProcessRunning(name string) bool {
 			break
 		}
 		s := windows.UTF16ToString(p.ExeFile[:])
+
 		if s == name {
+			println(s)
 			return true
 		}
 	}
@@ -221,7 +282,7 @@ func isWindowsUpdateEnabled() bool {
 	return disableWUfBSafeguards == 1
 }
 
-func SystemUnderVm() (bool, error) {
+func isUnderVm() (bool, error) {
 	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	defer unknown.Release()
 
@@ -265,7 +326,7 @@ func SystemUnderVm() (bool, error) {
 
 // We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
 // see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
-func HasVTx() bool {
+func hasVTx() bool {
 	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	defer unknown.Release()
 
@@ -334,6 +395,12 @@ func IsVMComputeRunning() bool {
 	return false
 }
 
+const (
+	FeatureWSL        = "Microsoft-Windows-Subsystem-Linux"
+	FeatureHyperV     = "Microsoft-Hyper-V"
+	FeatureVMPlatform = "VirtualMachinePlatform"
+)
+
 // Returns: featureExists, featureEnabled, error
 func QueryWindowsFeature(feature string) (bool, bool, error) {
 	unknown, err := oleutil.CreateObject("WbemScripting.SWbemLocator")
@@ -385,4 +452,15 @@ func QueryWindowsFeature(feature string) (bool, bool, error) {
 	featureEnabled := count > 0
 
 	return featureExists, featureEnabled, nil
+}
+
+func Retry(attempts int, sleep time.Duration, fn func() error) error {
+	if err := fn(); err != nil {
+		if attempts--; attempts > 0 {
+			time.Sleep(sleep)
+			return Retry(attempts, sleep, fn)
+		}
+		return err
+	}
+	return nil
 }

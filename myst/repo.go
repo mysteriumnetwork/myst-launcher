@@ -9,28 +9,17 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
-
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
 
 const checkPeriod = 12 * time.Hour
 
-type ImageVersionInfo struct {
-	ImageName        string
-	CurrentImgDigest string // input value
-
-	// calculated values
-	HasUpdate      bool
-	VersionCurrent string
-	VersionLatest  string
-}
-
-func CheckVersionAndUpgrades(vi *ImageVersionInfo, c *model.Config) bool {
+func CheckVersionAndUpgrades(imageDigest string, c *model.Config) bool {
 	var data []byte
-	f := utils.GetTmpDir() + "/myst_docker_hub_cache.txt"
+	f := os.Getenv("TMP") + "/myst_docker_hub_cache.txt"
 	i, err := os.Stat(f)
 	if err == nil {
 		if i.ModTime().Add(checkPeriod).After(time.Now()) {
@@ -90,7 +79,7 @@ func CheckVersionAndUpgrades(vi *ImageVersionInfo, c *model.Config) bool {
 				if match && latestDigest == digest {
 					latestVersion = name
 				}
-				digestsMatch := strings.ToLower(digest) == strings.ToLower(vi.CurrentImgDigest)
+				digestsMatch := strings.ToLower(digest) == strings.ToLower(imageDigest)
 				if digestsMatch && match {
 					currentVersion = name
 				}
@@ -99,8 +88,8 @@ func CheckVersionAndUpgrades(vi *ImageVersionInfo, c *model.Config) bool {
 	}
 	parseJson()
 
-	vi.HasUpdate = false
-	if (latestDigest != "" && vi.CurrentImgDigest != "") && latestDigest != vi.CurrentImgDigest {
+	gui.UI.HasUpdate = false
+	if (latestDigest != "" && imageDigest != "") && latestDigest != imageDigest {
 		// re-try on fresh data
 		ok := getFile()
 		if !ok {
@@ -108,11 +97,13 @@ func CheckVersionAndUpgrades(vi *ImageVersionInfo, c *model.Config) bool {
 		}
 		parseJson()
 
-		if (latestDigest != "" && vi.CurrentImgDigest != "") && latestDigest != vi.CurrentImgDigest {
-			vi.HasUpdate = true
+		if (latestDigest != "" && imageDigest != "") && latestDigest != imageDigest {
+			gui.UI.HasUpdate = true
 		}
 	}
-	vi.VersionCurrent = currentVersion
-	vi.VersionLatest = latestVersion
+	gui.UI.VersionCurrent = currentVersion
+	gui.UI.VersionLatest = latestVersion
+	gui.UI.Update()
+
 	return true
 }

@@ -209,7 +209,7 @@ func (mw *Gui) stateDlg() Widget {
 						AssignTo:       &mw.autoUpgrade,
 						OnCheckedChanged: func() {
 							UI.app.GetConfig().AutoUpgrade = mw.autoUpgrade.Checked()
-							UI.app.GetConfig().Save()
+							UI.app.SaveConfig()
 						},
 						//ColumnSpan: 2,
 						MaxSize: Size{Height: 15},
