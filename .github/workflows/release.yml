@@ -19,8 +19,7 @@ jobs:
       run: |
         go get -u github.com/hallazzang/syso/...
         syso
-        go build -ldflags="-s -w -H windowsgui" -v -o  build/myst-launcher-testnet2-amd64.exe .
-        go build -ldflags="-s -w -H windowsgui -X 'github.com/mysteriumnetwork/myst-launcher/myst.imageTag=testnet3'" -v -o  build/myst-launcher-amd64.exe .
+        go build -ldflags="-s -w -H windowsgui" -v -o  build/myst-launcher-amd64.exe .
       env:
         GOARCH: amd64
         GOOS: windows
@@ -41,6 +40,6 @@ jobs:
       with:
         files: |
           build/myst-launcher-amd64.exe
-          build/myst-launcher-testnet2-amd64.exe
+
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
