@@ -11,11 +11,9 @@ import (
 	"log"
 	"os"
 
-	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
-
-	"github.com/mysteriumnetwork/myst-launcher/utils"
-
 	"github.com/mysteriumnetwork/myst-launcher/app"
+	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func main() {
@@ -36,6 +34,7 @@ func main() {
 			return
 		}
 	}
+	// Upgrade binary on start
 	//if utils.LauncherUpgradeAvailable() {
 	//	fmt.Println("LauncherUpgradeAvailable !")
 	//}

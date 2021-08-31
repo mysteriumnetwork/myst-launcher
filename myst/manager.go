@@ -45,7 +45,7 @@ var (
 	defaultConfig = ManagerConfig{
 		CTX:          context.Background(),
 		ActionTimout: 10 * time.Second,
-		DataDir:      fmt.Sprintf("%s\\.mysterium-node", os.Getenv("USERPROFILE")),
+		DataDir:      fmt.Sprintf("%s\\.mysterium-node", utils.GetUserProfileDir()),
 	}
 )
 

@@ -14,8 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lxn/win"
-
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/native"
@@ -31,7 +29,7 @@ func (s *AppState) SuperviseDockerNode() {
 
 	if utils.LauncherUpgradeAvailable() {
 		ret := s.ui.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\n\r\nUpgrade launcher installation ?")
-		if ret == win.IDYES {
+		if ret == gui.IDYES {
 			exePath, _ := os.Executable()
 			err := native.ShellExecuteAndWait(0, "runas", exePath, FlagInstall, "", syscall.SW_NORMAL)
 			if err != nil {
@@ -82,7 +80,7 @@ func (s *AppState) SuperviseDockerNode() {
 
 			if isUnderVM && !s.Config.CheckVMSettingsConfirm {
 				ret := s.ui.YesNoModal("Requirements checker", "VM has been detected. \r\n\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
-				if ret == win.IDNO {
+				if ret == gui.IDNO {
 					s.mod.ExitApp()
 					return true
 				}

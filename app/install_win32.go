@@ -73,13 +73,10 @@ func (s *AppState) tryInstall() bool {
 		pp := gui.UIProps{}
 		switch feature {
 		case utils.IDFeatureWSL:
-			//s.mod.EnableWSL = true
 			pp["EnableWSL"] = true
 		case utils.IDFeatureHyperV:
-			//s.mod.EnableHyperV = true
 			pp["EnableHyperV"] = true
 		}
-		//s.mod.Update()
 		s.mod.UpdateProperties(pp)
 	})
 	if err != nil {
@@ -97,9 +94,6 @@ func (s *AppState) tryInstall() bool {
 
 	// proceeding install after reboot
 	if s.InstallStage2 {
-		//s.mod.InstallExecutable = true
-		//s.mod.RebootAfterWSLEnable = true
-		//s.mod.Update()
 		s.mod.UpdateProperties(gui.UIProps{"InstallExecutable": true, "RebootAfterWSLEnable": true})
 	}
 
@@ -113,8 +107,6 @@ func (s *AppState) tryInstall() bool {
 		s.mod.SwitchState(gui.ModalStateInstallError)
 		return true
 	}
-	//s.mod.CheckVTx = true
-	//s.mod.Update()
 	s.mod.UpdateProperties(gui.UIProps{"CheckVTx": true})
 
 	utils.CreateAutostartShortcut(FlagTray)
@@ -156,7 +148,6 @@ func (s *AppState) tryInstall() bool {
 		s.mod.SwitchState(gui.ModalStateInstallError)
 		return true
 	}
-	//s.mod.DownloadFiles = true
 	s.mod.UpdateProperties(gui.UIProps{"DownloadFiles": true})
 
 	log.Println("Installing wsl_update_x64.msi")
@@ -168,8 +159,6 @@ func (s *AppState) tryInstall() bool {
 		s.mod.SwitchState(gui.ModalStateInstallError)
 		return true
 	}
-	//s.mod.InstallWSLUpdate = true
-	//s.mod.Update()
 	s.mod.UpdateProperties(gui.UIProps{"InstallWSLUpdate": true})
 
 	log.Println("Installing docker desktop (wait ~5 minutes)")
@@ -187,8 +176,6 @@ func (s *AppState) tryInstall() bool {
 		s.mod.SwitchState(gui.ModalStateInstallError)
 		return true
 	}
-	//s.mod.InstallDocker = true
-	//s.mod.Update()
 	s.mod.UpdateProperties(gui.UIProps{"InstallDocker": true})
 
 	log.Println("Checking current group membership")
@@ -204,8 +191,6 @@ func (s *AppState) tryInstall() bool {
 		s.mod.SwitchState(gui.ModalStateInstallError)
 		return true
 	}
-	//s.mod.CheckGroupMembership = true
-	//s.mod.Update()
 	s.mod.UpdateProperties(gui.UIProps{"CheckGroupMembership": true})
 
 	s.Config.Read()
