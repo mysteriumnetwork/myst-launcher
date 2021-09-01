@@ -9,14 +9,11 @@ package app
 import (
 	"fmt"
 	"log"
-	"os"
 	"runtime"
-	"syscall"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
-	"github.com/mysteriumnetwork/myst-launcher/native"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -27,15 +24,13 @@ func (s *AppState) SuperviseDockerNode() {
 	utils.Win32Initialize()
 	defer s.WaitGroup.Done()
 
+	fmt.Println("SuperviseDockerNode >")
+
 	if utils.LauncherUpgradeAvailable() {
-		ret := s.ui.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\n\r\nUpgrade launcher installation ?")
-		if ret == gui.IDYES {
-			exePath, _ := os.Executable()
-			err := native.ShellExecuteAndWait(0, "runas", exePath, FlagInstall, "", syscall.SW_NORMAL)
-			if err != nil {
-				log.Println("Failed to install exe", err)
-			}
-		}
+		//	ret := s.ui.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\n\r\nUpgrade launcher installation ?")
+		//	if ret == gui.IDYES {
+		//		utils.UpdateExe()
+		//	}
 	}
 
 	mystManager, err := myst.NewManagerWithDefaults()
@@ -45,13 +40,13 @@ func (s *AppState) SuperviseDockerNode() {
 	docker := myst.NewDockerMonitor(mystManager)
 
 	t1 := time.Tick(15 * time.Second)
-	s.Config.Read()
-	s.mod.Update()
+	s.model.Update()
 
 	for {
 		tryStartOrInstallDocker := func() bool {
+
 			if isRunning, _ := docker.IsRunning(); isRunning {
-				s.mod.SetStateDocker(gui.RunnableStateRunning)
+				s.model.SetStateDocker(gui.RunnableStateRunning)
 				return false
 			}
 
@@ -77,15 +72,16 @@ func (s *AppState) SuperviseDockerNode() {
 				s.ui.ErrorModal("Application error", err.Error())
 				return true
 			}
+			fmt.Println("tryStartOrInstallDocker")
 
-			if isUnderVM && !s.Config.CheckVMSettingsConfirm {
+			if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
 				ret := s.ui.YesNoModal("Requirements checker", "VM has been detected. \r\n\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
 				if ret == gui.IDNO {
-					s.mod.ExitApp()
+					s.model.ExitApp()
 					return true
 				}
-				s.Config.CheckVMSettingsConfirm = true
-				s.Config.Save()
+				s.model.Config.CheckVMSettingsConfirm = true
+				s.model.Config.Save()
 			}
 			if needSetup {
 				return s.tryInstall()
@@ -93,20 +89,21 @@ func (s *AppState) SuperviseDockerNode() {
 
 			isRunning, couldNotStart := docker.IsRunning()
 			if isRunning {
-				s.mod.SetStateDocker(gui.RunnableStateRunning)
+				s.model.SetStateDocker(gui.RunnableStateRunning)
 				return false
 			}
-			s.mod.SetStateDocker(gui.RunnableStateStarting)
+			s.model.SetStateDocker(gui.RunnableStateStarting)
 			if couldNotStart {
-				s.mod.SetStateDocker(gui.RunnableStateUnknown)
+				s.model.SetStateDocker(gui.RunnableStateUnknown)
 				return s.tryInstall()
 			}
 
 			return false
 		}
+		fmt.Println("tryStartOrInstallDocker")
 		wantExit := tryStartOrInstallDocker()
 		if wantExit {
-			s.mod.SetWantExit()
+			s.model.SetWantExit()
 			return
 		}
 
@@ -117,27 +114,22 @@ func (s *AppState) SuperviseDockerNode() {
 		case act := <-s.action:
 			switch act {
 			case "check":
-				s.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-				ok := myst.CheckVersionAndUpgrades(&s.ImgVer, &s.Config)
-				if !ok {
-					break
-				}
-				s.Config.Save()
-				s.mod.Update()
+				s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
+				myst.CheckVersionAndUpgrades(s.model)
 
 			case "upgrade":
 				s.upgrade(mystManager)
 
 			case "enable":
-				s.Config.Enabled = true
-				s.Config.Save()
-				s.mod.SetStateContainer(gui.RunnableStateRunning)
-				mystManager.Start(s.GetConfig())
+				s.model.Config.Enabled = true
+				s.model.Config.Save()
+				s.model.SetStateContainer(gui.RunnableStateRunning)
+				mystManager.Start(s.model.GetConfig())
 
 			case "disable":
-				s.Config.Enabled = false
-				s.Config.Save()
-				s.mod.SetStateContainer(gui.RunnableStateUnknown)
+				s.model.Config.Enabled = false
+				s.model.Config.Save()
+				s.model.SetStateContainer(gui.RunnableStateUnknown)
 				mystManager.Stop()
 
 			case "stop":
@@ -152,47 +144,39 @@ func (s *AppState) SuperviseDockerNode() {
 }
 
 func (s *AppState) upgrade(mystManager *myst.Manager) {
-	s.mod.SetStateContainer(gui.RunnableStateUnknown)
+	s.model.SetStateContainer(gui.RunnableStateUnknown)
 	mystManager.Stop()
 
-	s.mod.SetStateContainer(gui.RunnableStateInstalling)
-	mystManager.Update(s.GetConfig())
+	s.model.SetStateContainer(gui.RunnableStateInstalling)
+	mystManager.Update(s.model.GetConfig())
 
-	s.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-	ok := myst.CheckVersionAndUpgrades(&s.ImgVer, &s.Config)
-	if ok {
-		s.Config.Save()
-	}
-	s.mod.Update()
+	s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
+	myst.CheckVersionAndUpgrades(s.model)
 }
 
 // check for image updates before starting container, offer upgrade interactively
 func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 	imageDigest := mystManager.GetCurrentImageDigest()
 
-	if s.ImgVer.CurrentImgDigest != imageDigest || s.ImgVer.VersionCurrent == "" || s.Config.NeedToCheckUpgrade() {
+	if s.model.ImgVer.CurrentImgDigest != imageDigest || s.model.ImgVer.VersionCurrent == "" || s.model.Config.NeedToCheckUpgrade() {
 		// docker has a new image (in result the of external command)
 
-		s.ImgVer.CurrentImgDigest = imageDigest
-		ok := myst.CheckVersionAndUpgrades(&s.ImgVer, &s.Config)
-		if ok {
-			s.Config.Save()
-		}
-		s.mod.Update()
+		s.model.ImgVer.CurrentImgDigest = imageDigest
+		myst.CheckVersionAndUpgrades(s.model)
 	}
-	if s.Config.AutoUpgrade && s.ImgVer.HasUpdate {
+	if s.model.Config.AutoUpgrade && s.model.ImgVer.HasUpdate {
 		s.upgrade(mystManager)
 	}
 
-	if s.Config.Enabled {
-		s.mod.SetStateContainer(gui.RunnableStateUnknown)
-		containerAlreadyRunning, err := mystManager.Start(s.GetConfig())
+	if s.model.Config.Enabled {
+		s.model.SetStateContainer(gui.RunnableStateUnknown)
+		containerAlreadyRunning, err := mystManager.Start(s.model.GetConfig())
 		if err != nil {
 			return
 		}
 
-		s.mod.SetStateContainer(gui.RunnableStateRunning)
-		s.mod.Update()
+		s.model.SetStateContainer(gui.RunnableStateRunning)
+		s.model.Update()
 
 		if !containerAlreadyRunning && s.didInstallation {
 			s.didInstallation = false

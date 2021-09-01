@@ -20,6 +20,28 @@ func IsProcessRunning(name string) bool {
 	return false
 }
 
-func OLECoInitialize() {
+func Win32Initialize() {}
 
+func LauncherUpgradeAvailable() bool {
+	log.Println("LauncherUpgradeAvailable: not implemented")
+	return false
+}
+
+func UpdateExe() {
+	log.Println("UpdateExe: not implemented")
+}
+
+// query if there are features to be enabled
+func QueryFeatures() ([]int, error) {
+	f := make([]int, 0)
+	return f, nil
+}
+
+func InstallFeatures(features []int, onFeatureReady func(int, string)) error {
+	return nil
+}
+
+func SystemUnderVm() (bool, error) {
+	log.Println("SystemUnderVm: not implemented")
+	return false, nil
 }

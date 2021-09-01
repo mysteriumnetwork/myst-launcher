@@ -14,7 +14,7 @@ import (
 	gui2 "github.com/mysteriumnetwork/myst-launcher/gui"
 )
 
-func (g *Gui) CreateNotifyIcon(ui *UIModel) {
+func (g *Gui) CreateNotifyIcon(ui *gui2.UIModel) {
 	var err error
 
 	g.mw, err = walk.NewMainWindow()

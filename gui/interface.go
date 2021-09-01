@@ -1,5 +1,7 @@
 package gui
 
+import "github.com/mysteriumnetwork/myst-launcher/model"
+
 // Dialog box command ids
 const (
 	IDOK       = 1
@@ -18,7 +20,7 @@ const (
 
 type UIProps map[string]interface{}
 
-type UIModelInterface interface {
+type Model interface {
 	WaitDialogueComplete() bool
 	SetStateDocker(RunnableState)
 	SetStateContainer(RunnableState)
@@ -36,4 +38,5 @@ type UIModelInterface interface {
 	//ShowNotificationInstalled()
 
 	Publish(topic string, args ...interface{})
+	GetConfig() *model.Config
 }

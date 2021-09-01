@@ -183,8 +183,7 @@ func (g *Gui) stateDlg() Widget {
 						Text: "Docker Hub image name",
 					},
 					Label{
-						//Text: g.model.app.GetImageName(),
-						Text: g.model.imgVer.ImageName,
+						AssignTo: &g.lbImageName,
 					},
 					Label{
 						Text: "Node version installed",
@@ -209,8 +208,8 @@ func (g *Gui) stateDlg() Widget {
 						TextOnLeftSide: true,
 						AssignTo:       &g.autoUpgrade,
 						OnCheckedChanged: func() {
-							g.model.app.GetConfig().AutoUpgrade = g.autoUpgrade.Checked()
-							g.model.app.GetConfig().Save()
+							g.model.GetConfig().AutoUpgrade = g.autoUpgrade.Checked()
+							g.model.GetConfig().Save()
 						},
 						//ColumnSpan: 2,
 						MaxSize: Size{Height: 15},

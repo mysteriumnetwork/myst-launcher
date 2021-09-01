@@ -11,12 +11,14 @@ func (g *Gui) OpenUpgradeDlg() {
 		acceptPB, cancelPB *walk.PushButton
 		lbVersionCurrent   *walk.Label
 		lbVersionLatest    *walk.Label
+		lbImageName        *walk.Label
 	)
 
 	refresh := func() {
-		lbVersionCurrent.SetText(g.model.imgVer.VersionCurrent)
-		lbVersionLatest.SetText(g.model.imgVer.VersionLatest)
-		acceptPB.SetEnabled(g.model.imgVer.HasUpdate)
+		lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
+		lbVersionLatest.SetText(g.model.ImgVer.VersionLatest)
+		lbImageName.SetText(g.model.ImgVer.ImageName)
+		acceptPB.SetEnabled(g.model.ImgVer.HasUpdate)
 	}
 
 	err := Dialog{
@@ -36,8 +38,8 @@ func (g *Gui) OpenUpgradeDlg() {
 				Text: "Docker Hub image name",
 			},
 			Label{
-				//Text: g.model.app.GetImageName(),
-				Text: g.model.imgVer.ImageName,
+				Text:     "-",
+				AssignTo: &lbImageName,
 			},
 			Label{
 				Text: "Node version installed",
@@ -63,7 +65,7 @@ func (g *Gui) OpenUpgradeDlg() {
 						Text:     "Yes",
 						OnClicked: func() {
 							dialog.Accept()
-							g.model.app.TriggerAction("upgrade")
+							g.model.App.TriggerAction("upgrade")
 						},
 					},
 					PushButton{

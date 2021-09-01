@@ -76,13 +76,13 @@ func (c *Config) Save() {
 	enc.Encode(&c)
 }
 
-type AppInterface interface {
-	//Publish(topic string, args ...interface{})
-	//Subscribe(topic string, fn interface{}) error
-	//Unsubscribe(topic string, fn interface{}) error
+///
+type ImageVersionInfo struct {
+	ImageName        string
+	CurrentImgDigest string // input value
 
-	TriggerAction(action string)
-	GetInTray() bool
-	GetConfig() *Config
-	//GetImageName() string
+	// calculated values
+	HasUpdate      bool
+	VersionCurrent string
+	VersionLatest  string
 }

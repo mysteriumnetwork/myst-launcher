@@ -14,10 +14,12 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
-	"github.com/mysteriumnetwork/go-fileversion"
-	"github.com/mysteriumnetwork/myst-launcher/native"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
+
+	"github.com/mysteriumnetwork/go-fileversion"
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 )
 
 const launcherLnk = "Mysterium Node Launcher.lnk"
@@ -72,6 +74,14 @@ func checkExe() bool {
 		return false
 	}
 	return true
+}
+
+func UpdateExe() {
+	exePath, _ := os.Executable()
+	err := native.ShellExecuteAndWait(0, "runas", exePath, _const.FlagInstall, "", syscall.SW_NORMAL)
+	if err != nil {
+		log.Println("Failed to install exe", err)
+	}
 }
 
 func LauncherUpgradeAvailable() bool {

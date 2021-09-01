@@ -54,6 +54,7 @@ type Gui struct {
 	lbVersionLatest       *walk.Label
 	lbVersionCurrent      *walk.Label
 	lbVersionUpdatesAvail *walk.LinkLabel
+	lbImageName           *walk.Label
 
 	autoUpgrade          *walk.CheckBox
 	manualPortForwarding *walk.CheckBox
@@ -76,17 +77,17 @@ type Gui struct {
 	checkGroupMembership *walk.CheckBox
 
 	btnFinish *walk.PushButton
-	iv        *walk.ImageView
+	img       *walk.ImageView
 
 	currentView gui2.ModalState
 	ico         *walk.Icon
 	icoActive   *walk.Icon
 
-	model              *UIModel
+	model              *gui2.UIModel
 	LastNotificationID NotificationTypeID
 }
 
-func NewGui(m *UIModel) *Gui {
+func NewGui(m *gui2.UIModel) *Gui {
 	g := &Gui{}
 	g.icon, _ = walk.NewIconFromResourceId(2)
 	g.iconActive, _ = walk.NewIconFromResourceId(3)
@@ -95,7 +96,7 @@ func NewGui(m *UIModel) *Gui {
 	return g
 }
 
-func (g *Gui) CreateDialogue() {
+func (g *Gui) CreateMainWindow() {
 	if err := (MainWindow{
 		Visible:   false,
 		AssignTo:  &g.dlg,
@@ -108,7 +109,7 @@ func (g *Gui) CreateDialogue() {
 
 		Children: []Widget{
 			ImageView{
-				AssignTo:  &g.iv,
+				AssignTo:  &g.img,
 				Alignment: AlignHNearVFar,
 			},
 			g.installationWelcome(),
@@ -118,7 +119,7 @@ func (g *Gui) CreateDialogue() {
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
-	g.dlg.SetVisible(!g.model.app.GetInTray())
+	g.dlg.SetVisible(!g.model.App.GetInTray())
 
 	var err error
 	g.ico, err = walk.NewIconFromResourceIdWithSize(2, walk.Size{
@@ -135,11 +136,11 @@ func (g *Gui) CreateDialogue() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	g.SetImage()
+	g.setImage()
 
 	g.model.UIBus.Subscribe("container-state", func() {
 		g.dlg.Synchronize(func() {
-			g.SetImage()
+			g.setImage()
 		})
 	})
 	// Events
@@ -150,7 +151,7 @@ func (g *Gui) CreateDialogue() {
 	})
 
 	g.model.UIBus.Subscribe("log", func(p []byte) {
-		switch g.model.state {
+		switch g.model.State {
 		case gui2.ModalStateInstallInProgress, gui2.ModalStateInstallError, gui2.ModalStateInstallFinished:
 			g.dlg.Synchronize(func() {
 				g.lbInstallationStatus.AppendText(string(p) + "\r\n")
@@ -179,7 +180,8 @@ func (g *Gui) CreateDialogue() {
 
 	// prevent closing the app
 	g.dlg.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		if g.model.wantExit {
+
+		if g.model.WantExit {
 			walk.App().Exit(0)
 		}
 		*canceled = true
@@ -213,14 +215,14 @@ func (g *Gui) changeView(state gui2.ModalState) {
 }
 
 func (g *Gui) refresh() {
-	switch g.model.state {
+	switch g.model.State {
 
 	case gui2.ModalStateInitial:
 		g.enableMenu(true)
 		g.changeView(frameState)
 
-		g.autoUpgrade.SetChecked(g.model.app.GetConfig().AutoUpgrade)
-		if !g.model.app.GetConfig().EnablePortForwarding {
+		g.autoUpgrade.SetChecked(g.model.GetConfig().AutoUpgrade)
+		if !g.model.GetConfig().EnablePortForwarding {
 			g.lbNetworkMode.SetText(`<a id="net">Port restricted cone NAT</a>`)
 		} else {
 			g.lbNetworkMode.SetText(`<a id="net">Manual port forwarding</a>`)
@@ -228,17 +230,18 @@ func (g *Gui) refresh() {
 
 		g.lbDocker.SetText(g.model.StateDocker.String())
 		g.lbContainer.SetText(g.model.StateContainer.String())
-		if !g.model.app.GetConfig().Enabled {
+		if !g.model.GetConfig().Enabled {
 			g.lbContainer.SetText("Disabled")
 		}
 		g.btnOpenNodeUI.SetEnabled(g.model.IsRunning())
 		//g.lbVersionLatest.SetText(g.model.VersionLatest)
 
-		g.lbVersionCurrent.SetText(g.model.imgVer.VersionCurrent)
+		g.lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
 		g.lbVersionUpdatesAvail.SetText("-")
-		if g.model.imgVer.HasUpdate {
+		if g.model.ImgVer.HasUpdate {
 			g.lbVersionUpdatesAvail.SetText(`<a id="upgrade">Yes !</a> - click to see details`)
 		}
+		g.lbImageName.SetText(g.model.ImgVer.ImageName)
 		g.btnOpenNodeUI.SetFocus()
 
 	case gui2.ModalStateInstallNeeded:
@@ -263,7 +266,7 @@ func (g *Gui) refresh() {
 		g.btnFinish.SetText("Exit installer")
 	}
 
-	switch g.model.state {
+	switch g.model.State {
 	case gui2.ModalStateInstallInProgress, gui2.ModalStateInstallFinished, gui2.ModalStateInstallError:
 		g.checkWindowsVersion.SetChecked(g.model.CheckWindowsVersion)
 		g.checkVTx.SetChecked(g.model.CheckVTx)
@@ -278,7 +281,7 @@ func (g *Gui) refresh() {
 	}
 }
 
-func (g *Gui) SetImage() {
+func (g *Gui) setImage() {
 	ico := g.ico
 	if g.model.StateContainer == gui2.RunnableStateRunning {
 		ico = g.icoActive
@@ -287,7 +290,7 @@ func (g *Gui) SetImage() {
 	if err != nil {
 		return
 	}
-	g.iv.SetImage(img)
+	g.img.SetImage(img)
 }
 
 func (g *Gui) ShowMain() {

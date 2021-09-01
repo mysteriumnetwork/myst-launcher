@@ -4,26 +4,25 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package gui_win32
+package gui
 
 import (
 	"github.com/asaskevich/EventBus"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
 )
 
 type UIModel struct {
 	UIBus     EventBus.Bus
 	waitClick chan int
 
-	state    gui.ModalState
-	wantExit bool
+	State    ModalState
+	WantExit bool
 
 	// common
-	StateDocker    gui.RunnableState
-	StateContainer gui.RunnableState
+	StateDocker    RunnableState
+	StateContainer RunnableState
 
 	// inst
 	CheckWindowsVersion  bool
@@ -37,26 +36,30 @@ type UIModel struct {
 	InstallDocker        bool
 	CheckGroupMembership bool
 
-	app    model.AppInterface
-	imgVer *myst.ImageVersionInfo
+	App    model.AppInterface
+	ImgVer model.ImageVersionInfo
+	Config model.Config
 }
 
 func NewUIModel() *UIModel {
 	m := &UIModel{}
 	m.waitClick = make(chan int, 0)
 	m.UIBus = EventBus.New()
+	m.Config.Read()
+	m.ImgVer.ImageName = _const.GetImageName()
+
 	return m
 }
 
-func (m *UIModel) SetImageVersionInfo(ivi *myst.ImageVersionInfo) {
-	m.imgVer = ivi
+func (m *UIModel) GetConfig() *model.Config {
+	return &m.Config
 }
 
 func (m *UIModel) SetApp(app model.AppInterface) {
-	m.app = app
+	m.App = app
 }
 
-func (m *UIModel) UpdateProperties(p gui.UIProps) {
+func (m *UIModel) UpdateProperties(p UIProps) {
 	for k, v := range p {
 		switch k {
 		case "CheckWindowsVersion":
@@ -88,13 +91,13 @@ func (m *UIModel) Update() {
 	m.UIBus.Publish("model-change")
 }
 
-func (m *UIModel) SwitchState(s gui.ModalState) {
-	m.state = s
+func (m *UIModel) SwitchState(s ModalState) {
+	m.State = s
 	m.Update()
 }
 
 func (m *UIModel) BtnFinishOnClick() {
-	if m.wantExit {
+	if m.WantExit {
 		m.ExitApp()
 		return
 	}
@@ -112,37 +115,33 @@ func (m *UIModel) WaitDialogueComplete() bool {
 }
 
 func (m *UIModel) SetWantExit() {
-	m.wantExit = true
+	m.WantExit = true
 	m.UIBus.Publish("want-exit")
 }
 
 func (m *UIModel) isExiting() bool {
-	return m.state == gui.ModalStateInstallError
+	return m.State == ModalStateInstallError
 }
 
 func (m *UIModel) ExitApp() {
 	close(m.waitClick)
-	m.wantExit = true
+	m.WantExit = true
 	m.UIBus.Publish("exit")
 }
 
 func (m *UIModel) IsRunning() bool {
-	return m.StateContainer == gui.RunnableStateRunning
+	return m.StateContainer == RunnableStateRunning
 }
 
-func (m *UIModel) SetStateDocker(r gui.RunnableState) {
+func (m *UIModel) SetStateDocker(r RunnableState) {
 	m.StateDocker = r
 	m.UIBus.Publish("model-change")
 }
 
-func (m *UIModel) SetStateContainer(r gui.RunnableState) {
+func (m *UIModel) SetStateContainer(r RunnableState) {
 	m.StateContainer = r
 	m.UIBus.Publish("model-change")
 	m.UIBus.Publish("container-state")
-}
-
-func (m *UIModel) GetImageName() string {
-	return m.imgVer.ImageName
 }
 
 func (m *UIModel) Publish(topic string, args ...interface{}) {
@@ -150,5 +149,5 @@ func (m *UIModel) Publish(topic string, args ...interface{}) {
 }
 
 func (m *UIModel) TriggerAction(action string) {
-	m.app.TriggerAction(action)
+	m.App.TriggerAction(action)
 }

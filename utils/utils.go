@@ -19,6 +19,10 @@ func CmdRun(name string, args ...string) (int, error) {
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &a
 
+	if err := cmd.Start(); err != nil {
+		return 0, err
+	}
+
 	if err := cmd.Wait(); err != nil {
 		// try to get the exit code
 		if exitError, ok := err.(*exec.ExitError); ok {

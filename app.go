@@ -12,6 +12,8 @@ import (
 	"os"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -20,15 +22,15 @@ func main() {
 	ap := app.NewApp()
 
 	if len(os.Args) > 1 {
-		ap.InTray = os.Args[1] == app.FlagTray
-		ap.InstallStage2 = os.Args[1] == app.FlagInstallStage2
+		ap.InTray = os.Args[1] == _const.FlagTray
+		ap.InstallStage2 = os.Args[1] == _const.FlagInstallStage2
 
 		switch os.Args[1] {
-		case app.FlagInstall:
+		case _const.FlagInstall:
 			utils.InstallExe()
 			return
 
-		case app.FlagUninstall:
+		case _const.FlagUninstall:
 			app.StopApp()
 			utils.UninstallExe()
 			return
@@ -42,17 +44,14 @@ func main() {
 	if app.IsAlreadyRunning() {
 		return
 	}
-
 	log.SetOutput(ap)
-	ap.Config.Read()
 
-	mod := gui_win32.NewUIModel()
-	mod.SetImageVersionInfo(&ap.ImgVer)
+	mod := gui.NewUIModel()
 	mod.SetApp(ap)
 
 	ui := gui_win32.NewGui(mod)
 	ui.CreateNotifyIcon(mod)
-	ui.CreateDialogue()
+	ui.CreateMainWindow()
 
 	ap.SetModel(mod)
 	ap.SetUI(ui)

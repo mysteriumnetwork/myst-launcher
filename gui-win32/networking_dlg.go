@@ -27,7 +27,7 @@ func (g *Gui) NetworkingDlg() {
 		editRedirectionPortFrom.SetEnabled(manualPortForwarding.Checked())
 		editRedirectionPortEnd.SetEnabled(manualPortForwarding.Checked())
 
-		conf := g.model.app.GetConfig()
+		conf := g.model.GetConfig()
 		if manualPortForwarding.Checked() != conf.EnablePortForwarding {
 			canSave = true
 		}
@@ -131,12 +131,12 @@ func (g *Gui) NetworkingDlg() {
 									walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 								return
 							}
-							g.model.app.GetConfig().EnablePortForwarding = manualPortForwarding.Checked()
-							g.model.app.GetConfig().PortRangeBegin = portRangeBegin
-							g.model.app.GetConfig().PortRangeEnd = portRangeLen
+							g.model.GetConfig().EnablePortForwarding = manualPortForwarding.Checked()
+							g.model.GetConfig().PortRangeBegin = portRangeBegin
+							g.model.GetConfig().PortRangeEnd = portRangeLen
 
 							dialog.Accept()
-							g.model.app.TriggerAction("upgrade")
+							g.model.App.TriggerAction("upgrade")
 						},
 					},
 					PushButton{
@@ -157,9 +157,9 @@ func (g *Gui) NetworkingDlg() {
 	dialog.Show()
 	dialog.SetX(g.dlg.X() + 150)
 
-	manualPortForwarding.SetChecked(g.model.app.GetConfig().EnablePortForwarding)
-	editRedirectionPortFrom.SetText(strconv.Itoa(g.model.app.GetConfig().PortRangeBegin))
-	editRedirectionPortEnd.SetText(strconv.Itoa(g.model.app.GetConfig().PortRangeEnd))
+	manualPortForwarding.SetChecked(g.model.GetConfig().EnablePortForwarding)
+	editRedirectionPortFrom.SetText(strconv.Itoa(g.model.GetConfig().PortRangeBegin))
+	editRedirectionPortEnd.SetText(strconv.Itoa(g.model.GetConfig().PortRangeEnd))
 	acceptPB.SetEnabled(canSave)
 	loaded = true
 

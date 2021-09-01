@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/buger/jsonparser"
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 
-	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/buger/jsonparser"
+	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -18,17 +19,7 @@ var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
 
 const checkPeriod = 12 * time.Hour
 
-type ImageVersionInfo struct {
-	ImageName        string
-	CurrentImgDigest string // input value
-
-	// calculated values
-	HasUpdate      bool
-	VersionCurrent string
-	VersionLatest  string
-}
-
-func CheckVersionAndUpgrades(vi *ImageVersionInfo, c *model.Config) bool {
+func CheckVersionAndUpgrades(mod *gui.UIModel) {
 	var data []byte
 	f := utils.GetTmpDir() + "/myst_docker_hub_cache.txt"
 	i, err := os.Stat(f)
@@ -50,14 +41,15 @@ func CheckVersionAndUpgrades(vi *ImageVersionInfo, c *model.Config) bool {
 		data, _ = ioutil.ReadAll(resp.Body)
 		os.WriteFile(f, data, 0777)
 
-		c.RefreshLastUpgradeCheck()
+		mod.Config.RefreshLastUpgradeCheck()
+		mod.Config.Save()
 		return true
 	}
 
 	if len(data) == 0 {
 		ok := getFile()
 		if !ok {
-			return false
+			return
 		}
 	}
 
@@ -79,18 +71,18 @@ func CheckVersionAndUpgrades(vi *ImageVersionInfo, c *model.Config) bool {
 					return
 				}
 
-				if name == imageTag {
+				if name == _const.ImageTag {
 					latestDigest = digest
 				}
 				match := versionRegex.MatchString(name)
 				// a work-around for testnet3, b/c there's only 1 version of image
-				if imageTag == "testnet3" {
+				if _const.ImageTag == "testnet3" {
 					match = true
 				}
 				if match && latestDigest == digest {
 					latestVersion = name
 				}
-				digestsMatch := strings.ToLower(digest) == strings.ToLower(vi.CurrentImgDigest)
+				digestsMatch := strings.ToLower(digest) == strings.ToLower(mod.ImgVer.CurrentImgDigest)
 				if digestsMatch && match {
 					currentVersion = name
 				}
@@ -99,20 +91,20 @@ func CheckVersionAndUpgrades(vi *ImageVersionInfo, c *model.Config) bool {
 	}
 	parseJson()
 
-	vi.HasUpdate = false
-	if (latestDigest != "" && vi.CurrentImgDigest != "") && latestDigest != vi.CurrentImgDigest {
+	mod.ImgVer.HasUpdate = false
+	if (latestDigest != "" && mod.ImgVer.CurrentImgDigest != "") && latestDigest != mod.ImgVer.CurrentImgDigest {
 		// re-try on fresh data
 		ok := getFile()
 		if !ok {
-			return false
+			return
 		}
 		parseJson()
 
-		if (latestDigest != "" && vi.CurrentImgDigest != "") && latestDigest != vi.CurrentImgDigest {
-			vi.HasUpdate = true
+		if (latestDigest != "" && mod.ImgVer.CurrentImgDigest != "") && latestDigest != mod.ImgVer.CurrentImgDigest {
+			mod.ImgVer.HasUpdate = true
 		}
 	}
-	vi.VersionCurrent = currentVersion
-	vi.VersionLatest = latestVersion
-	return true
+	mod.ImgVer.VersionCurrent = currentVersion
+	mod.ImgVer.VersionLatest = latestVersion
+	mod.Update()
 }
