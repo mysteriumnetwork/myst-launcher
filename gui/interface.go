@@ -24,6 +24,8 @@ type Model interface {
 	WaitDialogueComplete() bool
 	SetStateDocker(RunnableState)
 	SetStateContainer(RunnableState)
+	OnConfigRead()
+
 	SwitchState(s ModalState)
 
 	//ErrorModal(string, string) int

@@ -175,6 +175,7 @@ func (g *Gui) CreateMainWindow() {
 		}
 		g.dlg.Synchronize(func() {
 			g.refresh()
+			g.setImage()
 		})
 	})
 
