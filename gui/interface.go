@@ -22,23 +22,19 @@ type UIProps map[string]interface{}
 
 type Model interface {
 	WaitDialogueComplete() bool
+	ExitApp()
+	SetWantExit()
+
+
 	SetStateDocker(RunnableState)
 	SetStateContainer(RunnableState)
 	OnConfigRead()
 
 	SwitchState(s ModalState)
 
-	//ErrorModal(string, string) int
-	//YesNoModal(string, string) int
-	//ConfirmModal(string, string) int
-
 	UpdateProperties(m UIProps)
 	Update()
-	ExitApp()
-	SetWantExit()
-
-	//ShowNotificationInstalled()
-
+	
 	Publish(topic string, args ...interface{})
 	GetConfig() *model.Config
 }

@@ -93,7 +93,7 @@ func (m *UIModel) Update() {
 
 func (m *UIModel) SwitchState(s ModalState) {
 	m.State = s
-	m.Update()
+	m.UIBus.Publish("state-change")
 }
 
 func (m *UIModel) BtnFinishOnClick() {
@@ -138,18 +138,21 @@ func (m *UIModel) OnConfigRead() {
 }
 
 func (m *UIModel) SetStateDocker(r RunnableState) {
-	m.StateDocker = r
-	m.UIBus.Publish("model-change")
+	if m.StateDocker != r {
+		m.StateDocker = r
+		m.UIBus.Publish("model-change")
+	}
 }
 
 func (m *UIModel) SetStateContainer(r RunnableState) {
-	m.StateContainer = r
-	m.UIBus.Publish("model-change")
-	//m.UIBus.Publish("container-state")
+	if m.StateContainer != r {
+		m.StateContainer = r
+		m.UIBus.Publish("model-change")
+	}
 }
 
 func (m *UIModel) Publish(topic string, args ...interface{}) {
-	m.UIBus.Publish(topic, args)
+	m.UIBus.Publish(topic, args...)
 }
 
 func (m *UIModel) TriggerAction(action string) {

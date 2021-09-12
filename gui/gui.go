@@ -10,7 +10,9 @@ type Gui_ interface {
 	ShowMain()
 	ShowNotificationInstalled()
 	ShowNotificationUpgrade()
+
 	ConfirmModal(title, message string) int
 	YesNoModal(title, message string) int
 	ErrorModal(title, message string) int
+	SetModalReturnCode(rc int)
 }

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -13,11 +14,14 @@ import (
 var a = getSysProcAttrs()
 
 // returns: exit status, error
-func CmdRun(name string, args ...string) (int, error) {
+func CmdRun(out *bytes.Buffer, name string, args ...string) (int, error) {
 	log.Print(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
 
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &a
+	if out != nil {
+		cmd.Stdout = out
+	}
 
 	if err := cmd.Start(); err != nil {
 		return 0, err

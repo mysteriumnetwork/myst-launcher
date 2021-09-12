@@ -205,7 +205,6 @@ func (s *AppState) tryInstall() bool {
 	if !ok {
 		return true
 	}
-
 	s.model.SwitchState(gui.ModalStateInitial)
 	return false
 }

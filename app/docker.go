@@ -17,8 +17,6 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
-const group = "docker-users"
-
 func (s *AppState) SuperviseDockerNode() {
 	runtime.LockOSThread()
 	utils.Win32Initialize()
@@ -27,10 +25,10 @@ func (s *AppState) SuperviseDockerNode() {
 	fmt.Println("SuperviseDockerNode >")
 
 	if utils.LauncherUpgradeAvailable() {
-		//	ret := s.ui.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\n\r\nUpgrade launcher installation ?")
-		//	if ret == gui.IDYES {
-		//		utils.UpdateExe()
-		//	}
+		ret := s.ui.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
+		if ret == gui.IDYES {
+			utils.UpdateExe()
+		}
 	}
 
 	mystManager, err := myst.NewManagerWithDefaults()
@@ -44,11 +42,12 @@ func (s *AppState) SuperviseDockerNode() {
 
 	for {
 		tryStartOrInstallDocker := func() bool {
+			fmt.Println("tryStartOrInstallDocker")
 
-			if isRunning, _ := docker.IsRunning(); isRunning {
-				s.model.SetStateDocker(gui.RunnableStateRunning)
-				return false
-			}
+			// if isRunning, _ := docker.IsRunning(); isRunning {
+			// 	s.model.SetStateDocker(gui.RunnableStateRunning)
+			// 	return false
+			// }
 
 			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
 			isUnderVM, needSetup, err := false, false, error(nil)
@@ -72,10 +71,9 @@ func (s *AppState) SuperviseDockerNode() {
 				s.ui.ErrorModal("Application error", err.Error())
 				return true
 			}
-			fmt.Println("tryStartOrInstallDocker")
 
 			if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
-				ret := s.ui.YesNoModal("Requirements checker", "VM has been detected. \r\n\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
+				ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
 				if ret == gui.IDNO {
 					s.model.ExitApp()
 					return true
@@ -84,6 +82,7 @@ func (s *AppState) SuperviseDockerNode() {
 				s.model.Config.Save()
 			}
 			if needSetup {
+				fmt.Println("need setup >>>>>>>>>>>>>>>>>>>>>>>")
 				return s.tryInstall()
 			}
 
@@ -100,7 +99,6 @@ func (s *AppState) SuperviseDockerNode() {
 
 			return false
 		}
-		fmt.Println("tryStartOrInstallDocker")
 		wantExit := tryStartOrInstallDocker()
 		if wantExit {
 			s.model.SetWantExit()
@@ -174,9 +172,7 @@ func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 		if err != nil {
 			return
 		}
-
 		s.model.SetStateContainer(gui.RunnableStateRunning)
-		s.model.Update()
 
 		if !containerAlreadyRunning && s.didInstallation {
 			s.didInstallation = false

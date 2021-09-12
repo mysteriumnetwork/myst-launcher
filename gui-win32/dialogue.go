@@ -170,18 +170,23 @@ func (g *Gui) CreateMainWindow() {
 		}
 	})
 	g.model.UIBus.Subscribe("model-change", func() {
-		if !g.dlg.Visible() {
-			return
+		if g.dlg.Visible() {
+			g.dlg.Synchronize(func() {
+				g.refresh()
+				g.setImage()
+			})
 		}
-		g.dlg.Synchronize(func() {
-			g.refresh()
-			g.setImage()
-		})
+	})
+	g.model.UIBus.Subscribe("state-change", func() {
+		if g.dlg.Visible() {
+			g.dlg.Synchronize(func() {
+				g.refresh()
+			})
+		}
 	})
 
 	// prevent closing the app
 	g.dlg.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-
 		if g.model.WantExit {
 			walk.App().Exit(0)
 		}
