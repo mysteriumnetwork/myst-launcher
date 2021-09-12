@@ -14,7 +14,7 @@ func (g *Gui) menu() []MenuItem {
 					Text: "E&xit",
 					OnTriggered: func() {
 						g.TerminateWaitDialogueComplete()
-						g.NotifyUIExitApp()
+						g.CloseUI()
 					},
 				},
 			},

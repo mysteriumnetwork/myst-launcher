@@ -3,7 +3,7 @@ package app
 import (
 	"sync"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
+	model2 "github.com/mysteriumnetwork/myst-launcher/model"
 )
 
 type AppState struct {
@@ -14,8 +14,8 @@ type AppState struct {
 	WaitGroup sync.WaitGroup // for graceful shutdown
 
 	action chan string
-	model  *gui.UIModel //gui.Model
-	ui     gui.Gui_
+	model  *model2.UIModel //gui.Model
+	ui     model2.Gui_
 
 	// state
 	didInstallation bool
@@ -27,11 +27,11 @@ func NewApp() *AppState {
 	return s
 }
 
-func (s *AppState) SetModel(ui *gui.UIModel) {
+func (s *AppState) SetModel(ui *model2.UIModel) {
 	s.model = ui
 }
 
-func (s *AppState) SetUI(ui gui.Gui_) {
+func (s *AppState) SetUI(ui model2.Gui_) {
 	s.ui = ui
 }
 

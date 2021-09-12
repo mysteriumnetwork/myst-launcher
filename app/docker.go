@@ -12,7 +12,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/gui"
+	"github.com/mysteriumnetwork/myst-launcher/model"
+
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -26,7 +27,7 @@ func (s *AppState) SuperviseDockerNode() {
 
 	if utils.LauncherUpgradeAvailable() {
 		ret := s.ui.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
-		if ret == gui.IDYES {
+		if ret == model.IDYES {
 			utils.UpdateExe()
 		}
 	}
@@ -75,9 +76,9 @@ func (s *AppState) SuperviseDockerNode() {
 
 			if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
 				ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
-				if ret == gui.IDNO {
+				if ret == model.IDNO {
 					s.ui.TerminateWaitDialogueComplete()
-					s.ui.NotifyUIExitApp()
+					s.ui.CloseUI()
 					return true
 				}
 				s.model.Config.CheckVMSettingsConfirm = true
@@ -91,12 +92,12 @@ func (s *AppState) SuperviseDockerNode() {
 
 			isRunning, couldNotStart := docker.IsRunning()
 			if isRunning {
-				s.model.SetStateDocker(gui.RunnableStateRunning)
+				s.model.SetStateDocker(model.RunnableStateRunning)
 				return false
 			}
-			s.model.SetStateDocker(gui.RunnableStateStarting)
+			s.model.SetStateDocker(model.RunnableStateStarting)
 			if couldNotStart {
-				s.model.SetStateDocker(gui.RunnableStateUnknown)
+				s.model.SetStateDocker(model.RunnableStateUnknown)
 				return s.tryInstall()
 			}
 
@@ -123,13 +124,13 @@ func (s *AppState) SuperviseDockerNode() {
 			case "enable":
 				s.model.Config.Enabled = true
 				s.model.Config.Save()
-				s.model.SetStateContainer(gui.RunnableStateRunning)
+				s.model.SetStateContainer(model.RunnableStateRunning)
 				mystManager.Start(s.model.GetConfig())
 
 			case "disable":
 				s.model.Config.Enabled = false
 				s.model.Config.Save()
-				s.model.SetStateContainer(gui.RunnableStateUnknown)
+				s.model.SetStateContainer(model.RunnableStateUnknown)
 				mystManager.Stop()
 
 			case "stop":
@@ -144,10 +145,10 @@ func (s *AppState) SuperviseDockerNode() {
 }
 
 func (s *AppState) upgrade(mystManager *myst.Manager) {
-	s.model.SetStateContainer(gui.RunnableStateUnknown)
+	s.model.SetStateContainer(model.RunnableStateUnknown)
 	mystManager.Stop()
 
-	s.model.SetStateContainer(gui.RunnableStateInstalling)
+	s.model.SetStateContainer(model.RunnableStateInstalling)
 	mystManager.Update(s.model.GetConfig())
 
 	s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
@@ -169,12 +170,12 @@ func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 	}
 
 	if s.model.Config.Enabled {
-		s.model.SetStateContainer(gui.RunnableStateUnknown)
+		s.model.SetStateContainer(model.RunnableStateUnknown)
 		containerAlreadyRunning, err := mystManager.Start(s.model.GetConfig())
 		if err != nil {
 			return
 		}
-		s.model.SetStateContainer(gui.RunnableStateRunning)
+		s.model.SetStateContainer(model.RunnableStateRunning)
 
 		if !containerAlreadyRunning && s.didInstallation {
 			s.didInstallation = false

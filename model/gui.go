@@ -1,13 +1,7 @@
-package gui
+package model
 
 type Gui_ interface {
-	//OpenUpgradeDlg()
-	//CreateNotifyIcon(ui *UIModel)
-	//NetworkingDlg()
-	//CreateMainWindow()
-	//Run()
-
-	NotifyUIExitApp()
+	CloseUI()
 	WaitDialogueComplete() bool
 	TerminateWaitDialogueComplete()
 

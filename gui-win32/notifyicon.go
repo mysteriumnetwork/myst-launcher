@@ -10,11 +10,12 @@ package gui_win32
 import (
 	"log"
 
+	"github.com/mysteriumnetwork/myst-launcher/model"
+
 	"github.com/lxn/walk"
-	gui2 "github.com/mysteriumnetwork/myst-launcher/gui"
 )
 
-func (g *Gui) CreateNotifyIcon(ui *gui2.UIModel) {
+func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 	var err error
 
 	g.mw, err = walk.NewMainWindow()
@@ -31,7 +32,7 @@ func (g *Gui) CreateNotifyIcon(ui *gui2.UIModel) {
 	})
 	ui.UIBus.Subscribe("container-state", func() {
 		i := g.icon
-		if ui.StateContainer == gui2.RunnableStateRunning {
+		if ui.StateContainer == model.RunnableStateRunning {
 			i = g.iconActive
 		}
 		g.ni.SetIcon(i)
@@ -68,7 +69,7 @@ func (g *Gui) CreateNotifyIcon(ui *gui2.UIModel) {
 	}
 	exitAction.Triggered().Attach(func() {
 		g.TerminateWaitDialogueComplete()
-		g.NotifyUIExitApp()
+		g.CloseUI()
 	})
 
 	openUIAction := walk.NewAction()

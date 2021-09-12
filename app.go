@@ -11,9 +11,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/mysteriumnetwork/myst-launcher/model"
+
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
-	"github.com/mysteriumnetwork/myst-launcher/gui"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -46,7 +47,7 @@ func main() {
 	}
 	log.SetOutput(ap)
 
-	mod := gui.NewUIModel()
+	mod := model.NewUIModel()
 	mod.SetApp(ap)
 
 	ui := gui_win32.NewGui(mod)

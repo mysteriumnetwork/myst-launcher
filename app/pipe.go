@@ -6,8 +6,9 @@ import (
 	"bufio"
 	"log"
 
+	"github.com/mysteriumnetwork/myst-launcher/model"
+
 	"github.com/Microsoft/go-winio"
-	"github.com/mysteriumnetwork/myst-launcher/gui"
 )
 
 var LauncherPipeName = `\\.\pipe\mysterium_node_launcher`
@@ -30,7 +31,7 @@ func StopApp() bool {
 	return false
 }
 
-func CreatePipeAndListen(ui gui.Gui_) {
+func CreatePipeAndListen(ui model.Gui_) {
 	l, err := winio.ListenPipe(LauncherPipeName, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -52,7 +53,7 @@ func CreatePipeAndListen(ui gui.Gui_) {
 
 			case "stop\n":
 				ui.TerminateWaitDialogueComplete()
-				ui.NotifyUIExitApp()
+				ui.CloseUI()
 			}
 		}
 	}()

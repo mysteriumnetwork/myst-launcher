@@ -10,13 +10,14 @@ import (
 	"log"
 	"syscall"
 
+	model2 "github.com/mysteriumnetwork/myst-launcher/model"
+
 	"github.com/asaskevich/EventBus"
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
 
-	gui2 "github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 )
 
@@ -81,18 +82,18 @@ type Gui struct {
 	btnFinish *walk.PushButton
 	img       *walk.ImageView
 
-	currentView gui2.ModalState
+	currentView model2.UIState
 	ico         *walk.Icon
 	icoActive   *walk.Icon
 
-	model              *gui2.UIModel
+	model              *model2.UIModel
 	LastNotificationID NotificationTypeID
 
 	waitClick chan int
 	bus       EventBus.Bus
 }
 
-func NewGui(m *gui2.UIModel) *Gui {
+func NewGui(m *model2.UIModel) *Gui {
 	g := &Gui{}
 	g.icon, _ = walk.NewIconFromResourceId(2)
 	g.iconActive, _ = walk.NewIconFromResourceId(3)
@@ -159,7 +160,7 @@ func (g *Gui) CreateMainWindow() {
 
 	g.model.UIBus.Subscribe("log", func(p []byte) {
 		switch g.model.State {
-		case gui2.ModalStateInstallInProgress, gui2.ModalStateInstallError, gui2.ModalStateInstallFinished:
+		case model2.UIStateInstallInProgress, model2.UIStateInstallError, model2.UIStateInstallFinished:
 			g.dlg.Synchronize(func() {
 				g.lbInstallationStatus.AppendText(string(p) + "\r\n")
 			})
@@ -210,7 +211,7 @@ func (g *Gui) enableMenu(enable bool) {
 	g.actionUpgrade.SetEnabled(enable)
 }
 
-func (g *Gui) changeView(state gui2.ModalState) {
+func (g *Gui) changeView(state model2.UIState) {
 	prev := g.currentView
 	g.currentView = state
 
@@ -228,7 +229,7 @@ func (g *Gui) refresh() {
 	}
 	switch g.model.State {
 
-	case gui2.ModalStateInitial:
+	case model2.UIStateInitial:
 		g.enableMenu(true)
 		g.changeView(frameState)
 
@@ -255,30 +256,30 @@ func (g *Gui) refresh() {
 		g.lbImageName.SetText(g.model.ImgVer.ImageName)
 		g.btnOpenNodeUI.SetFocus()
 
-	case gui2.ModalStateInstallNeeded:
+	case model2.UIStateInstallNeeded:
 		g.enableMenu(false)
 		g.changeView(frameInsNeed)
 		g.btnBegin.SetEnabled(true)
 
-	case gui2.ModalStateInstallInProgress:
+	case model2.UIStateInstallInProgress:
 		g.enableMenu(false)
 		g.changeView(frameIns)
 		g.btnFinish.SetEnabled(false)
 
-	case gui2.ModalStateInstallFinished:
+	case model2.UIStateInstallFinished:
 		g.enableMenu(false)
 		g.changeView(frameIns)
 		g.btnFinish.SetEnabled(true)
 		g.btnFinish.SetText("Finish")
 
-	case gui2.ModalStateInstallError:
+	case model2.UIStateInstallError:
 		g.changeView(frameIns)
 		g.btnFinish.SetEnabled(true)
 		g.btnFinish.SetText("Exit installer")
 	}
 
 	switch g.model.State {
-	case gui2.ModalStateInstallInProgress, gui2.ModalStateInstallFinished, gui2.ModalStateInstallError:
+	case model2.UIStateInstallInProgress, model2.UIStateInstallFinished, model2.UIStateInstallError:
 		g.checkWindowsVersion.SetChecked(g.model.CheckWindowsVersion)
 		g.checkVTx.SetChecked(g.model.CheckVTx)
 		g.enableWSL.SetChecked(g.model.EnableWSL)
@@ -298,7 +299,7 @@ func (g *Gui) setImage() {
 	}
 
 	ico := g.ico
-	if g.model.StateContainer == gui2.RunnableStateRunning {
+	if g.model.StateContainer == model2.RunnableStateRunning {
 		ico = g.icoActive
 	}
 	img, err := walk.ImageFrom(ico)
@@ -407,6 +408,7 @@ func (g *Gui) DialogueComplete() {
 	}
 }
 
-func (g *Gui) NotifyUIExitApp() {
+func (g *Gui) CloseUI() {
+	g.model.WantExit = true
 	g.bus.Publish("exit")
 }

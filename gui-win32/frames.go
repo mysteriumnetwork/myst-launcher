@@ -36,7 +36,7 @@ func (g *Gui) installationWelcome() Widget {
 						Text:     "Install",
 						OnClicked: func() {
 							if g.model.WantExit {
-								g.NotifyUIExitApp()
+								g.CloseUI()
 							}
 							g.DialogueComplete()
 						},
@@ -161,7 +161,7 @@ func (g *Gui) installationDlg() Widget {
 						Text:       "Finish",
 						OnClicked: func() {
 							if g.model.WantExit {
-								g.NotifyUIExitApp()
+								g.CloseUI()
 							}
 							g.DialogueComplete()
 						},

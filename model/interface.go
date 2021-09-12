@@ -1,6 +1,4 @@
-package gui
-
-import "github.com/mysteriumnetwork/myst-launcher/model"
+package model
 
 // Dialog box command ids
 const (
@@ -27,10 +25,10 @@ type Model interface {
 	SetStateContainer(RunnableState)
 	OnConfigRead()
 
-	SwitchState(s ModalState)
+	SwitchState(s UIState)
 	UpdateProperties(m UIProps)
 	Update()
 
 	Publish(topic string, args ...interface{})
-	GetConfig() *model.Config
+	GetConfig() *Config
 }

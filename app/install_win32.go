@@ -8,8 +8,9 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/mysteriumnetwork/myst-launcher/model"
+
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
-	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
@@ -25,27 +26,27 @@ const group = "docker-users"
 func (s *AppState) tryInstall_() bool {
 	var err error
 
-	s.model.SwitchState(gui.ModalStateInstallNeeded)
+	s.model.SwitchState(model.UIStateInstallNeeded)
 	if !s.InstallStage2 {
 		ok := s.ui.WaitDialogueComplete()
 		if !ok {
 			return true
 		}
 	}
-	s.model.SwitchState(gui.ModalStateInstallInProgress)
+	s.model.SwitchState(model.UIStateInstallInProgress)
 
 	log.Println("Checking Windows version")
 	if !utils.IsWindowsVersionCompatible() {
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 
 		log.Println("You must run Windows 10 version 2004 or above.")
 
 		s.ui.ConfirmModal("Installation", "Please update to Windows 10 version 2004 or above.")
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 
 		return true
 	}
-	s.model.UpdateProperties(gui.UIProps{"CheckWindowsVersion": true})
+	s.model.UpdateProperties(model.UIProps{"CheckWindowsVersion": true})
 
 	if !s.InstallStage2 {
 		log.Println("Install executable")
@@ -55,12 +56,12 @@ func (s *AppState) tryInstall_() bool {
 		if err != nil {
 			log.Println("Failed to install executable")
 
-			s.model.SwitchState(gui.ModalStateInstallError)
+			s.model.SwitchState(model.UIStateInstallError)
 			return true
 		}
 		utils.CreateAutostartShortcut(_const.FlagInstallStage2)
 
-		s.model.UpdateProperties(gui.UIProps{"InstallExecutable": true})
+		s.model.UpdateProperties(model.UIProps{"InstallExecutable": true})
 	}
 
 	// Don't check VT-x / EPT as it's just enough to check VMPlatform WSL and vmcompute
@@ -68,12 +69,12 @@ func (s *AppState) tryInstall_() bool {
 	features, err := utils.QueryFeatures()
 	if err != nil {
 		log.Println("Failed to query feature:", utils.FeatureWSL)
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
 	err = utils.InstallFeatures(features, func(feature int, name string) {
 
-		pp := gui.UIProps{}
+		pp := model.UIProps{}
 		switch feature {
 		case utils.IDFeatureWSL:
 			pp["EnableWSL"] = true
@@ -83,7 +84,7 @@ func (s *AppState) tryInstall_() bool {
 		s.model.UpdateProperties(pp)
 	})
 	if err != nil {
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
 
@@ -97,7 +98,7 @@ func (s *AppState) tryInstall_() bool {
 
 	// proceeding install after reboot
 	if s.InstallStage2 {
-		s.model.UpdateProperties(gui.UIProps{"InstallExecutable": true, "RebootAfterWSLEnable": true})
+		s.model.UpdateProperties(model.UIProps{"InstallExecutable": true, "RebootAfterWSLEnable": true})
 	}
 
 	// Instead of chechking VT-x check vmcompute service is running
@@ -107,10 +108,10 @@ func (s *AppState) tryInstall_() bool {
 		log.Println("Vmcompute (Hyper-V Host Compute Service) is not running")
 
 		s.ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service)")
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	s.model.UpdateProperties(gui.UIProps{"CheckVTx": true})
+	s.model.UpdateProperties(model.UIProps{"CheckVTx": true})
 
 	utils.CreateAutostartShortcut(_const.FlagTray)
 	utils.CreateDesktopShortcut("")
@@ -148,10 +149,10 @@ func (s *AppState) tryInstall_() bool {
 			continue
 		}
 
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	s.model.UpdateProperties(gui.UIProps{"DownloadFiles": true})
+	s.model.UpdateProperties(model.UIProps{"DownloadFiles": true})
 
 	log.Println("Installing wsl_update_x64.msi")
 	gowin32.SetInstallerInternalUI(gowin32.InstallUILevelProgressOnly) // UI Level for a prompt
@@ -159,10 +160,10 @@ func (s *AppState) tryInstall_() bool {
 	if err != nil {
 		log.Println("Command failed: msiexec.exe /i wsl_update_x64.msi /quiet")
 
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	s.model.UpdateProperties(gui.UIProps{"InstallWSLUpdate": true})
+	s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate": true})
 
 	log.Println("Installing docker desktop (wait ~5 minutes)")
 	exe := os.Getenv("TMP") + "\\DockerDesktopInstaller.exe"
@@ -170,16 +171,16 @@ func (s *AppState) tryInstall_() bool {
 	if err != nil {
 		log.Println("DockerDesktopInstaller failed:", err)
 
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
 	if err := myst.StartDockerDesktop(); err != nil {
 		log.Println("Failed starting docker:", err)
 
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	s.model.UpdateProperties(gui.UIProps{"InstallDocker": true})
+	s.model.UpdateProperties(model.UIProps{"InstallDocker": true})
 
 	log.Println("Checking current group membership")
 	if !utils.CurrentGroupMembership(group) {
@@ -191,10 +192,10 @@ func (s *AppState) tryInstall_() bool {
 			windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
 		}
 
-		s.model.SwitchState(gui.ModalStateInstallError)
+		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	s.model.UpdateProperties(gui.UIProps{"CheckGroupMembership": true})
+	s.model.UpdateProperties(model.UIProps{"CheckGroupMembership": true})
 	//s.model.Config.Read()
 	s.model.Config.AutoStart = true
 	s.model.Config.Save()
@@ -202,11 +203,11 @@ func (s *AppState) tryInstall_() bool {
 	log.Println("Installation succeeded")
 	s.didInstallation = true
 
-	s.model.SwitchState(gui.ModalStateInstallFinished)
+	s.model.SwitchState(model.UIStateInstallFinished)
 	ok := s.ui.WaitDialogueComplete()
 	if !ok {
 		return true
 	}
-	s.model.SwitchState(gui.ModalStateInitial)
+	s.model.SwitchState(model.UIStateInitial)
 	return false
 }

@@ -8,10 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mysteriumnetwork/myst-launcher/model"
+
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
 
 	"github.com/buger/jsonparser"
-	"github.com/mysteriumnetwork/myst-launcher/gui"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -19,7 +20,7 @@ var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
 
 const checkPeriod = 12 * time.Hour
 
-func CheckVersionAndUpgrades(mod *gui.UIModel) {
+func CheckVersionAndUpgrades(mod *model.UIModel) {
 	var data []byte
 	f := utils.GetTmpDir() + "/myst_docker_hub_cache.txt"
 	i, err := os.Stat(f)

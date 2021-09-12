@@ -4,19 +4,18 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package gui
+package model
 
 import (
 	"github.com/asaskevich/EventBus"
 
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
-	"github.com/mysteriumnetwork/myst-launcher/model"
 )
 
 type UIModel struct {
 	UIBus EventBus.Bus
 
-	State    ModalState
+	State    UIState
 	WantExit bool
 
 	// common
@@ -35,26 +34,24 @@ type UIModel struct {
 	InstallDocker        bool
 	CheckGroupMembership bool
 
-	App    model.AppInterface
-	ImgVer model.ImageVersionInfo
-	Config model.Config
+	App    AppInterface
+	ImgVer ImageVersionInfo
+	Config Config
 }
 
 func NewUIModel() *UIModel {
 	m := &UIModel{}
-	//m.waitClick = make(chan int, 0)
 	m.UIBus = EventBus.New()
 	m.Config.Read()
 	m.ImgVer.ImageName = _const.GetImageName()
-
 	return m
 }
 
-func (m *UIModel) GetConfig() *model.Config {
+func (m *UIModel) GetConfig() *Config {
 	return &m.Config
 }
 
-func (m *UIModel) SetApp(app model.AppInterface) {
+func (m *UIModel) SetApp(app AppInterface) {
 	m.App = app
 }
 
@@ -90,7 +87,7 @@ func (m *UIModel) Update() {
 	m.UIBus.Publish("model-change")
 }
 
-func (m *UIModel) SwitchState(s ModalState) {
+func (m *UIModel) SwitchState(s UIState) {
 	m.State = s
 	m.UIBus.Publish("state-change")
 }
@@ -101,7 +98,7 @@ func (m *UIModel) SetWantExit() {
 }
 
 func (m *UIModel) isExiting() bool {
-	return m.State == ModalStateInstallError
+	return m.State == UIStateInstallError
 }
 
 func (m *UIModel) IsRunning() bool {
