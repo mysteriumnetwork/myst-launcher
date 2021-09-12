@@ -11,8 +11,11 @@ func (g *Gui) menu() []MenuItem {
 			Text:           "&File",
 			Items: []MenuItem{
 				Action{
-					Text:        "E&xit",
-					OnTriggered: func() { g.model.ExitApp() },
+					Text: "E&xit",
+					OnTriggered: func() {
+						g.TerminateWaitDialogueComplete()
+						g.NotifyUIExitApp()
+					},
 				},
 			},
 		},

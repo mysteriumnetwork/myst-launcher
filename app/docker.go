@@ -71,18 +71,21 @@ func (s *AppState) SuperviseDockerNode() {
 				s.ui.ErrorModal("Application error", err.Error())
 				return true
 			}
+			fmt.Println("tryStartOrInstallDocker 2>")
 
 			if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
 				ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
 				if ret == gui.IDNO {
-					s.model.ExitApp()
+					s.ui.TerminateWaitDialogueComplete()
+					s.ui.NotifyUIExitApp()
 					return true
 				}
 				s.model.Config.CheckVMSettingsConfirm = true
 				s.model.Config.Save()
 			}
+
+			//needSetup = true
 			if needSetup {
-				fmt.Println("need setup >>>>>>>>>>>>>>>>>>>>>>>")
 				return s.tryInstall()
 			}
 
@@ -99,8 +102,7 @@ func (s *AppState) SuperviseDockerNode() {
 
 			return false
 		}
-		wantExit := tryStartOrInstallDocker()
-		if wantExit {
+		if wantExit := tryStartOrInstallDocker(); wantExit {
 			s.model.SetWantExit()
 			return
 		}

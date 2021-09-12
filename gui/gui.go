@@ -7,6 +7,10 @@ type Gui_ interface {
 	//CreateMainWindow()
 	//Run()
 
+	NotifyUIExitApp()
+	WaitDialogueComplete() bool
+	TerminateWaitDialogueComplete()
+
 	ShowMain()
 	ShowNotificationInstalled()
 	ShowNotificationUpgrade()

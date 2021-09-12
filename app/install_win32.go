@@ -19,13 +19,15 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+const group = "docker-users"
+
 // returns exit model: true means exit
-func (s *AppState) tryInstall() bool {
+func (s *AppState) tryInstall_() bool {
 	var err error
 
 	s.model.SwitchState(gui.ModalStateInstallNeeded)
 	if !s.InstallStage2 {
-		ok := s.model.WaitDialogueComplete()
+		ok := s.ui.WaitDialogueComplete()
 		if !ok {
 			return true
 		}
@@ -201,7 +203,7 @@ func (s *AppState) tryInstall() bool {
 	s.didInstallation = true
 
 	s.model.SwitchState(gui.ModalStateInstallFinished)
-	ok := s.model.WaitDialogueComplete()
+	ok := s.ui.WaitDialogueComplete()
 	if !ok {
 		return true
 	}

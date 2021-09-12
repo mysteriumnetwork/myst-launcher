@@ -58,7 +58,7 @@ func main() {
 	ap.WaitGroup.Add(1)
 
 	go ap.SuperviseDockerNode()
-	app.CreatePipeAndListen(mod, ui)
+	app.CreatePipeAndListen(ui)
 
 	// Run the message loop
 	ui.Run()

@@ -26,7 +26,7 @@ func (g *Gui) CreateNotifyIcon(ui *gui2.UIModel) {
 		log.Fatal(err)
 	}
 
-	ui.UIBus.Subscribe("exit", func() {
+	g.bus.Subscribe("exit", func() {
 		g.ni.Dispose()
 	})
 	ui.UIBus.Subscribe("container-state", func() {
@@ -67,7 +67,8 @@ func (g *Gui) CreateNotifyIcon(ui *gui2.UIModel) {
 		log.Fatal(err)
 	}
 	exitAction.Triggered().Attach(func() {
-		ui.ExitApp()
+		g.TerminateWaitDialogueComplete()
+		g.NotifyUIExitApp()
 	})
 
 	openUIAction := walk.NewAction()

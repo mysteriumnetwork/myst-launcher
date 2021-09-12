@@ -14,8 +14,7 @@ import (
 )
 
 type UIModel struct {
-	UIBus     EventBus.Bus
-	waitClick chan int
+	UIBus EventBus.Bus
 
 	State    ModalState
 	WantExit bool
@@ -43,7 +42,7 @@ type UIModel struct {
 
 func NewUIModel() *UIModel {
 	m := &UIModel{}
-	m.waitClick = make(chan int, 0)
+	//m.waitClick = make(chan int, 0)
 	m.UIBus = EventBus.New()
 	m.Config.Read()
 	m.ImgVer.ImageName = _const.GetImageName()
@@ -96,24 +95,6 @@ func (m *UIModel) SwitchState(s ModalState) {
 	m.UIBus.Publish("state-change")
 }
 
-func (m *UIModel) BtnFinishOnClick() {
-	if m.WantExit {
-		m.ExitApp()
-		return
-	}
-
-	select {
-	case m.waitClick <- 0:
-	default:
-	}
-}
-
-// returns channel close status
-func (m *UIModel) WaitDialogueComplete() bool {
-	_, ok := <-m.waitClick
-	return ok
-}
-
 func (m *UIModel) SetWantExit() {
 	m.WantExit = true
 	m.UIBus.Publish("want-exit")
@@ -121,12 +102,6 @@ func (m *UIModel) SetWantExit() {
 
 func (m *UIModel) isExiting() bool {
 	return m.State == ModalStateInstallError
-}
-
-func (m *UIModel) ExitApp() {
-	close(m.waitClick)
-	m.WantExit = true
-	m.UIBus.Publish("exit")
 }
 
 func (m *UIModel) IsRunning() bool {

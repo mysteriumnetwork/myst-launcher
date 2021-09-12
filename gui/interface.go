@@ -21,20 +21,16 @@ const (
 type UIProps map[string]interface{}
 
 type Model interface {
-	WaitDialogueComplete() bool
-	ExitApp()
 	SetWantExit()
-
 
 	SetStateDocker(RunnableState)
 	SetStateContainer(RunnableState)
 	OnConfigRead()
 
 	SwitchState(s ModalState)
-
 	UpdateProperties(m UIProps)
 	Update()
-	
+
 	Publish(topic string, args ...interface{})
 	GetConfig() *model.Config
 }

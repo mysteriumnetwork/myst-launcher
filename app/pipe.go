@@ -30,7 +30,7 @@ func StopApp() bool {
 	return false
 }
 
-func CreatePipeAndListen(model *gui.UIModel, ui gui.Gui_) {
+func CreatePipeAndListen(ui gui.Gui_) {
 	l, err := winio.ListenPipe(LauncherPipeName, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +51,8 @@ func CreatePipeAndListen(model *gui.UIModel, ui gui.Gui_) {
 				ui.ShowMain()
 
 			case "stop\n":
-				model.ExitApp()
+				ui.TerminateWaitDialogueComplete()
+				ui.NotifyUIExitApp()
 			}
 		}
 	}()

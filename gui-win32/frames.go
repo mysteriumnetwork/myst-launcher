@@ -35,7 +35,10 @@ func (g *Gui) installationWelcome() Widget {
 						AssignTo: &g.btnBegin,
 						Text:     "Install",
 						OnClicked: func() {
-							g.model.BtnFinishOnClick()
+							if g.model.WantExit {
+								g.NotifyUIExitApp()
+							}
+							g.DialogueComplete()
 						},
 					},
 				},
@@ -157,7 +160,10 @@ func (g *Gui) installationDlg() Widget {
 						AssignTo:   &g.btnFinish,
 						Text:       "Finish",
 						OnClicked: func() {
-							g.model.BtnFinishOnClick()
+							if g.model.WantExit {
+								g.NotifyUIExitApp()
+							}
+							g.DialogueComplete()
 						},
 					},
 				},

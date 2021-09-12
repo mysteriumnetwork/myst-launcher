@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/mysteriumnetwork/myst-launcher/gui"

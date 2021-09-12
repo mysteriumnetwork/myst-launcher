@@ -10,6 +10,8 @@ import (
 	"log"
 	"syscall"
 
+	"github.com/asaskevich/EventBus"
+
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
@@ -85,6 +87,9 @@ type Gui struct {
 
 	model              *gui2.UIModel
 	LastNotificationID NotificationTypeID
+
+	waitClick chan int
+	bus       EventBus.Bus
 }
 
 func NewGui(m *gui2.UIModel) *Gui {
@@ -93,6 +98,8 @@ func NewGui(m *gui2.UIModel) *Gui {
 	g.iconActive, _ = walk.NewIconFromResourceId(3)
 	g.model = m
 
+	g.waitClick = make(chan int, 0)
+	g.bus = EventBus.New()
 	return g
 }
 
@@ -161,28 +168,23 @@ func (g *Gui) CreateMainWindow() {
 	g.currentView = frameState
 	g.changeView(frameState)
 
+	// refresh on window restore
 	g.dlg.Activating().Attach(func() {
-		if g.dlg.Visible() {
-			// refresh on window restore
-			g.dlg.Synchronize(func() {
-				g.refresh()
-			})
-		}
+		g.dlg.Synchronize(func() {
+			g.refresh()
+			g.setImage()
+		})
 	})
 	g.model.UIBus.Subscribe("model-change", func() {
-		if g.dlg.Visible() {
-			g.dlg.Synchronize(func() {
-				g.refresh()
-				g.setImage()
-			})
-		}
+		g.dlg.Synchronize(func() {
+			g.refresh()
+			g.setImage()
+		})
 	})
 	g.model.UIBus.Subscribe("state-change", func() {
-		if g.dlg.Visible() {
-			g.dlg.Synchronize(func() {
-				g.refresh()
-			})
-		}
+		g.dlg.Synchronize(func() {
+			g.refresh()
+		})
 	})
 
 	// prevent closing the app
@@ -194,7 +196,7 @@ func (g *Gui) CreateMainWindow() {
 		g.dlg.Hide()
 	})
 
-	g.model.UIBus.Subscribe("exit", func() {
+	g.bus.Subscribe("exit", func() {
 		g.dlg.Synchronize(func() {
 			g.dlg.Close()
 		})
@@ -221,6 +223,9 @@ func (g *Gui) changeView(state gui2.ModalState) {
 }
 
 func (g *Gui) refresh() {
+	if !g.dlg.Visible() {
+		return
+	}
 	switch g.model.State {
 
 	case gui2.ModalStateInitial:
@@ -288,6 +293,10 @@ func (g *Gui) refresh() {
 }
 
 func (g *Gui) setImage() {
+	if !g.dlg.Visible() {
+		return
+	}
+
 	ico := g.ico
 	if g.model.StateContainer == gui2.RunnableStateRunning {
 		ico = g.icoActive
@@ -375,6 +384,29 @@ func (g *Gui) ErrorModal(title, message string) int {
 	return <-res
 }
 
+func (g *Gui) SetModalReturnCode(rc int) {}
+
 func (g *Gui) Run() {
 	g.mw.Run()
+}
+
+// returns false, if dialogue was terminated
+func (g *Gui) WaitDialogueComplete() bool {
+	_, ok := <-g.waitClick
+	return ok
+}
+
+func (g *Gui) TerminateWaitDialogueComplete() {
+	close(g.waitClick)
+}
+
+func (g *Gui) DialogueComplete() {
+	select {
+	case g.waitClick <- 0:
+	default:
+	}
+}
+
+func (g *Gui) NotifyUIExitApp() {
+	g.bus.Publish("exit")
 }
