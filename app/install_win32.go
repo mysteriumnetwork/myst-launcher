@@ -68,12 +68,11 @@ func (s *AppState) tryInstall_() bool {
 
 	features, err := utils.QueryFeatures()
 	if err != nil {
-		log.Println("Failed to query feature:", utils.FeatureWSL)
+		log.Println("Failed to query feature:", err)
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
 	err = utils.InstallFeatures(features, func(feature int, name string) {
-
 		pp := model.UIProps{}
 		switch feature {
 		case utils.IDFeatureWSL:

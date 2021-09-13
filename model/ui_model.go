@@ -23,8 +23,10 @@ type UIModel struct {
 	StateContainer RunnableState
 
 	// inst
-	CheckWindowsVersion  bool
-	CheckVTx             bool
+	CheckWindowsVersion bool
+	CheckVTx            bool
+	CheckDocker         bool // darwin
+
 	EnableWSL            bool
 	EnableHyperV         bool
 	InstallExecutable    bool
@@ -62,6 +64,8 @@ func (m *UIModel) UpdateProperties(p UIProps) {
 			m.CheckWindowsVersion = v.(bool)
 		case "CheckVTx":
 			m.CheckVTx = v.(bool)
+		case "CheckDocker":
+			m.CheckDocker = v.(bool)
 		case "EnableWSL":
 			m.EnableWSL = v.(bool)
 		case "EnableHyperV":

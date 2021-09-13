@@ -16,7 +16,7 @@ func IsProcessRunning(name string) bool {
 	if err == nil {
 		return res == 0
 	}
-	log.Println("CmdRun error:", err)
+	log.Println("IsProcessRunning error:", err)
 	return false
 }
 
@@ -36,7 +36,11 @@ func SystemUnderVm() (bool, error) {
 	return false, nil
 }
 
-func HasVTx() bool {
-
-	return true
+func HasDocker() (bool, error) {
+	res, err := CmdRun(nil, "/usr/local/bin/docker", "version")
+	if err != nil {
+		log.Println("HasDocker error:", err)
+		return false, err
+	}
+	return res == 0 || res == 1, nil
 }

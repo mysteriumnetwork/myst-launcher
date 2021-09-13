@@ -45,10 +45,10 @@ func (s *AppState) SuperviseDockerNode() {
 		tryStartOrInstallDocker := func() bool {
 			fmt.Println("tryStartOrInstallDocker")
 
-			// if isRunning, _ := docker.IsRunning(); isRunning {
-			// 	s.model.SetStateDocker(gui.RunnableStateRunning)
-			// 	return false
-			// }
+			if isRunning, _ := docker.IsRunning(); isRunning {
+				s.model.SetStateDocker(model.RunnableStateRunning)
+				return false
+			}
 
 			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
 			isUnderVM, needSetup, err := false, false, error(nil)
@@ -85,7 +85,6 @@ func (s *AppState) SuperviseDockerNode() {
 				s.model.Config.Save()
 			}
 
-			//needSetup = true
 			if needSetup {
 				return s.tryInstall()
 			}
