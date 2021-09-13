@@ -3,7 +3,6 @@
 package app
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
