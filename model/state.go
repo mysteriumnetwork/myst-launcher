@@ -23,6 +23,8 @@ type Config struct {
 	EnablePortForwarding bool `json:"enable_port_forwarding"`
 	PortRangeBegin       int  `json:"port_range_begin"`
 	PortRangeEnd         int  `json:"port_range_end"`
+
+	ResourcePath string `json:"-"`
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {
