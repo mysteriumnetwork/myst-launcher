@@ -63,7 +63,10 @@ func (s *AppState) SuperviseDockerNode() {
 				}
 				if len(features) > 0 {
 					needSetup = true
-					return nil
+				}
+				hasDocker, _ := utils.HasDocker()
+				if !hasDocker {
+					needSetup = true
 				}
 				return nil
 			})
