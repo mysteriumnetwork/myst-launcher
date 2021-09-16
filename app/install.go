@@ -65,11 +65,11 @@ func (s *AppState) tryInstall() bool {
 		res, err := utils.CmdRun(nil, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
 		fmt.Println("cmd", res, err)
 
-		res, err := utils.CmdRun(nil, "/usr/bin/hdiutil", "attach", utils.GetTmpDir()+"/"+name)
+		res, err = utils.CmdRun(nil, "/usr/bin/hdiutil", "attach", utils.GetTmpDir()+"/"+name)
 		fmt.Println("cmd", res, err)
 
 		// cp -R /Volumes/Docker/Docker.app /Applications
-		res, err := utils.CmdRun(nil, "/bin/cp", "-R", "/Volumes/Docker/Docker.app", "/Applications")
+		res, err = utils.CmdRun(nil, "/bin/cp", "-R", "/Volumes/Docker/Docker.app", "/Applications")
 		fmt.Println("cmd", res, err)
 
 		// res, err := utils.CmdRun(nil, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
