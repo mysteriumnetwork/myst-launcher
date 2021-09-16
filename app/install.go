@@ -52,9 +52,9 @@ func (s *AppState) tryInstall() bool {
 		log.Println("Downloading Docker desktop..")
 		//if _, err := os.Stat(GetTmpDir() + "/" + name); err != nil {
 
-		err = utils.DownloadFile(utils.GetTmpDir()+"/"+ name, url, func(progress int) {
+		err = utils.DownloadFile(utils.GetTmpDir()+"/"+name, url, func(progress int) {
 			if progress%10 == 0 {
-				log.Println(fmt.Sprintf("%s - %d%%",  name, progress))
+				log.Println(fmt.Sprintf("%s - %d%%", name, progress))
 			}
 		})
 		if err != nil {
@@ -62,9 +62,18 @@ func (s *AppState) tryInstall() bool {
 			s.model.SwitchState(model.UIStateInstallError)
 			return true
 		}
-		res, err := utils.CmdRun(nil, "/usr/sbin/diskutil", "unmount","/Volumes/Docker")		
+		res, err := utils.CmdRun(nil, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
 		fmt.Println("cmd", res, err)
 
+		res, err = utils.CmdRun(nil, "/usr/bin/hdiutil", "attach", utils.GetTmpDir()+"/"+name)
+		fmt.Println("cmd", res, err)
+
+		// cp -R /Volumes/Docker/Docker.app /Applications
+		res, err = utils.CmdRun(nil, "/bin/cp", "-R", "/Volumes/Docker/Docker.app", "/Applications")
+		fmt.Println("cmd", res, err)
+
+		// res, err := utils.CmdRun(nil, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
+		// fmt.Println("cmd", res, err)
 	}
 
 	s.model.SwitchState(model.UIStateInstallFinished)
