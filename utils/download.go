@@ -7,44 +7,71 @@
 package utils
 
 import (
-	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
 	"time"
-
-	"github.com/cavaliercoder/grab"
 )
 
 type PrintProgressCallback func(progress int)
 
-func DownloadFile(filepath string, url string, cb PrintProgressCallback) error {
-	client := grab.NewClient()
-	req, _ := grab.NewRequest(filepath, url)
-	// workaround for ErrBadLength
-	req.NoResume = true
+type WriteCounter struct {
+	total         uint64
+	contentLength uint64
+	progress      int
+	cb            PrintProgressCallback
+}
 
-	resp := client.Do(req)
-	fmt.Printf("  %v\n", resp.HTTPResponse.Status)
-
-	t := time.NewTicker(1000 * time.Millisecond)
-	defer t.Stop()
-	percent := 0
-	cb(percent)
-Loop:
-	for {
-		select {
-		case <-t.C:
-			if int(100*resp.Progress()) > percent {
-				percent = int(100 * resp.Progress())
-				cb(percent)
-			}
-
-		case <-resp.Done:
-			if int(100*resp.Progress()) > percent {
-				percent = int(100 * resp.Progress())
-				cb(percent)
-			}
-			break Loop
+func (wc *WriteCounter) Write(p []byte) (int, error) {
+	n := len(p)
+	wc.total += uint64(n)
+	newProgress := int(100 * wc.total / wc.contentLength)
+	if newProgress > wc.progress {
+		wc.progress = newProgress
+		if wc.cb != nil {
+			wc.cb(wc.progress)
 		}
 	}
+	return n, nil
+}
 
-	return resp.Err()
+func DownloadFile(filepath string, url string, cb PrintProgressCallback) error {
+
+	c := &http.Client{
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ResponseHeaderTimeout: 10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
+	out, err := os.Create(filepath + ".tmp")
+	if err != nil {
+		return err
+	}
+
+	// Get the data
+	resp, err := c.Get(url)
+	if err != nil {
+		out.Close()
+		return err
+	}
+	defer resp.Body.Close()
+
+	counter := &WriteCounter{cb: cb}
+	counter.contentLength = uint64(resp.ContentLength)
+	counter.cb(0)
+	if _, err = io.Copy(out, io.TeeReader(resp.Body, counter)); err != nil {
+		out.Close()
+		return err
+	}
+	out.Close()
+	if err = os.Rename(filepath+".tmp", filepath); err != nil {
+		return err
+	}
+	return nil
 }
