@@ -1,11 +1,8 @@
 package utils
 
 import (
-	"encoding/xml"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"runtime"
 )
 
