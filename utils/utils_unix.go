@@ -38,8 +38,8 @@ func SystemUnderVm() (bool, error) {
 
 func HasDocker() (bool, error) {
 	// Don't try running docker binary directly
-	// b/c it cmay hang on darwin 
-	res, err := CmdRun(nil, "/bin/sh", "/usr/local/bin/docker", "version")
+	// b/c command.Start() may hang on darwin 
+	res, err := CmdRun(nil, "/bin/sh", "-c", "/usr/local/bin/docker version")
 	if err != nil {
 		log.Println("HasDocker error:", err)
 		return false, err

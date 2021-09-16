@@ -2,6 +2,7 @@ package myst
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -25,7 +26,10 @@ func NewDockerMonitor(m *Manager) *DockerMonitor {
 
 // return values: isRunning, couldNotStart
 func (r *DockerMonitor) IsRunning() (bool, bool) {
+	fmt.Println("IsRunning")
 	canPingDocker := r.m.CanPingDocker()
+	fmt.Println("IsRunning", canPingDocker)
+
 	if !canPingDocker {
 		r.tryStartCount++
 

@@ -2,21 +2,19 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"runtime"
 )
 
 func GetDockerDesktopLink() (string, error) {
-	os := ""
 	switch runtime.GOOS {
+
 	case "windows":
-		os = "win"
+		return "https://desktop.docker.com/mac/stable/amd64/Docker Desktop Installer.exe", nil
+		
 	case "darwin":
-		os = "mac"
+		return "https://desktop.docker.com/mac/stable/amd64/Docker.dmg", nil
+
 	default:
 		return "", errors.New("unknown system")
 	}
-
-	res := fmt.Sprintf("https://desktop.docker.com/%s/stable/amd64/appcast.xml", os)
-	return res, nil
 }

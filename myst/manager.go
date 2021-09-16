@@ -73,7 +73,8 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 }
 
 func (m *Manager) CanPingDocker() bool {
-	_, err := m.dockerAPI.Ping(m.ctx())
+	ctx,_ := context.WithTimeout(m.cfg.CTX, 10 * time.Second)
+	_, err := m.dockerAPI.Ping(ctx)
 	if err != nil {
 		return false
 	}

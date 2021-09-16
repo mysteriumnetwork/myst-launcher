@@ -45,7 +45,9 @@ func (s *AppState) SuperviseDockerNode() {
 		tryStartOrInstallDocker := func() bool {
 			fmt.Println("tryStartOrInstallDocker")
 
-			if isRunning, _ := docker.IsRunning(); isRunning {
+			isRunning_, couldNotStart := docker.IsRunning()
+			fmt.Println("isRunning, couldNotStart", isRunning_, couldNotStart)
+			if isRunning_ {
 				s.model.SetStateDocker(model.RunnableStateRunning)
 				return false
 			}
@@ -62,10 +64,12 @@ func (s *AppState) SuperviseDockerNode() {
 					return err
 				}
 				if len(features) > 0 {
+					fmt.Println("needSetup 1>")
 					needSetup = true
 				}
 				hasDocker, _ := utils.HasDocker()
 				if !hasDocker {
+					fmt.Println("needSetup 2>")
 					needSetup = true
 				}
 				return nil
