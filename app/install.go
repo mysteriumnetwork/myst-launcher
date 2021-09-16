@@ -3,6 +3,7 @@
 package app
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -40,7 +41,7 @@ func (s *AppState) tryInstall() bool {
 		//s.model.SwitchState(model.UIStateInstallError)
 		//return true
 
-		u, err := utils.GetDockerDesktopLink()
+		url, err := utils.GetDockerDesktopLink()
 		if err != nil {
 			log.Println("Couldn't get Docker Desktop link")
 			s.model.SwitchState(model.UIStateInstallError)
@@ -48,10 +49,10 @@ func (s *AppState) tryInstall() bool {
 		}
 		name := "Docker.dmg"
 
-		log.Println(fmt.Sprintf("Downloading Docker desktop..")
+		log.Println("Downloading Docker desktop..")
 		//if _, err := os.Stat(GetTmpDir() + "/" + name); err != nil {
 
-		err := utils.DownloadFile(GetTmpDir()+"/"+ name, url, func(progress int) {
+		err = utils.DownloadFile(utils.GetTmpDir()+"/"+ name, url, func(progress int) {
 			if progress%10 == 0 {
 				log.Println(fmt.Sprintf("%s - %d%%",  name, progress))
 			}
@@ -61,9 +62,8 @@ func (s *AppState) tryInstall() bool {
 			s.model.SwitchState(model.UIStateInstallError)
 			return true
 		}
-		utils.CmdRun(nil, "/usr/bin/diskutil", "unmount","/Volumes/Docker")
-		
-		
+		res, err := utils.CmdRun(nil, "/usr/sbin/diskutil", "unmount","/Volumes/Docker")		
+		fmt.Println("cmd", res, err)
 
 	}
 
