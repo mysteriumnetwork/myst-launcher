@@ -14,6 +14,20 @@ import (
 	"time"
 )
 
+var (
+	client = &http.Client{
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ResponseHeaderTimeout: 10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
+)
+
 type PrintProgressCallback func(progress int)
 
 type WriteCounter struct {
@@ -37,25 +51,13 @@ func (wc *WriteCounter) Write(p []byte) (int, error) {
 }
 
 func DownloadFile(filepath string, url string, cb PrintProgressCallback) error {
-
-	c := &http.Client{
-		Transport: &http.Transport{
-			Dial: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).Dial,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ResponseHeaderTimeout: 10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		},
-	}
 	out, err := os.Create(filepath + ".tmp")
 	if err != nil {
 		return err
 	}
 
 	// Get the data
-	resp, err := c.Get(url)
+	resp, err := client.Get(url)
 	if err != nil {
 		out.Close()
 		return err
