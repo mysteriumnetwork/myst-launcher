@@ -8,8 +8,24 @@ package app
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"time"
+)
+
+var (
+	client = &http.Client{
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ResponseHeaderTimeout: 10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
 )
 
 type PrintProgressCallback func(progress int)
@@ -41,7 +57,7 @@ func DownloadFile(filepath string, url string, cb PrintProgressCallback) error {
 	}
 
 	// Get the data
-	resp, err := http.Get(url)
+	resp, err := client.Get(url)
 	if err != nil {
 		out.Close()
 		return err
