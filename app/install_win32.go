@@ -23,7 +23,7 @@ import (
 const group = "docker-users"
 
 // returns exit model: true means exit
-func (s *AppState) tryInstall_() bool {
+func (s *AppState) tryInstall() bool {
 	var err error
 
 	s.model.SwitchState(model.UIStateInstallNeeded)

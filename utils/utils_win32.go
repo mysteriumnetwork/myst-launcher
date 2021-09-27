@@ -400,3 +400,13 @@ func QueryWindowsFeature(feature string) (bool, bool, error) {
 func Win32Initialize() {
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
 }
+
+func HasDocker() (bool, error) {
+	res, err := CmdRun(nil, "docker", "version")
+	if err != nil {
+		log.Println("HasDocker error:", err)
+		return false, err
+	}
+	fmt.Println("HasDocker", res)
+	return res == 0 || res == 1, nil
+}

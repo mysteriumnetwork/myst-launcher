@@ -73,25 +73,20 @@ func (s *AppState) tryInstall() bool {
 
 	var buf bytes.Buffer
 	res, err := utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
-	fmt.Println("cmd", buf.String(), res, err)
 	buf.Reset()
 
 	res, err = utils.CmdRun(&buf, "/usr/bin/hdiutil", "attach", utils.GetTmpDir()+name)
-	fmt.Println("cmd", buf.String(), res, err)
 	buf.Reset()
 
 	// cp -R /Volumes/Docker/Docker.app /Applications
 	res, err = utils.CmdRun(&buf, "/bin/cp", "-pR", "/Volumes/Docker/Docker.app", "/Applications")
-	fmt.Println("cmd", buf.String(), res, err)
 	buf.Reset()
 
 	//  xattr -d -r com.apple.quarantine /Applications/Docker.app
 	res, err = utils.CmdRun(&buf, "/usr/bin/xattr", "-d", "-r", "com.apple.quarantine", "/Applications/Docker.app")
-	fmt.Println("cmd", buf.String(), res, err)
 	buf.Reset()
 
 	res, err = utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
-	fmt.Println("cmd", buf.String(), res, err)
 	buf.Reset()
 
 	s.model.UpdateProperties(model.UIProps{"InstallDocker": true})
