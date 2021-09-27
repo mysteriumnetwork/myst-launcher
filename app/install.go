@@ -14,6 +14,11 @@ import (
 
 // returns exit model: true means exit
 func (s *AppState) tryInstall() bool {
+	s.model.SwitchState(model.UIStateInstallNeeded)
+	if !s.ui.WaitDialogueComplete() {
+		return true
+	}
+
 	s.model.SwitchState(model.UIStateInstallInProgress)
 
 	features, err := utils.QueryFeatures()
@@ -92,8 +97,7 @@ func (s *AppState) tryInstall() bool {
 	s.model.UpdateProperties(model.UIProps{"InstallDocker": true})
 
 	s.model.SwitchState(model.UIStateInstallFinished)
-	ok := s.ui.WaitDialogueComplete()
-	if !ok {
+	if !s.ui.WaitDialogueComplete() {
 		return true
 	}
 	s.model.SwitchState(model.UIStateInitial)
