@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"strings"
 	"time"
-
-	"github.com/mysteriumnetwork/myst-launcher/model"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -18,6 +17,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
+	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -27,6 +27,8 @@ const (
 	imageName     = "mysteriumnetwork/myst"
 	containerName = "myst"
 )
+
+const reportVerFlag = "--launcher.ver" //"--openvpn.binary"
 
 func GetImageName() string {
 	return imageName + ":" + imageTag
@@ -81,10 +83,7 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 
 func (m *Manager) CanPingDocker() bool {
 	_, err := m.dockerAPI.Ping(m.ctx())
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 // Returns: alreadyRunning, error
@@ -102,8 +101,23 @@ func (m *Manager) Start(c *model.Config) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
+	fmt.Println("mystContainer", mystContainer.Container.Command)
 	if mystContainer.IsRunning() {
 		return true, nil
+	}
+
+	// refresh config, if container isn't running yet
+	if !strings.Contains(mystContainer.Command, reportVerFlag) {
+		fmt.Println("no flag")
+
+		err = m.dockerAPI.ContainerRemove(m.ctx(), mystContainer.ID, types.ContainerRemoveOptions{})
+		if err != nil {
+			return false, wrap(err, ErrCouldNotRemoveImage)
+		}
+		if err := m.createMystContainer(c); err != nil {
+			return false, err
+		}
 	}
 
 	return false, m.startMystContainer()
@@ -157,11 +171,11 @@ func wrap(external, internal error) error {
 }
 
 func (m *Manager) startMystContainer() error {
+	fmt.Println("Start c")
 	mystContainer, err := m.findMystContainer()
 	if err != nil {
 		return err
 	}
-
 	err = m.dockerAPI.ContainerStart(m.ctx(), mystContainer.ID, types.ContainerStartOptions{})
 	if err != nil {
 		return wrap(err, ErrContainerStart)
@@ -201,12 +215,19 @@ func (m *Manager) createMystContainer(c *model.Config) error {
 	cmdArgs := []string{
 		"service", "--agreed-terms-and-conditions",
 	}
+	if c.HasOptionReportVersion {
+		pv, err := utils.GetProductVersion()
+		if err == nil {
+			cmdArgs = append([]string{reportVerFlag + "=" + pv.ProductVersion() + "/" + runtime.GOOS}, cmdArgs...)
+		}
+	}
 
 	if c.EnablePortForwarding {
 		p := fmt.Sprintf("%d-%d:%d-%d/udp", c.PortRangeBegin, c.PortRangeEnd, c.PortRangeBegin, c.PortRangeEnd)
 		portSpecs = append(portSpecs, p)
 
 		portsArg := fmt.Sprintf("--udp.ports=%d:%d", c.PortRangeBegin, c.PortRangeEnd)
+		// prepend
 		cmdArgs = append([]string{portsArg}, cmdArgs...)
 	}
 

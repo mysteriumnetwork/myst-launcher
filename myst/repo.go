@@ -1,10 +1,12 @@
 package myst
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,7 +15,35 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/model"
 )
 
-var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
+var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+).*$`)
+var minVersion = []int{0, 64, 5}
+
+func checkVersionRequirement(v string, minVersion []int) bool {
+	match := versionRegex.MatchString(v)
+	if !match {
+		return false
+	}
+	versionParts := versionRegex.FindAllStringSubmatch(v, -1)
+	fmt.Println("versionParts", versionParts[0][1:])
+
+	verMatches := false
+
+	for k, v := range versionParts[0][1:] {
+		i, _ := strconv.Atoi(v)
+
+		// sufficient condition
+		if i > minVersion[k] {
+			verMatches = true
+			break
+		}
+
+		// last part
+		if k == len(minVersion)-1 {
+			verMatches = i >= minVersion[k]
+		}
+	}
+	return verMatches
+}
 
 const checkPeriod = 12 * time.Hour
 
@@ -61,6 +91,7 @@ func CheckVersionAndUpgrades(imageDigest string, c *model.Config) bool {
 			if err != nil {
 				return
 			}
+			match := versionRegex.MatchString(name)
 
 			jsonparser.ArrayEach(value, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 				digest, err := jsonparser.GetString(value, "digest")
@@ -71,7 +102,6 @@ func CheckVersionAndUpgrades(imageDigest string, c *model.Config) bool {
 				if name == imageTag {
 					latestDigest = digest
 				}
-				match := versionRegex.MatchString(name)
 				// a work-around for testnet3, b/c there's only 1 version of image
 				if imageTag == "testnet3" {
 					match = true
@@ -104,6 +134,10 @@ func CheckVersionAndUpgrades(imageDigest string, c *model.Config) bool {
 	gui.UI.VersionCurrent = currentVersion
 	gui.UI.VersionLatest = latestVersion
 	gui.UI.Update()
+
+	if checkVersionRequirement(currentVersion, minVersion) {
+		c.HasOptionReportVersion = true
+	}
 
 	return true
 }
