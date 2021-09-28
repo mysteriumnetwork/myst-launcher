@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package utils
@@ -346,6 +347,7 @@ func IsVMComputeRunning() bool {
 
 // Returns: featureExists, featureEnabled, error
 func QueryWindowsFeature(feature string) (bool, bool, error) {
+	log.Println("Query feature:", feature)
 	unknown, err := oleutil.CreateObject("WbemScripting.SWbemLocator")
 	if err != nil {
 		return false, false, err

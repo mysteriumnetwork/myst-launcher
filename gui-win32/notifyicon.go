@@ -8,6 +8,7 @@
 package gui_win32
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -24,7 +25,9 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 	}
 	g.ni, err = walk.NewNotifyIcon(g.mw)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("err", err)
+		return
+		// log.Fatal(err)
 	}
 
 	g.bus.Subscribe("exit", func() {

@@ -37,24 +37,28 @@ func CreatePipeAndListen(ui model.Gui_) {
 		log.Fatal(err)
 	}
 
+	handleCommand := func ()  {
+		c, err := l.Accept()
+		if err != nil {
+			panic(err)
+		}
+		defer c.Close()
+
+		rw := bufio.NewReadWriter(bufio.NewReader(c), bufio.NewWriter(c))
+		s, _ := rw.ReadString('\n')
+		switch s {
+		case "popup\n":
+			ui.ShowMain()
+
+		case "stop\n":
+			ui.TerminateWaitDialogueComplete()
+			ui.CloseUI()
+		}	
+	}
+
 	go func() {
 		for {
-			c, err := l.Accept()
-			if err != nil {
-				panic(err)
-			}
-			defer c.Close()
-
-			rw := bufio.NewReadWriter(bufio.NewReader(c), bufio.NewWriter(c))
-			s, _ := rw.ReadString('\n')
-			switch s {
-			case "popup\n":
-				ui.ShowMain()
-
-			case "stop\n":
-				ui.TerminateWaitDialogueComplete()
-				ui.CloseUI()
-			}
+			handleCommand()
 		}
 	}()
 }

@@ -38,7 +38,7 @@ func (s *AppState) SuperviseDockerNode() {
 	}
 	docker := myst.NewDockerMonitor(mystManager)
 
-	t1 := time.Tick(15 * time.Second)
+	t1 := time.NewTicker(15 * time.Second)
 	s.model.Update()
 
 	for {
@@ -64,12 +64,10 @@ func (s *AppState) SuperviseDockerNode() {
 					return err
 				}
 				if len(features) > 0 {
-					fmt.Println("needSetup 1>")
 					needSetup = true
 				}
 				hasDocker, _ := utils.HasDocker()
 				if !hasDocker {
-					fmt.Println("needSetup 2>")
 					needSetup = true
 				}
 				return nil
@@ -79,7 +77,6 @@ func (s *AppState) SuperviseDockerNode() {
 				s.ui.ErrorModal("Application error", err.Error())
 				return true
 			}
-			fmt.Println("tryStartOrInstallDocker 2>")
 
 			if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
 				ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
@@ -93,6 +90,7 @@ func (s *AppState) SuperviseDockerNode() {
 			}
 
 			if needSetup {
+				fmt.Println("needSetup >")
 				return s.tryInstall()
 			}
 
@@ -103,6 +101,8 @@ func (s *AppState) SuperviseDockerNode() {
 			}
 			s.model.SetStateDocker(model.RunnableStateStarting)
 			if couldNotStart {
+				fmt.Println("couldNotStart >")
+
 				s.model.SetStateDocker(model.RunnableStateUnknown)
 				return s.tryInstall()
 			}
@@ -145,7 +145,7 @@ func (s *AppState) SuperviseDockerNode() {
 			}
 
 		// wait for ticker event if no action
-		case <-t1:
+		case <-t1.C:
 		}
 	}
 }
