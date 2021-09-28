@@ -1,4 +1,4 @@
-package gui
+package gui_win32
 
 import (
 	"strconv"
@@ -7,16 +7,14 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
-func (g *Gui) NetworkingDlg(owner walk.Form) {
+func (g *Gui) NetworkingDlg() {
 	var (
-		dialog             *walk.Dialog
-		acceptPB, cancelPB *walk.PushButton
-
+		dialog                  *walk.Dialog
+		acceptPB, cancelPB      *walk.PushButton
 		manualPortForwarding    *walk.CheckBox
 		editRedirectionPortEnd  *walk.TextEdit
 		editRedirectionPortFrom *walk.TextEdit
-
-		canSave bool
+		canSave                 bool
 	)
 	loaded := false
 
@@ -29,13 +27,14 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 		editRedirectionPortFrom.SetEnabled(manualPortForwarding.Checked())
 		editRedirectionPortEnd.SetEnabled(manualPortForwarding.Checked())
 
-		if manualPortForwarding.Checked() != UI.app.GetConfig().EnablePortForwarding {
+		conf := g.model.GetConfig()
+		if manualPortForwarding.Checked() != conf.EnablePortForwarding {
 			canSave = true
 		}
-		if editRedirectionPortEnd.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeEnd) {
+		if editRedirectionPortEnd.Text() != strconv.Itoa(conf.PortRangeEnd) {
 			canSave = true
 		}
-		if editRedirectionPortFrom.Text() != strconv.Itoa(UI.app.GetConfig().PortRangeBegin) {
+		if editRedirectionPortFrom.Text() != strconv.Itoa(conf.PortRangeBegin) {
 			canSave = true
 		}
 		acceptPB.SetEnabled(canSave)
@@ -61,7 +60,7 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		MinSize:       Size{400, 175},
-		Icon:          UI.icon,
+		Icon:          g.icon,
 
 		Layout: Grid{
 			Columns: 2,
@@ -132,12 +131,12 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 									walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 								return
 							}
-							UI.app.GetConfig().EnablePortForwarding = manualPortForwarding.Checked()
-							UI.app.GetConfig().PortRangeBegin = portRangeBegin
-							UI.app.GetConfig().PortRangeEnd = portRangeLen
+							g.model.GetConfig().EnablePortForwarding = manualPortForwarding.Checked()
+							g.model.GetConfig().PortRangeBegin = portRangeBegin
+							g.model.GetConfig().PortRangeEnd = portRangeLen
 
 							dialog.Accept()
-							UI.app.TriggerAction("upgrade")
+							g.model.App.TriggerAction("upgrade")
 						},
 					},
 					PushButton{
@@ -151,16 +150,16 @@ func (g *Gui) NetworkingDlg(owner walk.Form) {
 			},
 		},
 	}
-	err := d.Create(owner)
+	err := d.Create(g.dlg)
 	if err != nil {
 		return
 	}
 	dialog.Show()
-	dialog.SetX(UI.dlg.X() + 150)
+	dialog.SetX(g.dlg.X() + 150)
 
-	manualPortForwarding.SetChecked(UI.app.GetConfig().EnablePortForwarding)
-	editRedirectionPortFrom.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeBegin))
-	editRedirectionPortEnd.SetText(strconv.Itoa(UI.app.GetConfig().PortRangeEnd))
+	manualPortForwarding.SetChecked(g.model.GetConfig().EnablePortForwarding)
+	editRedirectionPortFrom.SetText(strconv.Itoa(g.model.GetConfig().PortRangeBegin))
+	editRedirectionPortEnd.SetText(strconv.Itoa(g.model.GetConfig().PortRangeEnd))
 	acceptPB.SetEnabled(canSave)
 	loaded = true
 

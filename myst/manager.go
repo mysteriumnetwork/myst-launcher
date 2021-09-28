@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/model"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -18,19 +16,14 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
-var imageTag = "latest"
-
 const (
-	imageName     = "mysteriumnetwork/myst"
 	containerName = "myst"
 )
-
-func GetImageName() string {
-	return imageName + ":" + imageTag
-}
 
 var (
 	ErrCouldNotConnect     = errors.New("could not connect to docker client")
@@ -45,7 +38,7 @@ var (
 	defaultConfig = ManagerConfig{
 		CTX:          context.Background(),
 		ActionTimout: 10 * time.Second,
-		DataDir:      fmt.Sprintf("%s\\.mysterium-node", os.Getenv("USERPROFILE")),
+		DataDir:      fmt.Sprintf("%s.mysterium-node", utils.GetUserProfileDir()+string(os.PathSeparator)),
 	}
 )
 
@@ -80,11 +73,11 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 }
 
 func (m *Manager) CanPingDocker() bool {
-	_, err := m.dockerAPI.Ping(m.ctx())
-	if err != nil {
-		return false
-	}
-	return true
+	ctx, cancel := context.WithTimeout(m.cfg.CTX, 10 * time.Second)
+	defer cancel()
+	
+	_, err := m.dockerAPI.Ping(ctx)
+	return err == nil
 }
 
 // Returns: alreadyRunning, error
@@ -186,7 +179,7 @@ func (m *Manager) findMystContainer() (*Container, error) {
 }
 
 func (m *Manager) pullMystLatest() error {
-	out, err := m.dockerAPI.ImagePull(m.ctx(), GetImageName(), types.ImagePullOptions{})
+	out, err := m.dockerAPI.ImagePull(m.ctx(), _const.GetImageName(), types.ImagePullOptions{})
 	if err != nil {
 		return wrap(err, ErrCouldNotPullImage)
 	}
@@ -215,7 +208,7 @@ func (m *Manager) createMystContainer(c *model.Config) error {
 		return err
 	}
 	config := &container.Config{
-		Image:        GetImageName(),
+		Image:        _const.GetImageName(),
 		ExposedPorts: nat.PortSet(exposedPorts),
 		Cmd:          strslice.StrSlice(cmdArgs),
 	}
@@ -285,6 +278,7 @@ func (m *Manager) GetCurrentImageDigest() string {
 	return imageDigest
 }
 
+// extend Container with method
 type Container struct {
 	*types.Container
 }

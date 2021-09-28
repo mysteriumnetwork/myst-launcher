@@ -1,4 +1,4 @@
-package app
+package _const
 
 const (
 	FlagTray          = "-tray"
