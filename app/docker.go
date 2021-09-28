@@ -7,13 +7,11 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"runtime"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
-
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -22,8 +20,6 @@ func (s *AppState) SuperviseDockerNode() {
 	runtime.LockOSThread()
 	utils.Win32Initialize()
 	defer s.WaitGroup.Done()
-
-	fmt.Println("SuperviseDockerNode >")
 
 	if utils.LauncherUpgradeAvailable() {
 		ret := s.ui.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
@@ -43,10 +39,9 @@ func (s *AppState) SuperviseDockerNode() {
 
 	for {
 		tryStartOrInstallDocker := func() bool {
-			fmt.Println("tryStartOrInstallDocker")
+			log.Println("tryStartOrInstallDocker")
 
-			isRunning_, couldNotStart := docker.IsRunning()
-			fmt.Println("isRunning, couldNotStart", isRunning_, couldNotStart)
+			isRunning_ := docker.IsRunningSimple()
 			if isRunning_ {
 				s.model.SetStateDocker(model.RunnableStateRunning)
 				return false
@@ -90,7 +85,6 @@ func (s *AppState) SuperviseDockerNode() {
 			}
 
 			if needSetup {
-				fmt.Println("needSetup >")
 				return s.tryInstall()
 			}
 
@@ -101,8 +95,6 @@ func (s *AppState) SuperviseDockerNode() {
 			}
 			s.model.SetStateDocker(model.RunnableStateStarting)
 			if couldNotStart {
-				fmt.Println("couldNotStart >")
-
 				s.model.SetStateDocker(model.RunnableStateUnknown)
 				return s.tryInstall()
 			}
@@ -119,6 +111,8 @@ func (s *AppState) SuperviseDockerNode() {
 
 		select {
 		case act := <-s.action:
+			log.Println("action:", act)
+
 			switch act {
 			case "check":
 				s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
@@ -140,7 +134,6 @@ func (s *AppState) SuperviseDockerNode() {
 				mystManager.Stop()
 
 			case "stop":
-				fmt.Println("action: stop")
 				return
 			}
 

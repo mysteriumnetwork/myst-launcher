@@ -406,7 +406,7 @@ func Win32Initialize() {
 func HasDocker() (bool, error) {
 	res, err := CmdRun(nil, "docker", "version")
 	if err != nil {
-		log.Println("HasDocker error:", err)
+		log.Println("HasDocker", err)
 		return false, err
 	}
 	return res == 0 || res == 1, nil

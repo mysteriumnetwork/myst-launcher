@@ -59,7 +59,9 @@ func (g *Gui) installationDlg() Widget {
 				Title:  "Installation process",
 				Layout: Grid{Columns: 2},
 				Children: []Widget{
-					VSpacer{RowSpan: 1, ColumnSpan: 2},
+					VSpacer{ColumnSpan: 2},
+					VSeparator{ColumnSpan: 2}, // workaround
+					
 					Label{
 						Text: "Check Windows version",
 					},
@@ -69,34 +71,21 @@ func (g *Gui) installationDlg() Widget {
 					},
 
 					Label{
-						Text: "Check VT-x",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.checkVTx,
-					},
-					Label{
-						Text: "Check WSL",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.enableWSL,
-					},
-					Label{
-						Text: "Check Hyper-V",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.enableHyperV,
-					},
-
-					Label{
 						Text: "Install executable",
 					},
 					CheckBox{
 						Enabled:  false,
 						AssignTo: &g.installExecutable,
 					},
+
+					Label{
+						Text: "Check Virtualization",
+					},
+					CheckBox{
+						Enabled:  false,
+						AssignTo: &g.checkVirt,
+					},
+
 					Label{
 						Text: "Reboot after WSL enable",
 					},

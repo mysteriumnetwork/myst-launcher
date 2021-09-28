@@ -44,15 +44,10 @@ func main() {
 			return
 		}
 	}
-	// Upgrade binary on start
-	//if utils.LauncherUpgradeAvailable() {
-	//	fmt.Println("LauncherUpgradeAvailable !")
-	//}
 
 	if app.IsAlreadyRunning() {
 		return
 	}
-	log.SetOutput(ap)
 
 	mod := model.NewUIModel()
 	mod.SetApp(ap)
@@ -67,6 +62,8 @@ func main() {
 
 	go ap.SuperviseDockerNode()
 	app.CreatePipeAndListen(ui)
+
+	log.SetOutput(ap)
 
 	// Run the message loop
 	ui.Run()

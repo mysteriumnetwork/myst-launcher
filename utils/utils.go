@@ -17,20 +17,16 @@ var a = getSysProcAttrs()
 func CmdRun(out *bytes.Buffer, name string, args ...string) (int, error) {
 	log.Print(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
 
-	var bb bytes.Buffer
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &a
 	if out != nil {
 		cmd.Stdout = out
-		cmd.Stderr = &bb
 	}
-
 	if err := cmd.Start(); err != nil {
 		return 0, err
 	}
 
 	if err := cmd.Wait(); err != nil {
-		fmt.Println("stderr", bb.String())
 
 		// try to get the exit code
 		if exitError, ok := err.(*exec.ExitError); ok {

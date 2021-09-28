@@ -10,14 +10,12 @@ import (
 	"log"
 	"syscall"
 
-	model2 "github.com/mysteriumnetwork/myst-launcher/model"
-
 	"github.com/asaskevich/EventBus"
-
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
 
+	model2 "github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 )
 
@@ -54,24 +52,20 @@ type Gui struct {
 	// common
 	lbDocker              *walk.Label
 	lbContainer           *walk.Label
-	lbVersionLatest       *walk.Label
 	lbVersionCurrent      *walk.Label
 	lbVersionUpdatesAvail *walk.LinkLabel
 	lbImageName           *walk.Label
 
-	autoUpgrade          *walk.CheckBox
-	manualPortForwarding *walk.CheckBox
-	lbNetworkMode        *walk.LinkLabel
-	btnOpenNodeUI        *walk.PushButton
+	autoUpgrade   *walk.CheckBox
+	lbNetworkMode *walk.LinkLabel
+	btnOpenNodeUI *walk.PushButton
 
 	// install
 	lbInstallationStatus *walk.TextEdit
 	btnBegin             *walk.PushButton
 
 	checkWindowsVersion  *walk.CheckBox
-	checkVTx             *walk.CheckBox
-	enableWSL            *walk.CheckBox
-	enableHyperV         *walk.CheckBox
+	checkVirt            *walk.CheckBox
 	installExecutable    *walk.CheckBox
 	rebootAfterWSLEnable *walk.CheckBox
 	downloadFiles        *walk.CheckBox
@@ -281,9 +275,7 @@ func (g *Gui) refresh() {
 	switch g.model.State {
 	case model2.UIStateInstallInProgress, model2.UIStateInstallFinished, model2.UIStateInstallError:
 		g.checkWindowsVersion.SetChecked(g.model.CheckWindowsVersion)
-		g.checkVTx.SetChecked(g.model.CheckVTx)
-		g.enableWSL.SetChecked(g.model.EnableWSL)
-		g.enableHyperV.SetChecked(g.model.EnableHyperV)
+		g.checkVirt.SetChecked(g.model.CheckVirt)
 		g.installExecutable.SetChecked(g.model.InstallExecutable)
 		g.rebootAfterWSLEnable.SetChecked(g.model.RebootAfterWSLEnable)
 		g.downloadFiles.SetChecked(g.model.DownloadFiles)
@@ -341,6 +333,9 @@ func OpenNodeUI() {
 
 func (g *Gui) ShowNotificationInstalled() {
 	//g.LastNotificationID = NotificationContainerStarted
+	if g.ni == nil {
+		return
+	}
 	err := g.ni.ShowCustom(
 		"Mysterium Node successfully installed!",
 		"Click this notification to open Node UI in browser",
@@ -352,6 +347,9 @@ func (g *Gui) ShowNotificationInstalled() {
 
 func (g *Gui) ShowNotificationUpgrade() {
 	//g.LastNotificationID = NotificationUpgrade
+	if g.ni == nil {
+		return
+	}
 	err := g.ni.ShowCustom(
 		"Upgrade available",
 		"Click this notification to see details.",
@@ -362,27 +360,15 @@ func (g *Gui) ShowNotificationUpgrade() {
 }
 
 func (g *Gui) ConfirmModal(title, message string) int {
-	res := make(chan int)
-	go func() {
-		res <- walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
-	}()
-	return <-res
+	return walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 }
 
 func (g *Gui) YesNoModal(title, message string) int {
-	res := make(chan int)
-	go func() {
-		res <- walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
-	}()
-	return <-res
+	return walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
 }
 
 func (g *Gui) ErrorModal(title, message string) int {
-	res := make(chan int)
-	go func() {
-		res <- walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
-	}()
-	return <-res
+	return walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
 }
 
 func (g *Gui) SetModalReturnCode(rc int) {}

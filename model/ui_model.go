@@ -7,6 +7,8 @@
 package model
 
 import (
+	"log"
+
 	"github.com/asaskevich/EventBus"
 
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
@@ -24,11 +26,9 @@ type UIModel struct {
 
 	// inst
 	CheckWindowsVersion bool
-	CheckVTx            bool
+	CheckVirt            bool
 	CheckDocker         bool // darwin
 
-	EnableWSL            bool
-	EnableHyperV         bool
 	InstallExecutable    bool
 	RebootAfterWSLEnable bool
 	DownloadFiles        bool
@@ -63,13 +63,13 @@ func (m *UIModel) UpdateProperties(p UIProps) {
 		case "CheckWindowsVersion":
 			m.CheckWindowsVersion = v.(bool)
 		case "CheckVTx":
-			m.CheckVTx = v.(bool)
+			m.CheckVirt = v.(bool)
 		case "CheckDocker":
 			m.CheckDocker = v.(bool)
-		case "EnableWSL":
-			m.EnableWSL = v.(bool)
-		case "EnableHyperV":
-			m.EnableHyperV = v.(bool)
+		// case "EnableWSL":
+			// m.EnableWSL = v.(bool)
+		// case "EnableHyperV":
+			// m.EnableHyperV = v.(bool)
 		case "InstallExecutable":
 			m.InstallExecutable = v.(bool)
 		case "RebootAfterWSLEnable":
@@ -82,6 +82,8 @@ func (m *UIModel) UpdateProperties(p UIProps) {
 			m.InstallDocker = v.(bool)
 		case "CheckGroupMembership":
 			m.CheckGroupMembership = v.(bool)
+		default:
+			log.Println("Unknown proprerty:", k)
 		}
 	}
 	m.UIBus.Publish("model-change")

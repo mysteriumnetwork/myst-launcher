@@ -72,16 +72,7 @@ func (s *AppState) tryInstall() bool {
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	err = utils.InstallFeatures(features, func(feature int, name string) {
-		pp := model.UIProps{}
-		switch feature {
-		case utils.IDFeatureWSL:
-			pp["EnableWSL"] = true
-		case utils.IDFeatureHyperV:
-			pp["EnableHyperV"] = true
-		}
-		s.model.UpdateProperties(pp)
-	})
+	err = utils.InstallFeatures(features, nil)
 	if err != nil {
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
@@ -195,7 +186,6 @@ func (s *AppState) tryInstall() bool {
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"CheckGroupMembership": true})
-	//s.model.Config.Read()
 	s.model.Config.AutoStart = true
 	s.model.Config.Save()
 

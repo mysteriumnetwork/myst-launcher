@@ -2,7 +2,6 @@ package myst
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -14,7 +13,6 @@ import (
 type DockerMonitor struct {
 	tryStartCount int
 	m             *Manager
-	couldNotStart bool
 }
 
 func NewDockerMonitor(m *Manager) *DockerMonitor {
@@ -24,21 +22,28 @@ func NewDockerMonitor(m *Manager) *DockerMonitor {
 	}
 }
 
+func (r *DockerMonitor) IsRunningSimple() bool {
+	canPingDocker := r.m.CanPingDocker()
+	if canPingDocker {
+		r.tryStartCount = 0
+	}
+	return canPingDocker
+}
+
 // return values: isRunning, couldNotStart
 func (r *DockerMonitor) IsRunning() (bool, bool) {
-	fmt.Println("IsRunning")
 	canPingDocker := r.m.CanPingDocker()
-	fmt.Println("IsRunning", canPingDocker)
 
 	if !canPingDocker {
 		r.tryStartCount++
-
-		if !r.tryStartDockerDesktop() || r.tryStartCount == 100 {
+		
+		if !r.tryStartDockerDesktop() || r.tryStartCount >= 20 {
 			r.tryStartCount = 0
 			return false, true
 		}
 		return false, false
 	}
+	r.tryStartCount = 0
 	return true, false
 }
 

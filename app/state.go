@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"sync"
 
 	model2 "github.com/mysteriumnetwork/myst-launcher/model"
@@ -40,6 +41,7 @@ func (s *AppState) Write(b []byte) (int, error) {
 	// see https://stackoverflow.com/a/20688698/4413696
 	bCopy := make([]byte, len(b))
 	copy(bCopy, b)
+	fmt.Print(string(bCopy))
 
 	s.model.Publish("log", bCopy)
 	return len(bCopy), nil
