@@ -73,24 +73,48 @@ func (s *AppState) tryInstall() bool {
 
 	var buf bytes.Buffer
 	res, err := utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
+	if err != nil {
+		log.Println("Failed to run command:", err)
+		s.model.SwitchState(model.UIStateInstallError)
+		return true
+	}
 	buf.Reset()
 
 	res, err = utils.CmdRun(&buf, "/usr/bin/hdiutil", "attach", utils.GetTmpDir()+name)
+	if err != nil {
+		log.Println("Failed to run command:", err)
+		s.model.SwitchState(model.UIStateInstallError)
+		return true
+	}
 	buf.Reset()
 
 	// cp -R /Volumes/Docker/Docker.app /Applications
 	res, err = utils.CmdRun(&buf, "/bin/cp", "-pR", "/Volumes/Docker/Docker.app", "/Applications")
+	if err != nil {
+		log.Println("Failed to run command:", err)
+		s.model.SwitchState(model.UIStateInstallError)
+		return true
+	}
 	buf.Reset()
 
 	//  xattr -d -r com.apple.quarantine /Applications/Docker.app
 	res, err = utils.CmdRun(&buf, "/usr/bin/xattr", "-d", "-r", "com.apple.quarantine", "/Applications/Docker.app")
+	if err != nil {
+		log.Println("Failed to run command:", err)
+		s.model.SwitchState(model.UIStateInstallError)
+		return true
+	}
 	buf.Reset()
 
 	res, err = utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
+	if err != nil {
+		log.Println("Failed to run command:", err)
+		s.model.SwitchState(model.UIStateInstallError)
+		return true
+	}
 	buf.Reset()
 
 	s.model.UpdateProperties(model.UIProps{"InstallDocker": true})
-
 	s.model.SwitchState(model.UIStateInstallFinished)
 	if !s.ui.WaitDialogueComplete() {
 		return true

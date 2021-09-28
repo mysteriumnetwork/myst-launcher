@@ -407,6 +407,5 @@ func HasDocker() (bool, error) {
 		log.Println("HasDocker error:", err)
 		return false, err
 	}
-	fmt.Println("HasDocker", res)
 	return res == 0 || res == 1, nil
 }
