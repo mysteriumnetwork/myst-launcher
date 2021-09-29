@@ -10,12 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/model"
-
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/buger/jsonparser"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+).*$`)
@@ -135,11 +134,11 @@ func CheckVersionAndUpgrades(mod *model.UIModel) {
 			mod.ImgVer.HasUpdate = true
 		}
 	}
-	gui.UI.VersionCurrent = currentVersion
-	gui.UI.VersionLatest = latestVersion
-	gui.UI.Update()
+	mod.ImgVer.VersionCurrent = currentVersion
+	mod.ImgVer.VersionLatest = latestVersion
+	mod.Update()
 
 	if checkVersionRequirement(currentVersion, minVersion) {
-		c.HasOptionReportVersion = true
+		mod.GetConfig().HasOptionReportVersion = true
 	}
 }

@@ -26,12 +26,6 @@ const (
 	containerName = "myst"
 )
 
-const reportVerFlag = "--launcher.ver" //"--openvpn.binary"
-
-func GetImageName() string {
-	return imageName + ":" + imageTag
-}
-
 var (
 	ErrCouldNotConnect     = errors.New("could not connect to docker client")
 	ErrCouldNotList        = errors.New("could not list containers")
@@ -80,7 +74,7 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 }
 
 func (m *Manager) CanPingDocker() bool {
-	ctx, cancel := context.WithTimeout(m.cfg.CTX, 10 * time.Second)
+	ctx, cancel := context.WithTimeout(m.cfg.CTX, 10*time.Second)
 	defer cancel()
 
 	_, err := m.dockerAPI.Ping(ctx)
@@ -219,7 +213,7 @@ func (m *Manager) createMystContainer(c *model.Config) error {
 	if c.HasOptionReportVersion {
 		pv, err := utils.GetProductVersion()
 		if err == nil {
-			cmdArgs = append([]string{reportVerFlag + "=" + pv.ProductVersion() + "/" + runtime.GOOS}, cmdArgs...)
+			cmdArgs = append([]string{"--launcher.ver=" + pv + "/" + runtime.GOOS}, cmdArgs...)
 		}
 	}
 
