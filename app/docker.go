@@ -124,8 +124,9 @@ func (s *AppState) SuperviseDockerNode() {
 			case "enable":
 				s.model.Config.Enabled = true
 				s.model.Config.Save()
-				s.model.SetStateContainer(model.RunnableStateRunning)
+				s.model.SetStateContainer(model.RunnableStateStarting)
 				mystManager.Start(s.model.GetConfig())
+				s.model.SetStateContainer(model.RunnableStateRunning)
 
 			case "disable":
 				s.model.Config.Enabled = false
@@ -144,11 +145,11 @@ func (s *AppState) SuperviseDockerNode() {
 }
 
 func (s *AppState) upgrade(mystManager *myst.Manager) {
-	s.model.SetStateContainer(model.RunnableStateUnknown)
-	mystManager.Stop()
-
 	s.model.SetStateContainer(model.RunnableStateInstalling)
-	mystManager.Update(s.model.GetConfig())
+	err := mystManager.Update(s.model.GetConfig())
+	if err != nil {
+		log.Println("upgrade", err)
+	}
 
 	s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
 	myst.CheckVersionAndUpgrades(s.model)
@@ -156,18 +157,6 @@ func (s *AppState) upgrade(mystManager *myst.Manager) {
 
 // check for image updates before starting container, offer upgrade interactively
 func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
-	imageDigest := mystManager.GetCurrentImageDigest()
-
-	if s.model.ImgVer.CurrentImgDigest != imageDigest || s.model.ImgVer.VersionCurrent == "" || s.model.Config.NeedToCheckUpgrade() {
-		// docker has a new image (in result the of external command)
-
-		s.model.ImgVer.CurrentImgDigest = imageDigest
-		myst.CheckVersionAndUpgrades(s.model)
-	}
-	if s.model.Config.AutoUpgrade && s.model.ImgVer.HasUpdate {
-		s.upgrade(mystManager)
-	}
-
 	if s.model.Config.Enabled {
 		s.model.SetStateContainer(model.RunnableStateUnknown)
 		containerAlreadyRunning, err := mystManager.Start(s.model.GetConfig())
@@ -178,8 +167,14 @@ func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 
 		if !containerAlreadyRunning && s.didInstallation {
 			s.didInstallation = false
-
 			s.ui.ShowNotificationInstalled()
 		}
+	}
+
+	s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
+	myst.CheckVersionAndUpgrades(s.model)
+
+	if s.model.Config.AutoUpgrade && s.model.ImgVer.HasUpdate {
+		s.upgrade(mystManager)
 	}
 }
