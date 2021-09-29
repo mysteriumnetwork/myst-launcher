@@ -116,20 +116,24 @@ func (m *Manager) Stop() error {
 }
 
 func (m *Manager) Update(c *model.Config) error {
+	err := m.pullMystLatest()
+	if err != nil {
+		return err
+	}
+
 	mystContainer, err := m.findMystContainer()
 	if err != nil && err != ErrContainerNotFound {
 		return err
 	}
 	if !errors.Is(err, ErrContainerNotFound) {
+		err = m.dockerAPI.ContainerStop(m.ctx(), mystContainer.ID, nil)
+		if err != nil {
+			return wrap(err, ErrCouldNotStop)
+		}
 		err = m.dockerAPI.ContainerRemove(m.ctx(), mystContainer.ID, types.ContainerRemoveOptions{})
 		if err != nil {
 			return wrap(err, ErrCouldNotRemoveImage)
 		}
-	}
-
-	err = m.pullMystLatest()
-	if err != nil {
-		return err
 	}
 
 	err = m.createMystContainer(c)

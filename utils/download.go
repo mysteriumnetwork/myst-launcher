@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-var (
-	client = &http.Client{
+func init() {
+	http.DefaultClient = &http.Client{
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
 				Timeout:   30 * time.Second,
@@ -26,7 +26,7 @@ var (
 			ExpectContinueTimeout: 1 * time.Second,
 		},
 	}
-)
+}
 
 type PrintProgressCallback func(progress int)
 
@@ -57,7 +57,7 @@ func DownloadFile(filepath string, url string, cb PrintProgressCallback) error {
 	}
 
 	// Get the data
-	resp, err := client.Get(url)
+	resp, err := http.Get(url)
 	if err != nil {
 		out.Close()
 		return err
