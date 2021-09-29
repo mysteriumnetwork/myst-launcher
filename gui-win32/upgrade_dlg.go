@@ -1,22 +1,24 @@
-package gui
+package gui_win32
 
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
 
-func (g *Gui) UpgradeDlg(owner walk.Form) {
+func (g *Gui) OpenUpgradeDlg() {
 	var (
 		dialog             *walk.Dialog
 		acceptPB, cancelPB *walk.PushButton
 		lbVersionCurrent   *walk.Label
 		lbVersionLatest    *walk.Label
+		lbImageName        *walk.Label
 	)
 
 	refresh := func() {
-		lbVersionCurrent.SetText(UI.VersionCurrent)
-		lbVersionLatest.SetText(UI.VersionLatest)
-		acceptPB.SetEnabled(UI.HasUpdate)
+		lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
+		lbVersionLatest.SetText(g.model.ImgVer.VersionLatest)
+		lbImageName.SetText(g.model.ImgVer.ImageName)
+		acceptPB.SetEnabled(g.model.ImgVer.HasUpdate)
 	}
 
 	err := Dialog{
@@ -25,7 +27,7 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		MinSize:       Size{400, 175},
-		Icon:          UI.icon,
+		Icon:          g.icon,
 
 		Layout: Grid{
 			Columns: 2,
@@ -36,7 +38,8 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 				Text: "Docker Hub image name",
 			},
 			Label{
-				Text: UI.app.GetImageName(),
+				Text:     "-",
+				AssignTo: &lbImageName,
 			},
 			Label{
 				Text: "Node version installed",
@@ -62,7 +65,7 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 						Text:     "Yes",
 						OnClicked: func() {
 							dialog.Accept()
-							UI.app.TriggerAction("upgrade")
+							g.model.App.TriggerAction("upgrade")
 						},
 					},
 					PushButton{
@@ -75,18 +78,18 @@ func (g *Gui) UpgradeDlg(owner walk.Form) {
 				},
 			},
 		},
-	}.Create(UI.dlg)
+	}.Create(g.dlg)
 	if err != nil {
 		return
 	}
 	dialog.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		UI.app.Unsubscribe("model-change", refresh)
+		g.model.UIBus.Unsubscribe("model-change", refresh)
 	})
 	dialog.Disposing()
 
 	dialog.Show()
-	dialog.SetX(UI.dlg.X() + 300)
+	dialog.SetX(g.dlg.X() + 300)
 	refresh()
 
-	UI.app.Subscribe("model-change", refresh)
+	g.model.UIBus.Subscribe("model-change", refresh)
 }

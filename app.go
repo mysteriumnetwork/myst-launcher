@@ -8,55 +8,69 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
-	"github.com/mysteriumnetwork/myst-launcher/gui"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
+	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func main() {
-	a := app.NewApp()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
+		}
+	}()
+
+	ap := app.NewApp()
 
 	if len(os.Args) > 1 {
-		a.InTray = os.Args[1] == app.FlagTray
-		a.InstallStage2 = os.Args[1] == app.FlagInstallStage2
+		ap.InTray = os.Args[1] == _const.FlagTray
+		ap.InstallStage2 = os.Args[1] == _const.FlagInstallStage2
 
 		switch os.Args[1] {
-		case app.FlagInstall:
-			app.InstallExe()
+		case _const.FlagInstall:
+			utils.InstallExe()
 			return
 
-		case app.FlagUninstall:
-			app.UninstallExe()
+		case _const.FlagUninstall:
+			app.StopApp()
+			utils.UninstallExe()
 			return
 		}
 	}
-	if utils.IsAlreadyRunning() {
+
+	if app.IsAlreadyRunning() {
 		return
 	}
 
-	log.SetOutput(a)
-	a.ReadConfig()
-	a.ImageName = myst.GetImageName()
+	mod := model.NewUIModel()
+	mod.SetApp(ap)
 
-	gui.UI.SetApp(a)
-	gui.CreateNotifyIcon()
-	gui.CreateDialogue()
+	ui := gui_win32.NewGui(mod)
+	ui.CreateNotifyIcon(mod)
+	ui.CreateMainWindow()
 
-	a.WaitGroup.Add(1)
-	go a.SuperviseDockerNode()
+	ap.SetModel(mod)
+	ap.SetUI(ui)
+	ap.WaitGroup.Add(1)
 
-	utils.CreatePipeAndListen(&gui.UI)
+	go ap.SuperviseDockerNode()
+	app.CreatePipeAndListen(ui)
+
+	log.SetOutput(ap)
 
 	// Run the message loop
-	gui.UI.Run()
+	ui.Run()
 
 	// send stop action to SuperviseDockerNode
-	a.TriggerAction("stop")
+	ap.TriggerAction("stop")
 
 	// wait for SuperviseDockerNode to finish its work
-	a.WaitGroup.Wait()
+	ap.WaitGroup.Wait()
 }
