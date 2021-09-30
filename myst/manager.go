@@ -85,7 +85,7 @@ func (m *Manager) CanPingDocker() bool {
 
 // Returns: alreadyRunning, error
 func (m *Manager) Start(c *model.Config) (bool, error) {
-	fmt.Println("Start >")
+	log.Println("Start >")
 
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
