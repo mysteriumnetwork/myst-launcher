@@ -24,8 +24,10 @@ type Config struct {
 	PortRangeBegin       int  `json:"port_range_begin"`
 	PortRangeEnd         int  `json:"port_range_end"`
 
-	ResourcePath          string `json:"-"`
-	DuplicateLogToConsole bool   `json:"-"`
+	ResourcePath                     string `json:"-"`
+	CurrentImgHasOptionReportVersion bool   `json:"-"`
+	DuplicateLogToConsole            bool   `json:"-"`
+	CurrentImage                     string `json:"-"`
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {

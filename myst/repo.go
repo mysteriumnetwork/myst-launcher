@@ -2,9 +2,11 @@ package myst
 
 import (
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/buger/jsonparser"
@@ -14,9 +16,40 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
-var versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+.*$`)
+var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+).*$`)
+var minVersion = []int{0, 66, 3}
 
-func CheckVersionAndUpgrades(mod *model.UIModel) {
+func checkVersionRequirement(v string, minVersion []int) bool {
+	log.Println("checkVersionRequirement>", v, minVersion)
+	match := versionRegex.MatchString(v)
+	if !match {
+		return false
+	}
+	versionParts := versionRegex.FindAllStringSubmatch(v, -1)
+	// log.Println("versionParts", versionParts[0][1:])
+
+	verMatches := false
+
+	for k, v := range versionParts[0][1:] {
+		i, _ := strconv.Atoi(v)
+
+		// sufficient condition
+		if i > minVersion[k] {
+			verMatches = true
+			break
+		}
+
+		// last part
+		if k == len(minVersion)-1 {
+			verMatches = i >= minVersion[k]
+		}
+	}
+	return verMatches
+}
+
+func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
+	// log.Println("CheckVersionAndUpgrades 1>")
+
 	var data []byte
 	getFile := func() bool {
 		url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=30"
@@ -53,6 +86,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel) {
 			if err != nil {
 				return
 			}
+			match := versionRegex.MatchString(name)
 
 			jsonparser.ArrayEach(value, func(value []byte, dataType jsonparser.ValueType, offset int, err_ error) {
 				digest, err := jsonparser.GetString(value, "digest")
@@ -63,7 +97,6 @@ func CheckVersionAndUpgrades(mod *model.UIModel) {
 				if name == _const.ImageTag {
 					latestDigest = digest
 				}
-				match := versionRegex.MatchString(name)
 				// a work-around for testnet3, b/c there's only 1 version of image
 				if _const.ImageTag == "testnet3" {
 					match = true
@@ -88,7 +121,6 @@ func CheckVersionAndUpgrades(mod *model.UIModel) {
 	updateUI := func() {
 		mod.ImgVer.VersionCurrent = currentVersion
 		mod.ImgVer.VersionLatest = latestVersion
-
 		mod.ImgVer.HasUpdate = hasUpdate()
 		mod.Update()
 	}
@@ -97,17 +129,22 @@ func CheckVersionAndUpgrades(mod *model.UIModel) {
 		parseJson()
 		updateUI()
 	}
+	if checkVersionRequirement(currentVersion, minVersion) {
+		mod.GetConfig().CurrentImgHasOptionReportVersion = true
+	}
 
-	if len(data) == 0 || mod.Config.NeedToCheckUpgrade() {
+	if !fastPath && len(data) == 0 || mod.Config.NeedToCheckUpgrade() {
 		ok := getFile()
 		if ok {
 			os.WriteFile(f, data, 0777)
-		} else {
-			return
-		}
 
-		parseJson()
-		updateUI()
+			parseJson()
+			updateUI()
+
+			if checkVersionRequirement(currentVersion, minVersion) {
+				mod.GetConfig().CurrentImgHasOptionReportVersion = true
+			}
+		}
 	}
 
 }

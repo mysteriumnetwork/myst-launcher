@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package app
@@ -8,9 +9,8 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/mysteriumnetwork/myst-launcher/model"
-
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 	"github.com/mysteriumnetwork/myst-launcher/utils"

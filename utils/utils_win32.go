@@ -411,3 +411,15 @@ func HasDocker() (bool, error) {
 	}
 	return res == 0 || res == 1, nil
 }
+
+func GetProductVersion() (string, error) {
+	fullExe_, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	fv,err := fileversion.New(fullExe_)
+	if err != nil {
+		return "", err
+	}
+	return fv.ProductVersion(), nil
+}
