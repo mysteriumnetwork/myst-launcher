@@ -34,7 +34,7 @@ func (s *AppState) SuperviseDockerNode() {
 	}
 	docker := myst.NewDockerMonitor(mystManager)
 
-	t1 := time.NewTicker(35 * time.Second)
+	t1 := time.NewTicker(15 * time.Second)
 	s.model.Update()
 
 	for {
