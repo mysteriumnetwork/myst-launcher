@@ -417,5 +417,9 @@ func GetProductVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fileversion.New(fullExe_).ProductVersion
+	fv,err := fileversion.New(fullExe_)
+	if err != nil {
+		return "", err
+	}
+	return fv.ProductVersion(), nil
 }

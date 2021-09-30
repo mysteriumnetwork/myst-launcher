@@ -136,7 +136,7 @@ func (g *Gui) NetworkingDlg() {
 							g.model.GetConfig().PortRangeEnd = portRangeLen
 
 							dialog.Accept()
-							g.model.App.TriggerAction("upgrade")
+							g.model.App.TriggerAction("restart")
 						},
 					},
 					PushButton{

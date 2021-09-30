@@ -1,8 +1,8 @@
 package myst
 
 import (
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -17,15 +17,16 @@ import (
 )
 
 var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+).*$`)
-var minVersion = []int{0, 64, 5}
+var minVersion = []int{0, 66, 3}
 
 func checkVersionRequirement(v string, minVersion []int) bool {
+	log.Println("checkVersionRequirement>", v, minVersion)
 	match := versionRegex.MatchString(v)
 	if !match {
 		return false
 	}
 	versionParts := versionRegex.FindAllStringSubmatch(v, -1)
-	fmt.Println("versionParts", versionParts[0][1:])
+	// log.Println("versionParts", versionParts[0][1:])
 
 	verMatches := false
 
@@ -46,7 +47,9 @@ func checkVersionRequirement(v string, minVersion []int) bool {
 	return verMatches
 }
 
-func CheckVersionAndUpgrades(mod *model.UIModel) {
+func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
+	// log.Println("CheckVersionAndUpgrades 1>")
+
 	var data []byte
 	getFile := func() bool {
 		url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=30"
@@ -118,7 +121,6 @@ func CheckVersionAndUpgrades(mod *model.UIModel) {
 	updateUI := func() {
 		mod.ImgVer.VersionCurrent = currentVersion
 		mod.ImgVer.VersionLatest = latestVersion
-
 		mod.ImgVer.HasUpdate = hasUpdate()
 		mod.Update()
 	}
@@ -127,20 +129,22 @@ func CheckVersionAndUpgrades(mod *model.UIModel) {
 		parseJson()
 		updateUI()
 	}
+	if checkVersionRequirement(currentVersion, minVersion) {
+		mod.GetConfig().CurrentImgHasOptionReportVersion = true
+	}
 
-	if len(data) == 0 || mod.Config.NeedToCheckUpgrade() {
+	if !fastPath && len(data) == 0 || mod.Config.NeedToCheckUpgrade() {
 		ok := getFile()
 		if ok {
 			os.WriteFile(f, data, 0777)
-		} else {
-			return
+
+			parseJson()
+			updateUI()
+
+			if checkVersionRequirement(currentVersion, minVersion) {
+				mod.GetConfig().CurrentImgHasOptionReportVersion = true
+			}
 		}
-
-		parseJson()
-		updateUI()
 	}
 
-	if checkVersionRequirement(currentVersion, minVersion) {
-		mod.GetConfig().HasOptionReportVersion = true
-	}
 }

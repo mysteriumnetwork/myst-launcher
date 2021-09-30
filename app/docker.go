@@ -34,7 +34,7 @@ func (s *AppState) SuperviseDockerNode() {
 	}
 	docker := myst.NewDockerMonitor(mystManager)
 
-	t1 := time.NewTicker(15 * time.Second)
+	t1 := time.NewTicker(35 * time.Second)
 	s.model.Update()
 
 	for {
@@ -116,10 +116,14 @@ func (s *AppState) SuperviseDockerNode() {
 			switch act {
 			case "check":
 				s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-				myst.CheckVersionAndUpgrades(s.model)
+				myst.CheckVersionAndUpgrades(s.model, false)
 
 			case "upgrade":
 				s.upgrade(mystManager)
+
+			case "restart":
+				s.restart(mystManager)
+				s.model.Config.Save()
 
 			case "enable":
 				s.model.Config.Enabled = true
@@ -144,6 +148,14 @@ func (s *AppState) SuperviseDockerNode() {
 	}
 }
 
+func (s *AppState) restart(mystManager *myst.Manager) {
+	s.model.SetStateContainer(model.RunnableStateInstalling)
+	err := mystManager.Restart(s.model.GetConfig())
+	if err != nil {
+		log.Println("restart", err)
+	}
+}
+
 func (s *AppState) upgrade(mystManager *myst.Manager) {
 	s.model.SetStateContainer(model.RunnableStateInstalling)
 	err := mystManager.Update(s.model.GetConfig())
@@ -152,13 +164,17 @@ func (s *AppState) upgrade(mystManager *myst.Manager) {
 	}
 
 	s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-	myst.CheckVersionAndUpgrades(s.model)
+	myst.CheckVersionAndUpgrades(s.model, false)
 }
 
 // check for image updates before starting container, offer upgrade interactively
 func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 	if s.model.Config.Enabled {
+
 		s.model.SetStateContainer(model.RunnableStateUnknown)
+		s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
+		myst.CheckVersionAndUpgrades(s.model, true)
+
 		containerAlreadyRunning, err := mystManager.Start(s.model.GetConfig())
 		if err != nil {
 			return
@@ -172,7 +188,7 @@ func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 	}
 
 	s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-	myst.CheckVersionAndUpgrades(s.model)
+	myst.CheckVersionAndUpgrades(s.model, false)
 
 	if s.model.Config.AutoUpgrade && s.model.ImgVer.HasUpdate {
 		s.upgrade(mystManager)
