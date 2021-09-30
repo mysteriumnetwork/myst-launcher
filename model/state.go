@@ -26,6 +26,7 @@ type Config struct {
 
 	ResourcePath           string `json:"-"`
 	HasOptionReportVersion bool   `json:"-"`
+	DuplicateLogToConsole  bool   `json:"-"`
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {
