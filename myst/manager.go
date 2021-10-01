@@ -247,10 +247,8 @@ func (m *Manager) createMystContainer(c *model.Config) error {
 		"service", "--agreed-terms-and-conditions",
 	}
 	if c.CurrentImgHasOptionReportVersion {
-		pv, err := utils.GetProductVersion()
-		if err == nil {
-			cmdArgs = append([]string{reportVerFlag + "=" + pv + "/" + runtime.GOOS}, cmdArgs...)
-		}
+		versionArg := fmt.Sprintf("%s=%s/%s", reportVerFlag, c.ProductVersion, runtime.GOOS)
+		cmdArgs = append([]string{versionArg}, cmdArgs...)
 	}
 
 	if c.EnablePortForwarding {

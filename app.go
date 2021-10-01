@@ -51,7 +51,9 @@ func main() {
 
 	mod := model.NewUIModel()
 	mod.SetApp(ap)
-	mod.GetConfig().DuplicateLogToConsole = true
+	mod.Config.DuplicateLogToConsole = true
+	pv, _ := utils.GetProductVersion()
+	mod.Config.ProductVersion = pv
 
 	ui := gui_win32.NewGui(mod)
 	ui.CreateNotifyIcon(mod)
