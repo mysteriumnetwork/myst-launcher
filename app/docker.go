@@ -7,6 +7,11 @@
 package app
 
 import (
+	"bufio"
+	"fmt"
+	"os"
+	"runtime/debug"
+
 	"log"
 	"runtime"
 	"time"
@@ -20,6 +25,14 @@ func (s *AppState) SuperviseDockerNode() {
 	runtime.LockOSThread()
 	utils.Win32Initialize()
 	defer s.WaitGroup.Done()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("stacktrace 2: " + string(debug.Stack()))
+
+			fmt.Print("Press 'Enter' to continue...")
+			bufio.NewReader(os.Stdin).ReadBytes('\n')
+		}
+	}()
 
 	if utils.LauncherUpgradeAvailable() {
 		ret := s.ui.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")

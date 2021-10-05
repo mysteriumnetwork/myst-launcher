@@ -8,6 +8,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -21,10 +22,12 @@ import (
 )
 
 func main() {
-	defer func() {	
+	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("recover >")
-			fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
+			fmt.Println("stacktrace main:" + string(debug.Stack()))
+
+			fmt.Print("Press 'Enter' to continue...")
+			bufio.NewReader(os.Stdin).ReadBytes('\n')
 		}
 	}()
 
