@@ -21,8 +21,9 @@ import (
 )
 
 func main() {
-	defer func() {
+	defer func() {	
 		if r := recover(); r != nil {
+			fmt.Println("recover >")
 			fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
 		}
 	}()
