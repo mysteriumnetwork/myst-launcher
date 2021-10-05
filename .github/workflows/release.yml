@@ -20,6 +20,7 @@ jobs:
         go get -u github.com/hallazzang/syso/...
         syso
         go build -ldflags="-s -w -H windowsgui" -v -o  build/myst-launcher-amd64.exe .
+        go build -ldflags="-s -w" -v -o  build/myst-launcher-dbg-amd64.exe .
       env:
         GOARCH: amd64
         GOOS: windows
@@ -40,6 +41,7 @@ jobs:
       with:
         files: |
           build/myst-launcher-amd64.exe
+          build/myst-launcher-dbg-amd64.exe
 
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
