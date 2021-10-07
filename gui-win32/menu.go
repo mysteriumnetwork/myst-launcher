@@ -13,6 +13,14 @@ func (g *Gui) menu() []MenuItem {
 			Text:           "&File",
 			Items: []MenuItem{
 				Action{
+					Text: "About",
+					OnTriggered: func() {
+						g.OpenAboutDlg()
+					},
+				},
+				Separator{},
+
+				Action{
 					Text: "E&xit",
 					OnTriggered: func() {
 						g.TerminateWaitDialogueComplete()
