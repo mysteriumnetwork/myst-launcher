@@ -97,7 +97,8 @@ func (s *AppState) tryInstall() bool {
 	if !isVMComputeRunning {
 		log.Println("Vmcompute (Hyper-V Host Compute Service) is not running")
 
-		s.ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service)")
+		s.ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service) is not running.\r\n\r\n"+
+			"Please enable virtualization in a system BIOS: VT-x and EPT options for Intel, SVM for AMD")
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
