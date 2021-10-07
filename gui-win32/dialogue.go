@@ -47,7 +47,7 @@ type Gui struct {
 	actionOpenUI   *walk.Action
 	actionUpgrade  *walk.Action
 	actionEnable   *walk.Action
-	actionDisable  *walk.Action
+	isNodeEnabled  *walk.MutableCondition
 
 	// common
 	lbDocker              *walk.Label
@@ -92,6 +92,8 @@ func NewGui(m *model2.UIModel) *Gui {
 	g.icon, _ = walk.NewIconFromResourceId(2)
 	g.iconActive, _ = walk.NewIconFromResourceId(3)
 	g.model = m
+	g.isNodeEnabled = walk.NewMutableCondition()
+	MustRegisterCondition("isNodeEnabled", g.isNodeEnabled)
 
 	g.waitClick = make(chan int, 0)
 	g.bus = EventBus.New()
@@ -200,8 +202,8 @@ func (g *Gui) CreateMainWindow() {
 
 func (g *Gui) enableMenu(enable bool) {
 	//actionMainMenu.SetEnabled(enable)
+
 	g.actionEnable.SetEnabled(enable)
-	g.actionDisable.SetEnabled(enable)
 	g.actionUpgrade.SetEnabled(enable)
 }
 
@@ -226,6 +228,7 @@ func (g *Gui) refresh() {
 	case model2.UIStateInitial:
 		g.enableMenu(true)
 		g.changeView(frameState)
+		g.isNodeEnabled.SetSatisfied(g.model.Config.Enabled)
 
 		g.autoUpgrade.SetChecked(g.model.GetConfig().AutoUpgrade)
 		if !g.model.GetConfig().EnablePortForwarding {

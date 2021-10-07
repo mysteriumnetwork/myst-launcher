@@ -5,6 +5,8 @@ import (
 )
 
 func (g *Gui) menu() []MenuItem {
+	//	isSpecialMode.SetSatisfied(true)
+
 	return []MenuItem{
 		Menu{
 			AssignActionTo: &g.actionFileMenu,
@@ -29,7 +31,6 @@ func (g *Gui) menu() []MenuItem {
 					AssignTo:    &g.actionOpenUI,
 					OnTriggered: func() { OpenNodeUI() },
 				},
-				Separator{},
 				Action{
 					Text:     "Check updates",
 					AssignTo: &g.actionUpgrade,
@@ -40,19 +41,15 @@ func (g *Gui) menu() []MenuItem {
 
 				Separator{},
 				Action{
-					Text:     "Disable node",
-					AssignTo: &g.actionDisable,
-					OnTriggered: func() {
-						//g.model.BtnDisableOnClick()
-						g.model.TriggerAction("disable")
-					},
-				},
-				Action{
+					Checked:  Bind("isNodeEnabled"),
 					Text:     "Enable node",
 					AssignTo: &g.actionEnable,
-					OnTriggered: func() {
-						//g.model.BtnEnableOnClick()
-						g.model.TriggerAction("enable")
+					OnTriggered: func() {				
+						if g.model.Config.Enabled {
+							g.model.TriggerAction("disable")
+						} else {
+							g.model.TriggerAction("enable")
+						}
 					},
 				},
 			},
