@@ -47,7 +47,9 @@ type Gui struct {
 	actionOpenUI   *walk.Action
 	actionUpgrade  *walk.Action
 	actionEnable   *walk.Action
-	isNodeEnabled  *walk.MutableCondition
+
+	isAutostartEnabled *walk.MutableCondition
+	isNodeEnabled      *walk.MutableCondition
 
 	// common
 	lbDocker              *walk.Label
@@ -92,7 +94,10 @@ func NewGui(m *model2.UIModel) *Gui {
 	g.icon, _ = walk.NewIconFromResourceId(2)
 	g.iconActive, _ = walk.NewIconFromResourceId(3)
 	g.model = m
+
+	g.isAutostartEnabled = walk.NewMutableCondition()
 	g.isNodeEnabled = walk.NewMutableCondition()
+	MustRegisterCondition("isAutostartEnabled", g.isAutostartEnabled)
 	MustRegisterCondition("isNodeEnabled", g.isNodeEnabled)
 
 	g.waitClick = make(chan int, 0)
@@ -228,7 +233,9 @@ func (g *Gui) refresh() {
 	case model2.UIStateInitial:
 		g.enableMenu(true)
 		g.changeView(frameState)
+		
 		g.isNodeEnabled.SetSatisfied(g.model.Config.Enabled)
+		g.isAutostartEnabled.SetSatisfied(g.model.Config.AutoStart)		
 
 		g.autoUpgrade.SetChecked(g.model.GetConfig().AutoUpgrade)
 		if !g.model.GetConfig().EnablePortForwarding {
@@ -361,7 +368,6 @@ func (g *Gui) ShowNotificationUpgrade() {
 	if err != nil {
 	}
 }
-
 
 func (g *Gui) getModalOwner() walk.Form {
 	if g != nil && g.dlg != nil {

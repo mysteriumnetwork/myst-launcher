@@ -50,12 +50,9 @@ func (s *AppState) tryInstall() bool {
 
 	if !s.InstallStage2 {
 		log.Println("Install executable")
-		fullExe, _ := os.Executable()
-		cmdArgs := _const.FlagInstall
-		err = native.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
-		if err != nil {
+		if err := utils.CheckAndInstallExe(); err != nil {
 			log.Println("Failed to install executable")
-
+			
 			s.model.SwitchState(model.UIStateInstallError)
 			return true
 		}

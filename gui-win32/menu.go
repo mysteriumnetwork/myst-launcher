@@ -5,8 +5,6 @@ import (
 )
 
 func (g *Gui) menu() []MenuItem {
-	//	isSpecialMode.SetSatisfied(true)
-
 	return []MenuItem{
 		Menu{
 			AssignActionTo: &g.actionFileMenu,
@@ -16,6 +14,14 @@ func (g *Gui) menu() []MenuItem {
 					Text: "About",
 					OnTriggered: func() {
 						g.OpenAboutDlg()
+					},
+				},
+				Separator{},
+				Action{
+					Checked: Bind("isAutostartEnabled"),
+					Text:    "Autostart launcher",
+					OnTriggered: func() {
+						g.model.TriggerAutostartAction()
 					},
 				},
 				Separator{},
@@ -52,7 +58,7 @@ func (g *Gui) menu() []MenuItem {
 					Checked:  Bind("isNodeEnabled"),
 					Text:     "Enable node",
 					AssignTo: &g.actionEnable,
-					OnTriggered: func() {				
+					OnTriggered: func() {
 						if g.model.Config.Enabled {
 							g.model.TriggerAction("disable")
 						} else {

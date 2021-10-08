@@ -68,10 +68,6 @@ func (m *UIModel) UpdateProperties(p UIProps) {
 			m.CheckVirt = v.(bool)
 		case "CheckDocker":
 			m.CheckDocker = v.(bool)
-		// case "EnableWSL":
-		// m.EnableWSL = v.(bool)
-		// case "EnableHyperV":
-		// m.EnableHyperV = v.(bool)
 		case "InstallExecutable":
 			m.InstallExecutable = v.(bool)
 		case "RebootAfterWSLEnable":
@@ -105,10 +101,6 @@ func (m *UIModel) SetWantExit() {
 	m.UIBus.Publish("want-exit")
 }
 
-func (m *UIModel) isExiting() bool {
-	return m.State == UIStateInstallError
-}
-
 func (m *UIModel) IsRunning() bool {
 	return m.StateContainer == RunnableStateRunning
 }
@@ -137,4 +129,15 @@ func (m *UIModel) Publish(topic string, args ...interface{}) {
 
 func (m *UIModel) TriggerAction(action string) {
 	m.App.TriggerAction(action)
+}
+
+func (m *UIModel) TriggerAutostartAction() {
+
+	m.Config.AutoStart = !m.Config.AutoStart
+	m.Config.Save()
+	m.UIBus.Publish("model-change")
+
+	if m.Config.AutoStart {
+		utils.CheckAndInstallExe()
+	}
 }
