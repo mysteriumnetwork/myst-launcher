@@ -141,3 +141,11 @@ func (m *UIModel) TriggerAutostartAction() {
 		utils.CheckAndInstallExe()
 	}
 }
+
+func (m *UIModel) TriggerNodeEnableAction() {
+	if m.Config.Enabled {
+		m.TriggerAction("disable")
+	} else {
+		m.TriggerAction("enable")
+	}
+}

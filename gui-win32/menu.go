@@ -59,11 +59,7 @@ func (g *Gui) menu() []MenuItem {
 					Text:     "Enable node",
 					AssignTo: &g.actionEnable,
 					OnTriggered: func() {
-						if g.model.Config.Enabled {
-							g.model.TriggerAction("disable")
-						} else {
-							g.model.TriggerAction("enable")
-						}
+						g.model.TriggerNodeEnableAction()
 					},
 				},
 			},

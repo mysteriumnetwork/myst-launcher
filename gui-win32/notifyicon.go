@@ -23,7 +23,7 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 		log.Fatal("NewMainWindow", err)
 	}
 	g.ni, err = walk.NewNotifyIcon(g.mw)
-	if err != nil {		
+	if err != nil {
 		log.Println("NewNotifyIcon", err)
 		return
 	}
@@ -43,7 +43,7 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 	if err := g.ni.SetIcon(g.icon); err != nil {
 		log.Fatal(err)
 	}
-	if err := g.ni.SetToolTip("Mysterium Network - Node Launcher"); err != nil {
+	if err := g.ni.SetToolTip("Mysterium Node Launcher"); err != nil {
 		log.Fatal(err)
 	}
 
@@ -74,20 +74,22 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 	})
 
 	openUIAction := walk.NewAction()
-	if err := openUIAction.SetText("Open &UI"); err != nil {
-		log.Fatal(err)
-	}
+	openUIAction.SetText("Open &UI")
 	openUIAction.Triggered().Attach(func() {
 		OpenNodeUI()
 	})
 
-	if err := g.ni.ContextMenu().Actions().Add(openUIAction); err != nil {
-		log.Fatal(err)
-	}
-	if err := g.ni.ContextMenu().Actions().Add(exitAction); err != nil {
-		log.Fatal(err)
-	}
-	if err := g.ni.SetVisible(true); err != nil {
-		log.Fatal(err)
-	}
+	nodeEnabled := walk.NewAction()
+	nodeEnabled.SetText("Enable node")
+	nodeEnabled.Triggered().Attach(func() {
+		g.model.TriggerNodeEnableAction()
+	})
+	nodeEnabled.SetCheckedCondition(g.isNodeEnabled)
+
+	g.ni.ContextMenu().Actions().Add(openUIAction)	
+	g.ni.ContextMenu().Actions().Add(nodeEnabled)
+	g.ni.ContextMenu().Actions().Add(walk.NewSeparatorAction())
+	g.ni.ContextMenu().Actions().Add(exitAction)
+
+	g.ni.SetVisible(true)
 }
