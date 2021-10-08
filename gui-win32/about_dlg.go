@@ -1,11 +1,8 @@
 package gui_win32
 
 import (
-	// "fmt"
-
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 type AboutDlgData struct {
@@ -19,9 +16,8 @@ func (g *Gui) OpenAboutDlg() {
 		acceptPB *walk.PushButton
 	)
 
-	foo := &AboutDlgData{}
-	v, _ := utils.GetProductVersion()
-	foo.Version = "Version: " + v
+	data := &AboutDlgData{}
+	data.Version = "Version: " + g.model.Config.ProductVersion
 
 	dlg := Dialog{
 		AssignTo:      &dialog,
@@ -32,7 +28,7 @@ func (g *Gui) OpenAboutDlg() {
 
 		DataBinder: DataBinder{
 			AssignTo:   &db,
-			DataSource: foo,
+			DataSource: data,
 		},
 		Layout: Grid{
 			Columns: 2,

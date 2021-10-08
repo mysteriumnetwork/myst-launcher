@@ -28,6 +28,7 @@ func main() {
 	}()
 
 	ap := app.NewApp()
+	p := app.NewPipeHandler()
 
 	if len(os.Args) > 1 {
 		ap.InTray = os.Args[1] == _const.FlagTray
@@ -39,23 +40,42 @@ func main() {
 			return
 
 		case _const.FlagUninstall:
-			app.StopApp()
+			p.SendStopApp()
 			utils.UninstallExe()
 			return
 		}
 	}
 
-	if app.IsAlreadyRunning() {
-		return
-	}
-
 	mod := model.NewUIModel()
 	mod.SetApp(ap)
 	mod.Config.DuplicateLogToConsole = true
-	pv, _ := utils.GetProductVersion()
-	mod.Config.ProductVersion = pv
+	mod.Config.ProductVersion, _ = utils.GetProductVersion()
 
 	ui := gui_win32.NewGui(mod)
+
+	// update launcher binary
+	if utils.LauncherUpgradeAvailable() {
+		update := ui.YesNoModal("Mysterium launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
+		if model.IDYES == update {
+			if !p.OwnsPipe() {
+				p.SendStopApp()
+				p.OpenPipe()
+			}
+			utils.UpdateExe()
+		} else {
+			if !p.OwnsPipe() {
+				p.SendPopupApp()
+				return
+			}
+		}
+		// continue execution
+	} else {
+		if !p.OwnsPipe() {
+			p.SendPopupApp()
+			return
+		}
+	}
+
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
 
@@ -64,7 +84,7 @@ func main() {
 	ap.WaitGroup.Add(1)
 
 	go ap.SuperviseDockerNode()
-	app.CreatePipeAndListen(ui)
+	p.Listen(ui)
 
 	log.SetOutput(ap)
 

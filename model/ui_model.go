@@ -12,6 +12,7 @@ import (
 	"github.com/asaskevich/EventBus"
 
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 type UIModel struct {
@@ -26,7 +27,7 @@ type UIModel struct {
 
 	// inst
 	CheckWindowsVersion bool
-	CheckVirt            bool
+	CheckVirt           bool
 	CheckDocker         bool // darwin
 
 	InstallExecutable    bool
@@ -46,6 +47,7 @@ func NewUIModel() *UIModel {
 	m.UIBus = EventBus.New()
 	m.Config.Read()
 	m.ImgVer.ImageName = _const.GetImageName()
+
 	return m
 }
 
@@ -67,9 +69,9 @@ func (m *UIModel) UpdateProperties(p UIProps) {
 		case "CheckDocker":
 			m.CheckDocker = v.(bool)
 		// case "EnableWSL":
-			// m.EnableWSL = v.(bool)
+		// m.EnableWSL = v.(bool)
 		// case "EnableHyperV":
-			// m.EnableHyperV = v.(bool)
+		// m.EnableHyperV = v.(bool)
 		case "InstallExecutable":
 			m.InstallExecutable = v.(bool)
 		case "RebootAfterWSLEnable":

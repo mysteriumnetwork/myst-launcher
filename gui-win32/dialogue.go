@@ -362,16 +362,24 @@ func (g *Gui) ShowNotificationUpgrade() {
 	}
 }
 
+
+func (g *Gui) getModalOwner() walk.Form {
+	if g != nil && g.dlg != nil {
+		return g.dlg
+	}
+	return nil
+}
+
 func (g *Gui) ConfirmModal(title, message string) int {
-	return walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+	return walk.MsgBox(g.getModalOwner(), title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 }
 
 func (g *Gui) YesNoModal(title, message string) int {
-	return walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
+	return walk.MsgBox(g.getModalOwner(), title, message, walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
 }
 
 func (g *Gui) ErrorModal(title, message string) int {
-	return walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
+	return walk.MsgBox(g.getModalOwner(), title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
 }
 
 func (g *Gui) SetModalReturnCode(rc int) {}
