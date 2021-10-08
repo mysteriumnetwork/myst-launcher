@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
+	"github.com/lxn/walk"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 
@@ -432,9 +433,13 @@ func GetProductVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fv,err := fileversion.New(fullExe_)
+	fv, err := fileversion.New(fullExe_)
 	if err != nil {
 		return "", err
 	}
 	return fv.ProductVersion(), nil
+}
+
+func ErrorModal(title, message string) int {
+	return walk.MsgBox(nil, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
 }

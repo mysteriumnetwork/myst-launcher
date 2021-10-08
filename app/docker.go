@@ -17,6 +17,8 @@ import (
 )
 
 func (s *AppState) SuperviseDockerNode() {
+	defer utils.PanicHandler("app")
+
 	runtime.LockOSThread()
 	utils.Win32Initialize()
 	defer s.WaitGroup.Done()

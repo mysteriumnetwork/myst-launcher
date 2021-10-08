@@ -233,9 +233,9 @@ func (g *Gui) refresh() {
 	case model2.UIStateInitial:
 		g.enableMenu(true)
 		g.changeView(frameState)
-		
+
 		g.isNodeEnabled.SetSatisfied(g.model.Config.Enabled)
-		g.isAutostartEnabled.SetSatisfied(g.model.Config.AutoStart)		
+		g.isAutostartEnabled.SetSatisfied(g.model.Config.AutoStart)
 
 		g.autoUpgrade.SetChecked(g.model.GetConfig().AutoUpgrade)
 		if !g.model.GetConfig().EnablePortForwarding {
@@ -316,11 +316,10 @@ func (g *Gui) ShowMain() {
 		win.ShowWindow(g.dlg.Handle(), win.SW_SHOW)
 		win.ShowWindow(g.dlg.Handle(), win.SW_SHOWNORMAL)
 
-		native.SwitchToThisWindow(g.dlg.Handle(), false)
-
-		win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-		win.SetWindowPos(g.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-		win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		// native.SwitchToThisWindow(g.dlg.Handle(), false)
+		// win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		// win.SetWindowPos(g.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		// win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 		return
 	}
 

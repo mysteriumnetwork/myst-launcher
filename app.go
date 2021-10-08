@@ -8,10 +8,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"runtime/debug"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
@@ -21,11 +19,7 @@ import (
 )
 
 func main() {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
-		}
-	}()
+	defer utils.PanicHandler("main")
 
 	ap := app.NewApp()
 	p := app.NewPipeHandler()
