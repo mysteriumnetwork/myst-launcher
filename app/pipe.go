@@ -67,7 +67,7 @@ func (p *PipeHandler) Listen(ui model.Gui_) {
 		s, _ := rw.ReadString('\n')
 		switch s {
 		case "popup\n":
-			ui.ShowMain()
+			ui.PopupMain()
 
 		case "stop\n":
 			ui.TerminateWaitDialogueComplete()

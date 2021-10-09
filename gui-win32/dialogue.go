@@ -311,23 +311,39 @@ func (g *Gui) setImage() {
 	g.img.SetImage(img)
 }
 
-func (g *Gui) ShowMain() {
-	if !g.dlg.Visible() {
+func (g *Gui) bringMainToTop() {
+	if g.dlg.Visible() {
 		win.ShowWindow(g.dlg.Handle(), win.SW_SHOW)
 		win.ShowWindow(g.dlg.Handle(), win.SW_SHOWNORMAL)
 
-		// native.SwitchToThisWindow(g.dlg.Handle(), false)
-		// win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-		// win.SetWindowPos(g.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
-		// win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		native.SwitchToThisWindow(g.dlg.Handle(), true)
+
+		win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		win.SetWindowPos(g.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+		win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+	}
+}
+
+func (g *Gui) PopupMain() {
+	if !g.dlg.Visible() {
+		win.ShowWindow(g.dlg.Handle(), win.SW_RESTORE)
 		return
 	}
+	g.bringMainToTop()
+}
 
-	if !win.IsIconic(g.dlg.Handle()) {
-		win.ShowWindow(g.dlg.Handle(), win.SW_MINIMIZE)
-	} else {
+func (g *Gui) ShowMain() {
+	if win.IsIconic(g.dlg.Handle()) {
 		win.ShowWindow(g.dlg.Handle(), win.SW_RESTORE)
+	} else {
+		if g.dlg.Visible() {
+			g.dlg.Hide()
+			return
+		} else {
+			g.dlg.Show()
+		}
 	}
+	g.bringMainToTop()
 }
 
 func OpenNodeUI() {
