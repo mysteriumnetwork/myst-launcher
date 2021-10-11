@@ -218,18 +218,6 @@ func (m *Manager) findMystContainer() (*Container, error) {
 
 func (m *Manager) pullMystLatest() error {
 
-	// dont pull an image if we already have it
-	l, err := m.dockerAPI.ImageList(m.ctx(), types.ImageListOptions{})
-	fmt.Println("pullMystLatest > ImageList >", err)
-	for _, i := range l {
-		for _, tag := range i.RepoTags {
-			if tag == _const.GetImageName() {
-				fmt.Println("!", tag)
-				return nil
-			}
-		}
-	}
-
 	out, err := m.dockerAPI.ImagePull(m.ctx(), _const.GetImageName(), types.ImagePullOptions{})
 	if err != nil {
 		return wrap(err, ErrCouldNotPullImage)
