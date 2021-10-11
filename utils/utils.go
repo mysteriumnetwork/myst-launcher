@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"runtime/debug"
 	"strings"
 	"syscall"
 	"time"
@@ -57,4 +59,29 @@ func Retry(attempts int, sleep time.Duration, fn func() error) error {
 		return err
 	}
 	return nil
+}
+
+func PanicHandler(threadName string) {
+	if err := recover(); err != nil {
+
+		fmt.Printf("Stacktrace %s: %s\n", threadName, debug.Stack())
+		fname := fmt.Sprintf("%s/launcher_trace_%d.txt", GetUserProfileDir(), time.Now().Unix())
+		f, err := os.Create(fname)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer f.Close()
+
+		var bu bytes.Buffer
+		
+		v,_ := GetProductVersion()
+		bu.WriteString(fmt.Sprintf("Version %s: \n", v))
+		bu.WriteString(fmt.Sprintf("Stacktrace %s: \n", threadName))
+		bu.Write(debug.Stack())
+		f.Write(bu.Bytes())
+
+		OpenExceptionDlg(threadName, bu.String())
+		os.Exit(1)
+	}
 }

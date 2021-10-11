@@ -42,7 +42,7 @@ func (s *AppState) Write(b []byte) (int, error) {
 	bCopy := make([]byte, len(b))
 	copy(bCopy, b)
 
-	if s.model.GetConfig().DuplicateLogToConsole {
+	if s.model.Config.DuplicateLogToConsole {
 		fmt.Print(string(bCopy))
 	}
 

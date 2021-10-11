@@ -7,6 +7,7 @@ type Gui_ interface {
 	WaitDialogueComplete() bool
 	TerminateWaitDialogueComplete()
 
+	PopupMain()
 	ShowMain()
 	ShowNotificationInstalled()
 	ShowNotificationUpgrade()

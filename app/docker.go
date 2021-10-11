@@ -17,16 +17,11 @@ import (
 )
 
 func (s *AppState) SuperviseDockerNode() {
+	defer utils.PanicHandler("app")
+
 	runtime.LockOSThread()
 	utils.Win32Initialize()
 	defer s.WaitGroup.Done()
-
-	if utils.LauncherUpgradeAvailable() {
-		ret := s.ui.YesNoModal("Launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
-		if ret == model.IDYES {
-			utils.UpdateExe()
-		}
-	}
 
 	mystManager, err := myst.NewManagerWithDefaults()
 	if err != nil {

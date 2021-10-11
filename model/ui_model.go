@@ -12,6 +12,7 @@ import (
 	"github.com/asaskevich/EventBus"
 
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 type UIModel struct {
@@ -26,7 +27,7 @@ type UIModel struct {
 
 	// inst
 	CheckWindowsVersion bool
-	CheckVirt            bool
+	CheckVirt           bool
 	CheckDocker         bool // darwin
 
 	InstallExecutable    bool
@@ -46,6 +47,7 @@ func NewUIModel() *UIModel {
 	m.UIBus = EventBus.New()
 	m.Config.Read()
 	m.ImgVer.ImageName = _const.GetImageName()
+
 	return m
 }
 
@@ -66,10 +68,6 @@ func (m *UIModel) UpdateProperties(p UIProps) {
 			m.CheckVirt = v.(bool)
 		case "CheckDocker":
 			m.CheckDocker = v.(bool)
-		// case "EnableWSL":
-			// m.EnableWSL = v.(bool)
-		// case "EnableHyperV":
-			// m.EnableHyperV = v.(bool)
 		case "InstallExecutable":
 			m.InstallExecutable = v.(bool)
 		case "RebootAfterWSLEnable":
@@ -103,10 +101,6 @@ func (m *UIModel) SetWantExit() {
 	m.UIBus.Publish("want-exit")
 }
 
-func (m *UIModel) isExiting() bool {
-	return m.State == UIStateInstallError
-}
-
 func (m *UIModel) IsRunning() bool {
 	return m.StateContainer == RunnableStateRunning
 }
@@ -135,4 +129,23 @@ func (m *UIModel) Publish(topic string, args ...interface{}) {
 
 func (m *UIModel) TriggerAction(action string) {
 	m.App.TriggerAction(action)
+}
+
+func (m *UIModel) TriggerAutostartAction() {
+
+	m.Config.AutoStart = !m.Config.AutoStart
+	m.Config.Save()
+	m.UIBus.Publish("model-change")
+
+	if m.Config.AutoStart {
+		utils.CheckAndInstallExe()
+	}
+}
+
+func (m *UIModel) TriggerNodeEnableAction() {
+	if m.Config.Enabled {
+		m.TriggerAction("disable")
+	} else {
+		m.TriggerAction("enable")
+	}
 }

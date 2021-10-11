@@ -1,10 +1,11 @@
+//go:build windows
 // +build windows
 
 package app
 
 import (
 	"bufio"
-	"log"
+	"net"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
 
@@ -13,7 +14,25 @@ import (
 
 var LauncherPipeName = `\\.\pipe\mysterium_node_launcher`
 
-func IsAlreadyRunning() bool {
+type PipeHandler struct {
+	pipe net.Listener
+}
+
+func NewPipeHandler() *PipeHandler {
+	h := &PipeHandler{}
+	h.OpenPipe()
+	return h
+}
+func (p *PipeHandler) OwnsPipe() bool {
+	return p.pipe != nil
+}
+
+func (p *PipeHandler) OpenPipe() {
+	l, _ := winio.ListenPipe(LauncherPipeName, nil)
+	p.pipe = l
+}
+
+func (p *PipeHandler) SendPopupApp() bool {
 	pipe, err := winio.DialPipe(LauncherPipeName, nil)
 	if err == nil {
 		pipe.Write([]byte("popup\n"))
@@ -22,7 +41,8 @@ func IsAlreadyRunning() bool {
 	return false
 }
 
-func StopApp() bool {
+// send stop and own the pipe
+func  (p *PipeHandler) SendStopApp() bool {
 	pipe, err := winio.DialPipe(LauncherPipeName, nil)
 	if err == nil {
 		pipe.Write([]byte("stop\n"))
@@ -31,14 +51,13 @@ func StopApp() bool {
 	return false
 }
 
-func CreatePipeAndListen(ui model.Gui_) {
-	l, err := winio.ListenPipe(LauncherPipeName, nil)
-	if err != nil {
-		log.Fatal(err)
+func (p *PipeHandler) Listen(ui model.Gui_) {
+	if p.pipe == nil {
+		return
 	}
 
-	handleCommand := func ()  {
-		c, err := l.Accept()
+	handleCommand := func() {
+		c, err := p.pipe.Accept()
 		if err != nil {
 			panic(err)
 		}
@@ -48,12 +67,12 @@ func CreatePipeAndListen(ui model.Gui_) {
 		s, _ := rw.ReadString('\n')
 		switch s {
 		case "popup\n":
-			ui.ShowMain()
+			ui.PopupMain()
 
 		case "stop\n":
 			ui.TerminateWaitDialogueComplete()
 			ui.CloseUI()
-		}	
+		}
 	}
 
 	go func() {
@@ -61,4 +80,5 @@ func CreatePipeAndListen(ui model.Gui_) {
 			handleCommand()
 		}
 	}()
+
 }

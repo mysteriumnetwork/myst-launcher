@@ -23,13 +23,10 @@ func IsProcessRunning(name string) bool {
 func Win32Initialize() {}
 
 func LauncherUpgradeAvailable() bool {
-	log.Println("LauncherUpgradeAvailable: not implemented")
 	return false
 }
 
-func UpdateExe() {
-	log.Println("UpdateExe: not implemented")
-}
+func UpdateExe() {}
 
 func SystemUnderVm() (bool, error) {
 	log.Println("SystemUnderVm: not implemented")
@@ -47,7 +44,11 @@ func HasDocker() (bool, error) {
 	return res == 0 || res == 1, nil
 }
 
-// TODO: use data from config
 func GetProductVersion() (string, error) {
 	return "", nil
+}
+
+// install exe if n/e
+func CheckAndInstallExe() error {
+	return nil
 }

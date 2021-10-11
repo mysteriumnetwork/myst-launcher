@@ -47,7 +47,9 @@ type Gui struct {
 	actionOpenUI   *walk.Action
 	actionUpgrade  *walk.Action
 	actionEnable   *walk.Action
-	actionDisable  *walk.Action
+
+	isAutostartEnabled *walk.MutableCondition
+	isNodeEnabled      *walk.MutableCondition
 
 	// common
 	lbDocker              *walk.Label
@@ -92,6 +94,11 @@ func NewGui(m *model2.UIModel) *Gui {
 	g.icon, _ = walk.NewIconFromResourceId(2)
 	g.iconActive, _ = walk.NewIconFromResourceId(3)
 	g.model = m
+
+	g.isAutostartEnabled = walk.NewMutableCondition()
+	g.isNodeEnabled = walk.NewMutableCondition()
+	MustRegisterCondition("isAutostartEnabled", g.isAutostartEnabled)
+	MustRegisterCondition("isNodeEnabled", g.isNodeEnabled)
 
 	g.waitClick = make(chan int, 0)
 	g.bus = EventBus.New()
@@ -200,8 +207,8 @@ func (g *Gui) CreateMainWindow() {
 
 func (g *Gui) enableMenu(enable bool) {
 	//actionMainMenu.SetEnabled(enable)
+
 	g.actionEnable.SetEnabled(enable)
-	g.actionDisable.SetEnabled(enable)
 	g.actionUpgrade.SetEnabled(enable)
 }
 
@@ -226,6 +233,9 @@ func (g *Gui) refresh() {
 	case model2.UIStateInitial:
 		g.enableMenu(true)
 		g.changeView(frameState)
+
+		g.isNodeEnabled.SetSatisfied(g.model.Config.Enabled)
+		g.isAutostartEnabled.SetSatisfied(g.model.Config.AutoStart)
 
 		g.autoUpgrade.SetChecked(g.model.GetConfig().AutoUpgrade)
 		if !g.model.GetConfig().EnablePortForwarding {
@@ -301,24 +311,39 @@ func (g *Gui) setImage() {
 	g.img.SetImage(img)
 }
 
-func (g *Gui) ShowMain() {
-	if !g.dlg.Visible() {
+func (g *Gui) bringMainToTop() {
+	if g.dlg.Visible() {
 		win.ShowWindow(g.dlg.Handle(), win.SW_SHOW)
 		win.ShowWindow(g.dlg.Handle(), win.SW_SHOWNORMAL)
 
-		native.SwitchToThisWindow(g.dlg.Handle(), false)
+		native.SwitchToThisWindow(g.dlg.Handle(), true)
 
 		win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 		win.SetWindowPos(g.dlg.Handle(), win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
 		win.SetWindowPos(g.dlg.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOSIZE|win.SWP_NOMOVE)
+	}
+}
+
+func (g *Gui) PopupMain() {
+	if !g.dlg.Visible() {
+		win.ShowWindow(g.dlg.Handle(), win.SW_RESTORE)
 		return
 	}
+	g.bringMainToTop()
+}
 
-	if !win.IsIconic(g.dlg.Handle()) {
-		win.ShowWindow(g.dlg.Handle(), win.SW_MINIMIZE)
-	} else {
+func (g *Gui) ShowMain() {
+	if win.IsIconic(g.dlg.Handle()) {
 		win.ShowWindow(g.dlg.Handle(), win.SW_RESTORE)
+	} else {
+		if g.dlg.Visible() {
+			g.dlg.Hide()
+			return
+		} else {
+			g.dlg.Show()
+		}
 	}
+	g.bringMainToTop()
 }
 
 func OpenNodeUI() {
@@ -359,16 +384,23 @@ func (g *Gui) ShowNotificationUpgrade() {
 	}
 }
 
+func (g *Gui) getModalOwner() walk.Form {
+	if g != nil && g.dlg != nil {
+		return g.dlg
+	}
+	return nil
+}
+
 func (g *Gui) ConfirmModal(title, message string) int {
-	return walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
+	return walk.MsgBox(g.getModalOwner(), title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 }
 
 func (g *Gui) YesNoModal(title, message string) int {
-	return walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
+	return walk.MsgBox(g.getModalOwner(), title, message, walk.MsgBoxTopMost|walk.MsgBoxYesNo|walk.MsgBoxIconExclamation)
 }
 
 func (g *Gui) ErrorModal(title, message string) int {
-	return walk.MsgBox(g.dlg, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
+	return walk.MsgBox(g.getModalOwner(), title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
 }
 
 func (g *Gui) SetModalReturnCode(rc int) {}

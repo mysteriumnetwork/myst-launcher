@@ -11,6 +11,22 @@ func (g *Gui) menu() []MenuItem {
 			Text:           "&File",
 			Items: []MenuItem{
 				Action{
+					Text: "About",
+					OnTriggered: func() {
+						g.OpenAboutDlg()
+					},
+				},
+				Separator{},
+				Action{
+					Checked: Bind("isAutostartEnabled"),
+					Text:    "Autostart launcher",
+					OnTriggered: func() {
+						g.model.TriggerAutostartAction()
+					},
+				},
+				Separator{},
+
+				Action{
 					Text: "E&xit",
 					OnTriggered: func() {
 						g.TerminateWaitDialogueComplete()
@@ -29,7 +45,6 @@ func (g *Gui) menu() []MenuItem {
 					AssignTo:    &g.actionOpenUI,
 					OnTriggered: func() { OpenNodeUI() },
 				},
-				Separator{},
 				Action{
 					Text:     "Check updates",
 					AssignTo: &g.actionUpgrade,
@@ -40,19 +55,11 @@ func (g *Gui) menu() []MenuItem {
 
 				Separator{},
 				Action{
-					Text:     "Disable node",
-					AssignTo: &g.actionDisable,
-					OnTriggered: func() {
-						//g.model.BtnDisableOnClick()
-						g.model.TriggerAction("disable")
-					},
-				},
-				Action{
+					Checked:  Bind("isNodeEnabled"),
 					Text:     "Enable node",
 					AssignTo: &g.actionEnable,
 					OnTriggered: func() {
-						//g.model.BtnEnableOnClick()
-						g.model.TriggerAction("enable")
+						g.model.TriggerNodeEnableAction()
 					},
 				},
 			},

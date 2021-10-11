@@ -224,7 +224,7 @@ func (g *Gui) stateDlg() Widget {
 						AssignTo: &g.lbDocker,
 					},
 					Label{
-						Text: "Container",
+						Text: "Node",
 					},
 					Label{
 						Text:     "-",

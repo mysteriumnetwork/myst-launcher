@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
+	"github.com/lxn/walk"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 
@@ -104,6 +105,20 @@ func LauncherUpgradeAvailable() bool {
 	return strings.Compare(verToStr(ver.FixedInfo().FileVersion), verToStr(verDst.FixedInfo().FileVersion)) > 0
 }
 
+// install exe if n/e
+func CheckAndInstallExe() error {
+	if !checkExe() {
+		fullExe, _ := os.Executable()
+		cmdArgs := _const.FlagInstall
+		err := native.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// should be executed with admin's privileges
 func InstallExe() error {
 	fullExe_, _ := os.Executable()
 	ver, err := fileversion.New(fullExe_)
@@ -132,6 +147,7 @@ func InstallExe() error {
 	return nil
 }
 
+// should be executed with admin privs
 func UninstallExe() error {
 	registry.DeleteKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher`)
 
@@ -417,9 +433,13 @@ func GetProductVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fv,err := fileversion.New(fullExe_)
+	fv, err := fileversion.New(fullExe_)
 	if err != nil {
 		return "", err
 	}
 	return fv.ProductVersion(), nil
+}
+
+func ErrorModal(title, message string) int {
+	return walk.MsgBox(nil, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
 }
