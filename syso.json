@@ -17,16 +17,16 @@
     {
       "ID": 1,
       "Fixed": {
-        "FileVersion": "1.0.14.0",
-        "ProductVersion": "1.0.14.0"
+        "FileVersion": "1.0.15.0",
+        "ProductVersion": "1.0.15.0"
       },
       "StringTables": [
         {
           "Language": "0409",
           "Charset": "04b0",
           "Strings": {
-            "FileVersion": "1.0.14",
-            "ProductVersion": "1.0.14",
+            "FileVersion": "1.0.15",
+            "ProductVersion": "1.0.15",
             "FileDescription": "Mysterium Network Node Launcher",
             "ProductName": "Mysterium Network Node Launcher",
             "CompanyName": "Mysterium Network",
