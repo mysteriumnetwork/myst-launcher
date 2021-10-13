@@ -43,13 +43,18 @@ func (c *Config) NeedToCheckUpgrade() bool {
 	return t.Add(upgradeCheckPeriod).Before(time.Now())
 }
 
+func (c *Config) getDefaultValues() {
+	c.Enabled = true
+	c.EnablePortForwarding = false
+	c.PortRangeBegin = 42000
+	c.PortRangeEnd = 42100
+}
+
 func (c *Config) Read() {
 	f := utils.GetUserProfileDir() + "/.myst_node_launcher"
 	_, err := os.Stat(f)
 	if os.IsNotExist(err) {
-		// create default settings
-		c.AutoStart = true
-		c.Enabled = true
+		c.getDefaultValues()
 		c.Save()
 		return
 	}
@@ -59,12 +64,7 @@ func (c *Config) Read() {
 		return
 	}
 
-	// default value
-	c.Enabled = true
-	c.EnablePortForwarding = false
-	c.PortRangeBegin = 42000
-	c.PortRangeEnd = 42100
-
+	c.getDefaultValues()
 	json.NewDecoder(file).Decode(&c)
 }
 
