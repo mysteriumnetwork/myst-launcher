@@ -34,3 +34,10 @@ func (r RunnableState) String() string {
 		return "?"
 	}
 }
+
+type InstallStep int
+
+const (
+	StepInProgress = InstallStep(1)
+	StepFinished   = InstallStep(2)
+)

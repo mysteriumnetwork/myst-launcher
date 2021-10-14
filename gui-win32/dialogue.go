@@ -284,15 +284,29 @@ func (g *Gui) refresh() {
 
 	switch g.model.State {
 	case model2.UIStateInstallInProgress, model2.UIStateInstallFinished, model2.UIStateInstallError:
-		g.checkWindowsVersion.SetChecked(g.model.CheckWindowsVersion)
-		g.checkVirt.SetChecked(g.model.CheckVirt)
-		g.installExecutable.SetChecked(g.model.InstallExecutable)
-		g.rebootAfterWSLEnable.SetChecked(g.model.RebootAfterWSLEnable)
-		g.downloadFiles.SetChecked(g.model.DownloadFiles)
-		g.installWSLUpdate.SetChecked(g.model.InstallWSLUpdate)
-		g.installDocker.SetChecked(g.model.InstallDocker)
-		g.checkGroupMembership.SetChecked(g.model.CheckGroupMembership)
+		// g.checkWindowsVersion.SetChecked(g.model.CheckWindowsVersion.GetChecked())
+		// g.checkVirt.SetChecked(g.model.CheckVirt.GetChecked())
+		// g.installExecutable.SetChecked(g.model.InstallExecutable.GetChecked())
+		// g.rebootAfterWSLEnable.SetChecked(g.model.RebootAfterWSLEnable.GetChecked())
+		// g.downloadFiles.SetChecked(g.model.DownloadFiles.GetChecked())
+		// g.installWSLUpdate.SetChecked(g.model.InstallWSLUpdate.GetChecked())
+		// g.installDocker.SetChecked(g.model.InstallDocker.GetChecked())
+		// g.checkGroupMembership.SetChecked(g.model.CheckGroupMembership.GetChecked())
+
+		setCheckBox(g.checkWindowsVersion, g.model.CheckWindowsVersion)
+		setCheckBox(g.checkVirt, g.model.CheckVirt)
+		setCheckBox(g.installExecutable, g.model.InstallExecutable)
+		setCheckBox(g.rebootAfterWSLEnable, g.model.RebootAfterWSLEnable)
+		setCheckBox(g.downloadFiles, g.model.DownloadFiles)
+		setCheckBox(g.installWSLUpdate, g.model.InstallWSLUpdate)
+		setCheckBox(g.installDocker, g.model.InstallDocker)
+		setCheckBox(g.checkGroupMembership, g.model.CheckGroupMembership)
+
 	}
+}
+
+func setCheckBox(b *walk.CheckBox, st model2.InstallStep) {
+	b.SetChecked(st == model2.StepFinished)
 }
 
 func (g *Gui) setImage() {
