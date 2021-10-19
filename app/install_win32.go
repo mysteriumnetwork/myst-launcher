@@ -146,7 +146,7 @@ func (s *AppState) tryInstall() bool {
 	gowin32.SetInstallerInternalUI(gowin32.InstallUILevelProgressOnly) // UI Level for a prompt
 	err = gowin32.InstallProduct(os.Getenv("TMP")+"\\wsl_update_x64.msi", "ACTION=INSTALL")
 	if err != nil {
-		log.Println("Command failed: msiexec.exe /i wsl_update_x64.msi /quiet")
+		log.Println("InstallProduct failed (wsl_update_x64.msi)", err)
 
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
