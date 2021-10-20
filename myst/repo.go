@@ -133,7 +133,8 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 		mod.GetConfig().CurrentImgHasOptionReportVersion = true
 	}
 
-	if !fastPath && len(data) == 0 || mod.Config.NeedToCheckUpgrade() {
+	// Reload image list if cache has no info about current version
+	if !fastPath && len(data) == 0 || mod.Config.NeedToCheckUpgrade() || currentVersion=="" {
 		ok := getFile()
 		if ok {
 			os.WriteFile(f, data, 0777)
