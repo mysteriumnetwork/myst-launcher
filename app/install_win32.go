@@ -24,8 +24,9 @@ const group = "docker-users"
 
 // returns exit model: true means exit
 func (s *AppState) tryInstall() bool {
-	var err error
+	s.model.ResetProperties()
 
+	var err error
 	s.model.SwitchState(model.UIStateInstallNeeded)
 	if !s.InstallStage2 {
 		ok := s.ui.WaitDialogueComplete()
@@ -34,7 +35,6 @@ func (s *AppState) tryInstall() bool {
 		}
 	}
 	s.model.SwitchState(model.UIStateInstallInProgress)
-
 	log.Println("Checking Windows version")
 	s.model.UpdateProperties(model.UIProps{"CheckWindowsVersion": model.StepInProgress})
 	if !utils.IsWindowsVersionCompatible() {
@@ -44,7 +44,7 @@ func (s *AppState) tryInstall() bool {
 
 		s.ui.ConfirmModal("Installation", "Please update to Windows 10 version 2004 or above.")
 		s.model.SwitchState(model.UIStateInstallError)
-
+		s.model.UpdateProperties(model.UIProps{"CheckWindowsVersion":  model.StepFailed})
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"CheckWindowsVersion": model.StepFinished})
@@ -59,11 +59,10 @@ func (s *AppState) tryInstall() bool {
 			return true
 		}
 		utils.CreateAutostartShortcut(_const.FlagInstallStage2)
-		s.model.UpdateProperties(model.UIProps{"InstallExecutable": model.StepFinished})
 	}
+	s.model.UpdateProperties(model.UIProps{"InstallExecutable": model.StepFinished})
 
 	// Don't check VT-x / EPT as it's just enough to check VMPlatform WSL and vmcompute
-
 	features, err := utils.QueryFeatures()
 	if err != nil {
 		log.Println("Failed to query feature:", err)
@@ -83,11 +82,9 @@ func (s *AppState) tryInstall() bool {
 		}
 		return true
 	}
-
 	// proceeding install after reboot
-	if s.InstallStage2 {
-		s.model.UpdateProperties(model.UIProps{"InstallExecutable":  model.StepFinished, "RebootAfterWSLEnable":  model.StepFinished})
-	}
+	s.model.UpdateProperties(model.UIProps{"RebootAfterWSLEnable":  model.StepFinished})
+
 
 	// Instead of chechking VT-x check vmcompute service is running
 	s.model.UpdateProperties(model.UIProps{"CheckVTx":  model.StepInProgress})
@@ -99,6 +96,7 @@ func (s *AppState) tryInstall() bool {
 		s.ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service) is not running.\r\n\r\n"+
 			"Please enable virtualization in a system BIOS: VT-x and EPT options for Intel, SVM for AMD")
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"CheckVTx":  model.StepFailed})
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"CheckVTx":  model.StepFinished})
@@ -141,6 +139,7 @@ func (s *AppState) tryInstall() bool {
 		}
 
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"DownloadFiles":  model.StepFailed})
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"DownloadFiles":  model.StepFinished})
@@ -153,6 +152,7 @@ func (s *AppState) tryInstall() bool {
 		log.Println("Command failed: msiexec.exe /i wsl_update_x64.msi /quiet")
 
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate":  model.StepFailed})
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate":  model.StepFinished})
@@ -165,12 +165,14 @@ func (s *AppState) tryInstall() bool {
 		log.Println("DockerDesktopInstaller failed:", err)
 
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallDocker":  model.StepFailed})
 		return true
 	}
 	if err := myst.StartDockerDesktop(); err != nil {
 		log.Println("Failed starting docker:", err)
 
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallDocker":  model.StepFailed})
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"InstallDocker":  model.StepFinished})
@@ -187,6 +189,7 @@ func (s *AppState) tryInstall() bool {
 		}
 
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"CheckGroupMembership":  model.StepFailed})
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"CheckGroupMembership":  model.StepFinished})

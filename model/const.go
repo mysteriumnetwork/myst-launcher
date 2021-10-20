@@ -23,11 +23,11 @@ const (
 func (r RunnableState) String() string {
 	switch r {
 	case RunnableStateRunning:
-		return "Running [OK]"
+		return "ONLINE"
 	case RunnableStateInstalling:
-		return "Installing.."
+		return "INSTALLING.."
 	case RunnableStateStarting:
-		return "Starting.."
+		return "STARTING.."
 	case RunnableStateUnknown:
 		return "-"
 	default:
@@ -38,6 +38,8 @@ func (r RunnableState) String() string {
 type InstallStep int
 
 const (
+	StepNone       = InstallStep(0)
 	StepInProgress = InstallStep(1)
 	StepFinished   = InstallStep(2)
+	StepFailed     = InstallStep(3)
 )

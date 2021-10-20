@@ -16,6 +16,8 @@ import (
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
+	"github.com/tryor/gdiplus"
+	"github.com/tryor/winapi"
 )
 
 func main() {
@@ -44,7 +46,16 @@ func main() {
 	mod.SetApp(ap)
 	mod.Config.DuplicateLogToConsole = true
 	mod.Config.ProductVersion, _ = utils.GetProductVersion()
-
+	
+	log.Println("Initializing GDI+ ....")
+	var gpToken winapi.ULONG_PTR
+	var input gdiplus.GdiplusStartupInput
+	input.GdiplusVersion = 1
+	_, err := gdiplus.Startup(&gpToken, &input, nil)
+	if err != nil {
+		panic(err)
+	}
+	
 	ui := gui_win32.NewGui(mod)
 
 	// update launcher binary
@@ -70,6 +81,7 @@ func main() {
 		}
 	}
 
+
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
 
@@ -84,6 +96,7 @@ func main() {
 
 	// Run the message loop
 	ui.Run()
+	gdiplus.GdiplusShutdown(gpToken)
 
 	// send stop action to SuperviseDockerNode
 	ap.TriggerAction("stop")

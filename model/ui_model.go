@@ -58,6 +58,20 @@ func (m *UIModel) SetApp(app AppInterface) {
 	m.App = app
 }
 
+func (m *UIModel) ResetProperties() {
+	m.CheckWindowsVersion = StepNone
+	m.CheckVirt = StepNone
+	m.CheckDocker = StepNone
+	m.InstallExecutable = StepNone
+	m.RebootAfterWSLEnable = StepNone
+	m.DownloadFiles = StepNone
+	m.InstallWSLUpdate = StepNone
+	m.InstallDocker = StepNone
+	m.CheckGroupMembership = StepNone
+
+	m.UIBus.Publish("model-change")
+}
+
 func (m *UIModel) UpdateProperties(p UIProps) {
 	for k, v := range p {
 		v := v.(InstallStep)
@@ -121,6 +135,7 @@ func (m *UIModel) SetStateContainer(r RunnableState) {
 	if m.StateContainer != r {
 		m.StateContainer = r
 		m.UIBus.Publish("model-change")
+		m.UIBus.Publish("container-state")
 	}
 }
 
