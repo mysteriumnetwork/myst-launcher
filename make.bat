@@ -1,5 +1,3 @@
 go run cmd/resource/resource.go
-
-set GOBIN=%cd%\bin
-go install -v -trimpath -ldflags "-s -w -H windowsgui" github.com/mysteriumnetwork/myst-launcher/cmd/app
-move bin\app.exe bin\myst-launcher-amd64-dbg.exe
+go build -v -trimpath -ldflags "-s -w -H windowsgui" -o  bin/myst-launcher-amd64.exe github.com/mysteriumnetwork/myst-launcher/cmd/app
+go build -v -trimpath -ldflags "-s -w" -o  bin/myst-launcher-dbg-amd64.exe github.com/mysteriumnetwork/myst-launcher/cmd/app

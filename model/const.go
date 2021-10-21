@@ -29,9 +29,9 @@ func (r RunnableState) String() string {
 	case RunnableStateStarting:
 		return "STARTING.."
 	case RunnableStateUnknown:
-		return "-"
+		return "OFFLINE"
 	default:
-		return "?"
+		return "???"
 	}
 }
 

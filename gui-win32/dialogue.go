@@ -315,6 +315,8 @@ func setState(b *impl.StatusViewImpl, st model2.InstallStep) {
 		b.SetState(1)
 	case model2.StepNone:
 		b.SetState(0)
+	default:
+		b.SetState(0)
 	}
 }
 func setState2(b *impl.StatusViewImpl, st model2.RunnableState) {
@@ -326,7 +328,7 @@ func setState2(b *impl.StatusViewImpl, st model2.RunnableState) {
 	case model2.RunnableStateStarting:
 		b.SetState(3)
 	case model2.RunnableStateUnknown:
-		b.SetState(0)
+		b.SetState(1)
 	}
 }
 
