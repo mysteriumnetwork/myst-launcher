@@ -166,12 +166,13 @@ func (s *AppState) upgrade(mystManager *myst.Manager) {
 func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 
 	if s.model.Config.Enabled {
-		s.model.SetStateContainer(model.RunnableStateUnknown)
+		
 		s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
 		myst.CheckVersionAndUpgrades(s.model, true)
 
 		containerAlreadyRunning, err := mystManager.Start(s.model.GetConfig())
 		if err != nil {
+			s.model.SetStateContainer(model.RunnableStateUnknown)
 			log.Println("upgradeImageAndRun", err)
 			return
 		}
