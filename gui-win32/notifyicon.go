@@ -36,8 +36,11 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 		if ui.StateContainer == model.RunnableStateRunning {
 			i = g.iconActive
 		}
+
 		g.ni.SetIcon(i)
-		g.dlg.Synchronize(func() { g.dlg.SetIcon(i) })
+		// g.dlg.Synchronize(func() {
+		// 	g.dlg.SetIcon(i)
+		// })
 	})
 
 	if err := g.ni.SetIcon(g.icon); err != nil {
@@ -86,7 +89,7 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 	})
 	nodeEnabled.SetCheckedCondition(g.isNodeEnabled)
 
-	g.ni.ContextMenu().Actions().Add(openUIAction)	
+	g.ni.ContextMenu().Actions().Add(openUIAction)
 	g.ni.ContextMenu().Actions().Add(nodeEnabled)
 	g.ni.ContextMenu().Actions().Add(walk.NewSeparatorAction())
 	g.ni.ContextMenu().Actions().Add(exitAction)

@@ -26,16 +26,15 @@ type UIModel struct {
 	StateContainer RunnableState
 
 	// inst
-	CheckWindowsVersion bool
-	CheckVirt           bool
-	CheckDocker         bool // darwin
-
-	InstallExecutable    bool
-	RebootAfterWSLEnable bool
-	DownloadFiles        bool
-	InstallWSLUpdate     bool
-	InstallDocker        bool
-	CheckGroupMembership bool
+	CheckWindowsVersion  InstallStep
+	CheckVirt            InstallStep
+	CheckDocker          InstallStep // darwin
+	InstallExecutable    InstallStep
+	RebootAfterWSLEnable InstallStep
+	DownloadFiles        InstallStep
+	InstallWSLUpdate     InstallStep
+	InstallDocker        InstallStep
+	CheckGroupMembership InstallStep
 
 	App    AppInterface
 	ImgVer ImageVersionInfo
@@ -59,27 +58,43 @@ func (m *UIModel) SetApp(app AppInterface) {
 	m.App = app
 }
 
+func (m *UIModel) ResetProperties() {
+	m.CheckWindowsVersion = StepNone
+	m.CheckVirt = StepNone
+	m.CheckDocker = StepNone
+	m.InstallExecutable = StepNone
+	m.RebootAfterWSLEnable = StepNone
+	m.DownloadFiles = StepNone
+	m.InstallWSLUpdate = StepNone
+	m.InstallDocker = StepNone
+	m.CheckGroupMembership = StepNone
+
+	m.UIBus.Publish("model-change")
+}
+
 func (m *UIModel) UpdateProperties(p UIProps) {
 	for k, v := range p {
+		v := v.(InstallStep)
+
 		switch k {
 		case "CheckWindowsVersion":
-			m.CheckWindowsVersion = v.(bool)
+			m.CheckWindowsVersion = v
 		case "CheckVTx":
-			m.CheckVirt = v.(bool)
+			m.CheckVirt = v
 		case "CheckDocker":
-			m.CheckDocker = v.(bool)
+			m.CheckDocker = v
 		case "InstallExecutable":
-			m.InstallExecutable = v.(bool)
+			m.InstallExecutable = v
 		case "RebootAfterWSLEnable":
-			m.RebootAfterWSLEnable = v.(bool)
+			m.RebootAfterWSLEnable = v
 		case "DownloadFiles":
-			m.DownloadFiles = v.(bool)
+			m.DownloadFiles = v
 		case "InstallWSLUpdate":
-			m.InstallWSLUpdate = v.(bool)
+			m.InstallWSLUpdate = v
 		case "InstallDocker":
-			m.InstallDocker = v.(bool)
+			m.InstallDocker = v
 		case "CheckGroupMembership":
-			m.CheckGroupMembership = v.(bool)
+			m.CheckGroupMembership = v
 		default:
 			log.Println("Unknown proprerty:", k)
 		}
@@ -120,6 +135,7 @@ func (m *UIModel) SetStateContainer(r RunnableState) {
 	if m.StateContainer != r {
 		m.StateContainer = r
 		m.UIBus.Publish("model-change")
+		m.UIBus.Publish("container-state")
 	}
 }
 

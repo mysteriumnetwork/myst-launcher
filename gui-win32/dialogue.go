@@ -17,14 +17,13 @@ import (
 
 	model2 "github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/native"
+	"github.com/mysteriumnetwork/myst-launcher/widget/impl"
 )
 
 const (
-	ofs          = 0
-	frameImage_  = 0 + ofs
-	frameInsNeed = 1 + ofs
-	frameIns     = 2 + ofs
-	frameState   = 3 + ofs
+	frameInsNeed = 0
+	frameIns     = 1
+	frameState   = 2
 )
 
 type NotificationTypeID int
@@ -52,34 +51,36 @@ type Gui struct {
 	isNodeEnabled      *walk.MutableCondition
 
 	// common
-	lbDocker              *walk.Label
-	lbContainer           *walk.Label
-	lbVersionCurrent      *walk.Label
-	lbVersionUpdatesAvail *walk.LinkLabel
-	lbImageName           *walk.Label
+	stDocker         *impl.StatusViewImpl
+	stContainer      *impl.StatusViewImpl
+	lbDocker         *walk.Label
+	lbContainer      *walk.Label
+	lbVersionCurrent *walk.Label
+	lbVersionLatest  *walk.Label
+	lbImageName      *walk.Label
 
 	autoUpgrade   *walk.CheckBox
-	lbNetworkMode *walk.LinkLabel
+	lbNetworkMode *walk.Label
 	btnOpenNodeUI *walk.PushButton
 
 	// install
 	lbInstallationStatus *walk.TextEdit
 	btnBegin             *walk.PushButton
 
-	checkWindowsVersion  *walk.CheckBox
-	checkVirt            *walk.CheckBox
-	installExecutable    *walk.CheckBox
-	rebootAfterWSLEnable *walk.CheckBox
-	downloadFiles        *walk.CheckBox
-	installWSLUpdate     *walk.CheckBox
-	installDocker        *walk.CheckBox
-	checkGroupMembership *walk.CheckBox
+	checkWindowsVersion  *impl.StatusViewImpl
+	checkVirt            *impl.StatusViewImpl
+	installExecutable    *impl.StatusViewImpl
+	rebootAfterWSLEnable *impl.StatusViewImpl
+	downloadFiles        *impl.StatusViewImpl
+	installWSLUpdate     *impl.StatusViewImpl
+	installDocker        *impl.StatusViewImpl
+	checkGroupMembership *impl.StatusViewImpl
 
 	btnFinish *walk.PushButton
 	img       *walk.ImageView
 
 	currentView model2.UIState
-	ico         *walk.Icon
+	logo        *walk.Icon
 	icoActive   *walk.Icon
 
 	model              *model2.UIModel
@@ -87,40 +88,59 @@ type Gui struct {
 
 	waitClick chan int
 	bus       EventBus.Bus
+
+	cmp             *walk.Composite
+	headerContainer *walk.Composite
+	lbNodeUI        *walk.LinkLabel
+	lbMMN           *walk.LinkLabel
 }
 
 func NewGui(m *model2.UIModel) *Gui {
 	g := &Gui{}
-	g.icon, _ = walk.NewIconFromResourceId(2)
-	g.iconActive, _ = walk.NewIconFromResourceId(3)
-	g.model = m
 
+	var err error
+	g.logo, err = walk.NewIconFromResourceWithSize("APPICON", walk.Size{64, 64})
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.icoActive, err = walk.NewIconFromResourceWithSize("ICON_ACTIVE", walk.Size{64, 64})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	g.icon, err = walk.NewIconFromResource("APPICON")
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.iconActive, _ = walk.NewIconFromResource("ICON_ACTIVE")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	g.model = m
 	g.isAutostartEnabled = walk.NewMutableCondition()
 	g.isNodeEnabled = walk.NewMutableCondition()
 	MustRegisterCondition("isAutostartEnabled", g.isAutostartEnabled)
 	MustRegisterCondition("isNodeEnabled", g.isNodeEnabled)
 
-	g.waitClick = make(chan int, 0)
+	g.waitClick = make(chan int)
 	g.bus = EventBus.New()
 	return g
 }
 
 func (g *Gui) CreateMainWindow() {
+
 	if err := (MainWindow{
 		Visible:   false,
 		AssignTo:  &g.dlg,
 		Title:     "Mysterium Node Launcher",
-		MinSize:   Size{380, 640},
-		Size:      Size{380, 640},
+		MinSize:   Size{380, 600},
+		Size:      Size{380, 600},
 		Icon:      g.icon,
 		MenuItems: g.menu(),
 		Layout:    VBox{},
 
 		Children: []Widget{
-			ImageView{
-				AssignTo:  &g.img,
-				Alignment: AlignHNearVFar,
-			},
 			g.installationWelcome(),
 			g.installationDlg(),
 			g.stateDlg(),
@@ -128,30 +148,20 @@ func (g *Gui) CreateMainWindow() {
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
+
+	// manual layout for head panel
+	g.cmp.SetBounds(walk.Rectangle{0, 0, 400, 100})
+	g.img.SetBounds(walk.Rectangle{5, 5, 70, 70})
+	g.headerContainer.SetBounds(walk.Rectangle{80, 5, 270, 70})
+	g.stContainer.SetBounds(walk.Rectangle{0, 0, 20, 20})
+	g.lbContainer.SetBounds(walk.Rectangle{25, 0, 70, 20})
+	g.lbNodeUI.SetBounds(walk.Rectangle{120, 4, 150, 20})
+	g.lbMMN.SetBounds(walk.Rectangle{120, 24, 150, 20})
+
 	g.dlg.SetVisible(!g.model.App.GetInTray())
 
-	var err error
-	g.ico, err = walk.NewIconFromResourceIdWithSize(2, walk.Size{
-		Width:  64,
-		Height: 64,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	g.icoActive, err = walk.NewIconFromResourceIdWithSize(3, walk.Size{
-		Width:  64,
-		Height: 64,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
 	g.setImage()
 
-	g.model.UIBus.Subscribe("container-state", func() {
-		g.dlg.Synchronize(func() {
-			g.setImage()
-		})
-	})
 	// Events
 	g.model.UIBus.Subscribe("want-exit", func() {
 		g.dlg.Synchronize(func() {
@@ -180,7 +190,7 @@ func (g *Gui) CreateMainWindow() {
 	g.model.UIBus.Subscribe("model-change", func() {
 		g.dlg.Synchronize(func() {
 			g.refresh()
-			g.setImage()
+			//g.setImage()
 		})
 	})
 	g.model.UIBus.Subscribe("state-change", func() {
@@ -206,8 +216,7 @@ func (g *Gui) CreateMainWindow() {
 }
 
 func (g *Gui) enableMenu(enable bool) {
-	//actionMainMenu.SetEnabled(enable)
-
+	//g.actionMainMenu.SetEnabled(enable)
 	g.actionEnable.SetEnabled(enable)
 	g.actionUpgrade.SetEnabled(enable)
 }
@@ -239,24 +248,25 @@ func (g *Gui) refresh() {
 
 		g.autoUpgrade.SetChecked(g.model.GetConfig().AutoUpgrade)
 		if !g.model.GetConfig().EnablePortForwarding {
-			g.lbNetworkMode.SetText(`<a id="net">Port restricted cone NAT</a>`)
+			g.lbNetworkMode.SetText(`Port restricted cone NAT`)
 		} else {
-			g.lbNetworkMode.SetText(`<a id="net">Manual port forwarding</a>`)
+			g.lbNetworkMode.SetText(`Manual port forwarding`)
 		}
 
 		g.lbDocker.SetText(g.model.StateDocker.String())
+		g.lbContainer.SetText(g.model.StateContainer.String())
+		setState2(g.stDocker, g.model.StateDocker)
+		setState2(g.stContainer, g.model.StateContainer)
+
 		g.lbContainer.SetText(g.model.StateContainer.String())
 		if !g.model.GetConfig().Enabled {
 			g.lbContainer.SetText("Disabled")
 		}
 		g.btnOpenNodeUI.SetEnabled(g.model.IsRunning())
-		//g.lbVersionLatest.SetText(g.model.VersionLatest)
 
 		g.lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
-		g.lbVersionUpdatesAvail.SetText("-")
-		if g.model.ImgVer.HasUpdate {
-			g.lbVersionUpdatesAvail.SetText(`<a id="upgrade">Yes !</a> - click to see details`)
-		}
+		g.lbVersionLatest.SetText(g.model.ImgVer.VersionLatest)
+
 		g.lbImageName.SetText(g.model.ImgVer.ImageName)
 		g.btnOpenNodeUI.SetFocus()
 
@@ -284,14 +294,41 @@ func (g *Gui) refresh() {
 
 	switch g.model.State {
 	case model2.UIStateInstallInProgress, model2.UIStateInstallFinished, model2.UIStateInstallError:
-		g.checkWindowsVersion.SetChecked(g.model.CheckWindowsVersion)
-		g.checkVirt.SetChecked(g.model.CheckVirt)
-		g.installExecutable.SetChecked(g.model.InstallExecutable)
-		g.rebootAfterWSLEnable.SetChecked(g.model.RebootAfterWSLEnable)
-		g.downloadFiles.SetChecked(g.model.DownloadFiles)
-		g.installWSLUpdate.SetChecked(g.model.InstallWSLUpdate)
-		g.installDocker.SetChecked(g.model.InstallDocker)
-		g.checkGroupMembership.SetChecked(g.model.CheckGroupMembership)
+		setState(g.checkWindowsVersion, g.model.CheckWindowsVersion)
+		setState(g.checkVirt, g.model.CheckVirt)
+		setState(g.installExecutable, g.model.InstallExecutable)
+		setState(g.rebootAfterWSLEnable, g.model.RebootAfterWSLEnable)
+		setState(g.downloadFiles, g.model.DownloadFiles)
+		setState(g.installWSLUpdate, g.model.InstallWSLUpdate)
+		setState(g.installDocker, g.model.InstallDocker)
+		setState(g.checkGroupMembership, g.model.CheckGroupMembership)
+	}
+}
+
+func setState(b *impl.StatusViewImpl, st model2.InstallStep) {
+	switch st {
+	case model2.StepInProgress:
+		b.SetState(3)
+	case model2.StepFinished:
+		b.SetState(2)
+	case model2.StepFailed:
+		b.SetState(1)
+	case model2.StepNone:
+		b.SetState(0)
+	default:
+		b.SetState(0)
+	}
+}
+func setState2(b *impl.StatusViewImpl, st model2.RunnableState) {
+	switch st {
+	case model2.RunnableStateRunning:
+		b.SetState(2)
+	case model2.RunnableStateInstalling:
+		b.SetState(3)
+	case model2.RunnableStateStarting:
+		b.SetState(3)
+	case model2.RunnableStateUnknown:
+		b.SetState(1)
 	}
 }
 
@@ -300,11 +337,7 @@ func (g *Gui) setImage() {
 		return
 	}
 
-	ico := g.ico
-	if g.model.StateContainer == model2.RunnableStateRunning {
-		ico = g.icoActive
-	}
-	img, err := walk.ImageFrom(ico)
+	img, err := walk.ImageFrom(g.logo)
 	if err != nil {
 		return
 	}
@@ -356,18 +389,26 @@ func OpenNodeUI() {
 		syscall.SW_NORMAL)
 }
 
+func OpenMMN() {
+	native.ShellExecuteAndWait(
+		0,
+		"",
+		"rundll32",
+		"url.dll,FileProtocolHandler https://my.mysterium.network/",
+		"",
+		syscall.SW_NORMAL)
+}
+
 func (g *Gui) ShowNotificationInstalled() {
 	//g.LastNotificationID = NotificationContainerStarted
 	if g.ni == nil {
 		return
 	}
-	err := g.ni.ShowCustom(
+
+	g.ni.ShowCustom(
 		"Mysterium Node successfully installed!",
 		"Click this notification to open Node UI in browser",
 		g.icon)
-
-	if err != nil {
-	}
 }
 
 func (g *Gui) ShowNotificationUpgrade() {
@@ -375,13 +416,11 @@ func (g *Gui) ShowNotificationUpgrade() {
 	if g.ni == nil {
 		return
 	}
-	err := g.ni.ShowCustom(
+
+	g.ni.ShowCustom(
 		"Upgrade available",
 		"Click this notification to see details.",
 		g.icon)
-
-	if err != nil {
-	}
 }
 
 func (g *Gui) getModalOwner() walk.Form {

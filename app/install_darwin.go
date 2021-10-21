@@ -17,9 +17,9 @@ func (s *AppState) tryInstall() bool {
 	if !s.ui.WaitDialogueComplete() {
 		return true
 	}
-
 	s.model.SwitchState(model.UIStateInstallInProgress)
 
+	s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepInProgress})
 	features, err := utils.QueryFeatures()
 	if err != nil {
 		log.Println("Failed to query feature:", err)
@@ -31,15 +31,16 @@ func (s *AppState) tryInstall() bool {
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	s.model.UpdateProperties(model.UIProps{"CheckVTx": true})
+	s.model.UpdateProperties(model.UIProps{"CheckVTx":  model.StepFinished})
 
+	s.model.UpdateProperties(model.UIProps{"CheckDocker": model.StepInProgress})
 	hasDocker, err := utils.HasDocker()
 	if err != nil {
 		log.Println("Failed to check Docker:", err)
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	s.model.UpdateProperties(model.UIProps{"CheckDocker": true})
+	s.model.UpdateProperties(model.UIProps{"CheckDocker": model.StepFinished})
 	if hasDocker {
 		s.model.SwitchState(model.UIStateInstallFinished)
 		ok := s.ui.WaitDialogueComplete()
@@ -50,6 +51,7 @@ func (s *AppState) tryInstall() bool {
 		return false
 	}
 
+	s.model.UpdateProperties(model.UIProps{"DownloadFiles": model.StepInProgress})
 	name := "Docker.dmg"
 	url, err := utils.GetDockerDesktopLink()
 	if err != nil {
@@ -68,8 +70,9 @@ func (s *AppState) tryInstall() bool {
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	s.model.UpdateProperties(model.UIProps{"DownloadFiles": true})
+	s.model.UpdateProperties(model.UIProps{"DownloadFiles": model.StepFinished})
 
+	s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepInProgress})
 	var buf bytes.Buffer
 	_, err = utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
 	if err != nil {
@@ -113,7 +116,7 @@ func (s *AppState) tryInstall() bool {
 	}
 	buf.Reset()
 
-	s.model.UpdateProperties(model.UIProps{"InstallDocker": true})
+	s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFinished})
 	log.Println("Installation succeeded")
 
 	s.model.SwitchState(model.UIStateInstallFinished)

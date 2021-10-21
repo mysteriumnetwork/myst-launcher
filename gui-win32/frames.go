@@ -3,6 +3,7 @@ package gui_win32
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	. "github.com/mysteriumnetwork/myst-launcher/widget/declarative"
 )
 
 func (g *Gui) installationWelcome() Widget {
@@ -61,65 +62,148 @@ func (g *Gui) installationDlg() Widget {
 				Children: []Widget{
 					VSpacer{ColumnSpan: 2},
 					VSeparator{ColumnSpan: 2}, // workaround
-					
-					Label{
-						Text: "Check Windows version",
+
+					Composite{
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo: &g.checkWindowsVersion,
+								MaxSize:  Size{Height: 20, Width: 20},
+							},
+							Label{
+								Text: "Check Windows version",
+							},
+							HSpacer{},
+						},
+						MaxSize:    Size{Height: 20},
+						ColumnSpan: 2,
 					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.checkWindowsVersion,
+					Composite{
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo: &g.installExecutable,
+								MaxSize:  Size{Height: 20, Width: 20},
+							},
+							Label{
+								Text: "Install executable",
+							},
+							HSpacer{},
+						},
+						MaxSize:    Size{Height: 20},
+						ColumnSpan: 2,
 					},
 
-					Label{
-						Text: "Install executable",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.installExecutable,
+					Composite{
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo: &g.checkVirt,
+								MaxSize:  Size{Height: 20, Width: 20},
+							},
+							Label{
+								Text: "Check Virtualization",
+							},
+							HSpacer{},
+						},
+						MaxSize:    Size{Height: 20},
+						ColumnSpan: 2,
 					},
 
-					Label{
-						Text: "Check Virtualization",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.checkVirt,
+					Composite{
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo: &g.rebootAfterWSLEnable,
+								MaxSize:  Size{Height: 20, Width: 20},
+							},
+							Label{
+								Text: "Reboot after WSL enable",
+							},
+							HSpacer{},
+						},
+						MaxSize:    Size{Height: 20},
+						ColumnSpan: 2,
 					},
 
-					Label{
-						Text: "Reboot after WSL enable",
+					Composite{
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo: &g.downloadFiles,
+								MaxSize:  Size{Height: 20, Width: 20},
+							},
+							Label{
+								Text: "Download files",
+							},
+							HSpacer{},
+						},
+						MaxSize:    Size{Height: 20},
+						ColumnSpan: 2,
 					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.rebootAfterWSLEnable,
+
+					Composite{
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo: &g.installWSLUpdate,
+								MaxSize:  Size{Height: 20, Width: 20},
+							},
+							Label{
+								Text: "Install WSL update",
+							},
+							HSpacer{},
+						},
+						MaxSize:    Size{Height: 20},
+						ColumnSpan: 2,
 					},
-					Label{
-						Text: "Download files",
+
+					Composite{
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo: &g.installDocker,
+								MaxSize:  Size{Height: 20, Width: 20},
+							},
+							Label{
+								Text: "Install Docker",
+							},
+							HSpacer{},
+						},
+						MaxSize:    Size{Height: 20},
+						ColumnSpan: 2,
 					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.downloadFiles,
-					},
-					Label{
-						Text: "Install WSL update",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.installWSLUpdate,
-					},
-					Label{
-						Text: "Install Docker",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.installDocker,
-					},
-					Label{
-						Text: "Check group membership (docker-users)",
-					},
-					CheckBox{
-						Enabled:  false,
-						AssignTo: &g.checkGroupMembership,
+
+					Composite{
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo: &g.checkGroupMembership,
+								MaxSize:  Size{Height: 20, Width: 20},
+							},
+							Label{
+								Text: "Check group membership (docker-users)",
+							},
+							HSpacer{},
+						},
+						MaxSize:    Size{Height: 20},
+						ColumnSpan: 2,
 					},
 
 					VSpacer{
@@ -132,6 +216,7 @@ func (g *Gui) installationDlg() Widget {
 						Text:       "Installation status:",
 						ColumnSpan: 2,
 					},
+
 					TextEdit{
 						ColumnSpan: 2,
 						RowSpan:    1,
@@ -163,23 +248,89 @@ func (g *Gui) installationDlg() Widget {
 
 func (g *Gui) stateDlg() Widget {
 	return Composite{
+		Name:    "HH",
 		Visible: false,
 		Layout: VBox{
 			MarginsZero: true,
 		},
 
 		Children: []Widget{
-			GroupBox{
-				Title:  "Status",
+			Composite{
+				AssignTo: &g.cmp,
+				MinSize:  Size{Height: 120},
+				MaxSize:  Size{Height: 120},
+
+				Children: []Widget{
+					ImageView{
+						AssignTo:  &g.img,
+						Alignment: AlignHNearVFar,
+					},
+
+					Composite{
+						AssignTo: &g.headerContainer,
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo: &g.stContainer,
+								MaxSize:  Size{Height: 20, Width: 20},
+							},
+							Label{
+								Text:     "-",
+								AssignTo: &g.lbContainer,
+								Font: Font{
+									PointSize: 8,
+									Bold:      true,
+								},
+							},
+
+							LinkLabel{
+								Text:     "<a>Node UI</a>",
+								AssignTo: &g.lbNodeUI,
+								OnLinkActivated: func(link *walk.LinkLabelLink) {
+									OpenNodeUI()
+								},
+								Alignment: AlignHNearVNear,
+							},
+							LinkLabel{
+								Text:     "<a>My Mysterium Network</a>",
+								AssignTo: &g.lbMMN,
+								OnLinkActivated: func(link *walk.LinkLabelLink) {
+									OpenMMN()
+								},
+								Alignment: AlignHNearVNear,
+							},
+						},
+						MaxSize: Size{Height: 20},
+					},
+				},
+			},
+
+			Composite{
 				Layout: Grid{Columns: 2},
 				Children: []Widget{
 					VSpacer{ColumnSpan: 2},
+					VSpacer{ColumnSpan: 2},
+
+					Label{
+						Text:     "Node info",
+						AssignTo: &g.lbDocker,
+						Font: Font{
+							PointSize: 8,
+							Bold:      true,
+						},
+					},
+					Label{
+						Text: "",
+					},
 					Label{
 						Text: "Docker Hub image name",
 					},
 					Label{
 						AssignTo: &g.lbImageName,
 					},
+
 					Label{
 						Text: "Node version installed",
 					},
@@ -188,28 +339,25 @@ func (g *Gui) stateDlg() Widget {
 						AssignTo: &g.lbVersionCurrent,
 					},
 					Label{
-						Text: "Upgrade available",
+						Text: "Latest version",
 					},
-					LinkLabel{
-						AssignTo: &g.lbVersionUpdatesAvail,
-						Text:     `-`,
-						OnLinkActivated: func(link *walk.LinkLabelLink) {
-							g.OpenUpgradeDlg()
-						},
+					Label{
+						Text:     "-",
+						AssignTo: &g.lbVersionLatest,
 					},
 
+					Label{
+						Text: "Upgrade automatically",
+					},
 					CheckBox{
-						Text:           "Upgrade automatically",
-						TextOnLeftSide: true,
-						AssignTo:       &g.autoUpgrade,
+						Text:     " ",
+						AssignTo: &g.autoUpgrade,
 						OnCheckedChanged: func() {
 							g.model.GetConfig().AutoUpgrade = g.autoUpgrade.Checked()
 							g.model.GetConfig().Save()
 						},
-						//ColumnSpan: 2,
 						MaxSize: Size{Height: 15},
 					},
-					HSpacer{Size: 1},
 
 					VSpacer{
 						ColumnSpan: 2,
@@ -217,31 +365,35 @@ func (g *Gui) stateDlg() Widget {
 					},
 
 					Label{
-						Text: "Docker",
-					},
-					Label{
-						Text:     "-",
+						Text:     "Advanced settings",
 						AssignTo: &g.lbDocker,
+						Font: Font{
+							PointSize: 8,
+							Bold:      true,
+						},
 					},
 					Label{
-						Text: "Node",
+						Text: "",
 					},
-					Label{
-						Text:     "-",
-						AssignTo: &g.lbContainer,
-					},
-					VSpacer{
-						ColumnSpan: 2,
-						Size:       20,
-					},
-
 					Label{
 						Text: "Networking mode",
 					},
-					LinkLabel{
+					Label{
 						Text:     "-",
 						AssignTo: &g.lbNetworkMode,
-						OnLinkActivated: func(link *walk.LinkLabelLink) {
+					},
+					Label{
+						Text: "",
+					},
+					PushButton{
+						Enabled:  true,
+						AssignTo: &g.btnOpenNodeUI,
+						Text:     "Config..",
+
+						OnSizeChanged: func() {
+							g.btnOpenNodeUI.SetWidthPixels(75)
+						},						
+						OnClicked: func() {
 							g.NetworkingDlg()
 						},
 					},
@@ -250,20 +402,51 @@ func (g *Gui) stateDlg() Widget {
 						Size:       20,
 					},
 
-					PushButton{
-						Enabled:  false,
-						AssignTo: &g.btnOpenNodeUI,
-						Text:     "Open Node UI",
-						OnClicked: func() {
-							OpenNodeUI()
+					Label{
+						Text: "Docker Desktop",
+						Font: Font{
+							PointSize: 8,
+							Bold:      true,
 						},
+					},
+					Label{
+						Text: "",
+					},
+					Label{
+						Text: "Status",
+					},
+					
+					Composite{
+						Layout: HBox{
+							MarginsZero: true,
+						},
+						Children: []Widget{
+							StatusView{
+								AssignTo:        &g.stDocker,
+								MaxSize:         Size{Height: 20, Width: 20},
+								OnBoundsChanged: func() {},
+							},
+							Label{
+								Text:     "-",
+								AssignTo: &g.lbDocker,
+								Font: Font{
+									PointSize: 8,
+									Bold:      true,
+								},
+							},
+						},
+						MaxSize: Size{Height: 20},
+					},
+
+					VSpacer{
 						ColumnSpan: 2,
+						Size:       20,
 					},
 
 					VSpacer{ColumnSpan: 2},
-					HSpacer{},
 				},
 			},
 		},
 	}
+
 }
