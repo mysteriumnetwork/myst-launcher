@@ -1,3 +1,4 @@
+//go:build darwin
 // +build darwin
 
 package app
@@ -11,7 +12,7 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
-// returns exit model: true means exit
+// returns exit mode: true means exit
 func (s *AppState) tryInstall() bool {
 	s.model.SwitchState(model.UIStateInstallNeeded)
 	if !s.ui.WaitDialogueComplete() {
@@ -24,6 +25,7 @@ func (s *AppState) tryInstall() bool {
 	if err != nil {
 		log.Println("Failed to query feature:", err)
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepFailed})
 		return true
 	}
 	if len(features) > 0 {
@@ -31,16 +33,18 @@ func (s *AppState) tryInstall() bool {
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	s.model.UpdateProperties(model.UIProps{"CheckVTx":  model.StepFinished})
+	s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepFinished})
 
 	s.model.UpdateProperties(model.UIProps{"CheckDocker": model.StepInProgress})
 	hasDocker, err := utils.HasDocker()
 	if err != nil {
 		log.Println("Failed to check Docker:", err)
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"CheckDocker": model.StepFailed})
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"CheckDocker": model.StepFinished})
+
 	if hasDocker {
 		s.model.SwitchState(model.UIStateInstallFinished)
 		ok := s.ui.WaitDialogueComplete()
@@ -68,6 +72,7 @@ func (s *AppState) tryInstall() bool {
 	if err != nil {
 		log.Println("Couldn't get Docker Desktop")
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"DownloadFiles": model.StepFailed})
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"DownloadFiles": model.StepFinished})
@@ -78,6 +83,7 @@ func (s *AppState) tryInstall() bool {
 	if err != nil {
 		log.Println("Failed to run command:", err)
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
 	}
 	buf.Reset()
@@ -86,6 +92,7 @@ func (s *AppState) tryInstall() bool {
 	if err != nil {
 		log.Println("Failed to run command:", err)
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
 	}
 	buf.Reset()
@@ -95,6 +102,7 @@ func (s *AppState) tryInstall() bool {
 	if err != nil {
 		log.Println("Failed to run command:", err)
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
 	}
 	buf.Reset()
@@ -104,6 +112,7 @@ func (s *AppState) tryInstall() bool {
 	if err != nil {
 		log.Println("Failed to run command:", err)
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
 	}
 	buf.Reset()
@@ -112,6 +121,7 @@ func (s *AppState) tryInstall() bool {
 	if err != nil {
 		log.Println("Failed to run command:", err)
 		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
 	}
 	buf.Reset()
