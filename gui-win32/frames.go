@@ -297,7 +297,7 @@ func (g *Gui) stateDlg() Widget {
 								Text:     "<a>My Mysterium Network</a>",
 								AssignTo: &g.lbMMN,
 								OnLinkActivated: func(link *walk.LinkLabelLink) {
-									OpenNodeUI()
+									OpenMMN()
 								},
 								Alignment: AlignHNearVNear,
 							},

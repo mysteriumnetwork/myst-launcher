@@ -389,6 +389,16 @@ func OpenNodeUI() {
 		syscall.SW_NORMAL)
 }
 
+func OpenMMN() {
+	native.ShellExecuteAndWait(
+		0,
+		"",
+		"rundll32",
+		"url.dll,FileProtocolHandler https://my.mysterium.network/",
+		"",
+		syscall.SW_NORMAL)
+}
+
 func (g *Gui) ShowNotificationInstalled() {
 	//g.LastNotificationID = NotificationContainerStarted
 	if g.ni == nil {
