@@ -40,9 +40,9 @@ func main() {
 	// Make a VersionInfo structure
 	vi := version.Info{
 		FileVersion:    [4]uint16{1, 0, 0, 0},
-		ProductVersion: [4]uint16{1, 0, 17, 0},
+		ProductVersion: [4]uint16{1, 0, 18, 0},
 	}
-	vi.Set(0x0409, version.ProductVersion, "v1.0.17")
+	vi.Set(0x0409, version.ProductVersion, "v1.0.18")
 	vi.Set(0x0409, version.ProductName, "Mysterium Network Node Launcher")
 	vi.Set(0x0409, version.CompanyName, "Mysterium Network")
 	vi.Set(0x0409, version.LegalCopyright, "Copyright \u00a9 2021 Mysterium Network")
