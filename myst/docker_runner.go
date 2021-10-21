@@ -37,7 +37,7 @@ func (r *DockerMonitor) IsRunning() (bool, bool) {
 	if !canPingDocker {
 		r.tryStartCount++
 		
-		if !r.tryStartDockerDesktop() || r.tryStartCount >= 2 {
+		if !r.tryStartDockerDesktop() || r.tryStartCount >= 20 {
 			r.tryStartCount = 0
 			return false, true
 		}
