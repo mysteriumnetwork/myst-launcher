@@ -39,7 +39,7 @@ func main() {
 
 	// Make a VersionInfo structure
 	vi := version.Info{
-		FileVersion:    [4]uint16{1, 0, 0, 0},
+		FileVersion:    [4]uint16{1, 0, 18, 0},
 		ProductVersion: [4]uint16{1, 0, 18, 0},
 	}
 	vi.Set(0x0409, version.ProductVersion, "v1.0.18")
