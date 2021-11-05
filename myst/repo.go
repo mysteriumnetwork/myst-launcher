@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package myst
 
 import (
@@ -134,7 +141,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 	}
 
 	// Reload image list if cache has no info about current version
-	if !fastPath && len(data) == 0 || mod.Config.NeedToCheckUpgrade() || currentVersion=="" {
+	if !fastPath && len(data) == 0 || mod.Config.NeedToCheckUpgrade() || currentVersion == "" {
 		ok := getFile()
 		if ok {
 			os.WriteFile(f, data, 0777)

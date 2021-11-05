@@ -1,7 +1,14 @@
 //go:build windows
 // +build windows
 
-package app
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+package ipc
 
 import (
 	"bufio"
@@ -42,7 +49,7 @@ func (p *PipeHandler) SendPopupApp() bool {
 }
 
 // send stop and own the pipe
-func  (p *PipeHandler) SendStopApp() bool {
+func (p *PipeHandler) SendStopApp() bool {
 	pipe, err := winio.DialPipe(LauncherPipeName, nil)
 	if err == nil {
 		pipe.Write([]byte("stop\n"))
@@ -80,5 +87,4 @@ func (p *PipeHandler) Listen(ui model.Gui_) {
 			handleCommand()
 		}
 	}()
-
 }

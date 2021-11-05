@@ -8,8 +8,10 @@
 package main
 
 import (
+	"github.com/mysteriumnetwork/myst-launcher/ipc"
 	"log"
 	"os"
+	"runtime"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
@@ -23,8 +25,11 @@ import (
 func main() {
 	defer utils.PanicHandler("main")
 
+	runtime.LockOSThread()
+	utils.Win32Initialize()
+
 	ap := app.NewApp()
-	p := app.NewPipeHandler()
+	p := ipc.NewPipeHandler()
 
 	if len(os.Args) > 1 {
 		ap.InTray = os.Args[1] == _const.FlagTray
@@ -46,7 +51,7 @@ func main() {
 	mod.SetApp(ap)
 	mod.Config.DuplicateLogToConsole = true
 	mod.Config.ProductVersion, _ = utils.GetProductVersion()
-	
+
 	log.Println("Initializing GDI+ ....")
 	var gpToken winapi.ULONG_PTR
 	var input gdiplus.GdiplusStartupInput
@@ -55,7 +60,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	ui := gui_win32.NewGui(mod)
 
 	// update launcher binary
@@ -80,7 +85,6 @@ func main() {
 			return
 		}
 	}
-
 
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()

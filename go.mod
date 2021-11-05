@@ -20,6 +20,7 @@ require (
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
 	github.com/winlabs/gowin32 v0.0.0-20210302152218-c9e40aa88058
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
+	golang.org/x/text v0.3.4
 	google.golang.org/grpc v1.39.0 // indirect
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 )

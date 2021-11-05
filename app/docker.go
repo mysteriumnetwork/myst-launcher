@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 package app
 
 import (
@@ -166,7 +167,7 @@ func (s *AppState) upgrade(mystManager *myst.Manager) {
 func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 
 	if s.model.Config.Enabled {
-		
+
 		s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
 		myst.CheckVersionAndUpgrades(s.model, true)
 

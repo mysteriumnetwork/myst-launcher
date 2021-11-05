@@ -1,6 +1,13 @@
 //go:build windows
 // +build windows
 
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package utils
 
 import (
@@ -442,4 +449,49 @@ func GetProductVersion() (string, error) {
 
 func ErrorModal(title, message string) int {
 	return walk.MsgBox(nil, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
+}
+
+/////
+// interfaces
+
+func GetNetworkInterfaces() bool {
+	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
+	defer unknown.Release()
+
+	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
+	defer wmi.Release()
+
+	// service is a SWbemServices
+	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
+	service := serviceRaw.ToIDispatch()
+	defer service.Release()
+
+	// result is a SWBemObjectSet
+	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_NetworkAdapter")
+	result := resultRaw.ToIDispatch()
+	defer result.Release()
+
+	countVar, _ := oleutil.GetProperty(result, "Count")
+	count := int(countVar.Val)
+
+	for i := 0; i < count; i++ {
+		itemRaw, _ := oleutil.CallMethod(result, "ItemIndex", i)
+		item := itemRaw.ToIDispatch()
+		defer item.Release()
+
+		// ti, err := item.GetTypeInfo()
+		// defer ti.Release()
+
+		fmt.Println("if>", oleutil.MustGetProperty(item, "GUID").ToString())
+		v, _ := oleutil.GetProperty(item, "Caption")
+		if v != nil {
+			fmt.Println("c>", v.Value())
+		}
+		v, _ = oleutil.GetProperty(item, "DeviceID")
+		if v != nil {
+			fmt.Println("c>", v.Value())
+		}
+
+	}
+	return false
 }
