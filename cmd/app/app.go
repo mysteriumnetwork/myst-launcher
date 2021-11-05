@@ -62,28 +62,8 @@ func main() {
 	}
 
 	ui := gui_win32.NewGui(mod)
-
-	// update launcher binary
-	if utils.LauncherUpgradeAvailable() {
-		update := ui.YesNoModal("Mysterium launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
-		if model.IDYES == update {
-			if !p.OwnsPipe() {
-				p.SendStopApp()
-				p.OpenPipe()
-			}
-			utils.UpdateExe()
-		} else {
-			if !p.OwnsPipe() {
-				p.SendPopupApp()
-				return
-			}
-		}
-		// continue execution
-	} else {
-		if !p.OwnsPipe() {
-			p.SendPopupApp()
-			return
-		}
+	if updateLauncherFromNewBinary(ui, p) {
+		return
 	}
 
 	ui.CreateNotifyIcon(mod)
@@ -107,4 +87,25 @@ func main() {
 
 	// wait for SuperviseDockerNode to finish its work
 	ap.WaitGroup.Wait()
+}
+
+// return: bool exit
+func updateLauncherFromNewBinary(ui *gui_win32.Gui, p *ipc.PipeHandler) bool {
+	if utils.LauncherUpgradeAvailable() {
+		update := ui.YesNoModal("Mysterium launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
+		if model.IDYES == update {
+			if !p.OwnsPipe() {
+				p.SendStopApp()
+				p.OpenPipe()
+			}
+			utils.UpdateExe()
+			return false
+		}
+	}
+
+	if !p.OwnsPipe() {
+		p.SendPopupApp()
+		return true
+	}
+	return false
 }

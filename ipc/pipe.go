@@ -19,7 +19,7 @@ import (
 	"github.com/Microsoft/go-winio"
 )
 
-var LauncherPipeName = `\\.\pipe\mysterium_node_launcher`
+const launcherPipeName = `\\.\pipe\mysterium_node_launcher`
 
 type PipeHandler struct {
 	pipe net.Listener
@@ -35,12 +35,12 @@ func (p *PipeHandler) OwnsPipe() bool {
 }
 
 func (p *PipeHandler) OpenPipe() {
-	l, _ := winio.ListenPipe(LauncherPipeName, nil)
+	l, _ := winio.ListenPipe(launcherPipeName, nil)
 	p.pipe = l
 }
 
 func (p *PipeHandler) SendPopupApp() bool {
-	pipe, err := winio.DialPipe(LauncherPipeName, nil)
+	pipe, err := winio.DialPipe(launcherPipeName, nil)
 	if err == nil {
 		pipe.Write([]byte("popup\n"))
 		return true
@@ -50,7 +50,7 @@ func (p *PipeHandler) SendPopupApp() bool {
 
 // send stop and own the pipe
 func (p *PipeHandler) SendStopApp() bool {
-	pipe, err := winio.DialPipe(LauncherPipeName, nil)
+	pipe, err := winio.DialPipe(launcherPipeName, nil)
 	if err == nil {
 		pipe.Write([]byte("stop\n"))
 		return true
