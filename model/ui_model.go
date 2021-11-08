@@ -40,6 +40,26 @@ type UIModel struct {
 	App    AppInterface
 	ImgVer ImageVersionInfo
 	Config Config
+
+	// state
+	CurrentImgHasOptionReportVersion bool
+	CurrentImage                     string
+	DuplicateLogToConsole            bool
+	// launcher update
+	LauncherHasUpdate       bool
+	ProductVersion          string
+	ProductVersionLatest    string
+	ProductVersionLatestUrl string
+}
+
+type ImageVersionInfo struct {
+	ImageName        string
+	CurrentImgDigest string // input value
+
+	// calculated values
+	HasUpdate      bool
+	VersionCurrent string
+	VersionLatest  string
 }
 
 func NewUIModel() *UIModel {
@@ -49,6 +69,13 @@ func NewUIModel() *UIModel {
 	m.ImgVer.ImageName = _const.GetImageName()
 
 	return m
+}
+
+func (m *UIModel) SetProductVersion(v string) {
+	m.ProductVersion = v
+	if v[0] == 'v' {
+		m.ProductVersion = v[1:]
+	}
 }
 
 func (m *UIModel) GetConfig() *Config {
@@ -149,7 +176,6 @@ func (m *UIModel) TriggerAction(action string) {
 }
 
 func (m *UIModel) TriggerAutostartAction() {
-
 	m.Config.AutoStart = !m.Config.AutoStart
 	m.Config.Save()
 	m.UIBus.Publish("model-change")

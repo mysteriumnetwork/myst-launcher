@@ -8,6 +8,7 @@
 package app
 
 import (
+	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"log"
 	"runtime"
 	"time"
@@ -28,7 +29,7 @@ func (s *AppState) SuperviseDockerNode() {
 	if err != nil {
 		panic(err) // TODO handle gracefully
 	}
-	docker := myst.NewDockerMonitor(mystManager)
+	docker := NewDockerMonitor(mystManager)
 
 	t1 := time.NewTicker(15 * time.Second)
 	s.model.Update()
@@ -37,7 +38,7 @@ func (s *AppState) SuperviseDockerNode() {
 		tryStartOrInstallDocker := func() bool {
 			log.Println("tryStartOrInstallDocker")
 
-			isRunning_ := docker.IsRunningSimple()
+			isRunning_ := docker.IsRunningShort()
 			if isRunning_ {
 				s.model.SetStateDocker(model.RunnableStateRunning)
 				return false
@@ -112,7 +113,7 @@ func (s *AppState) SuperviseDockerNode() {
 			switch act {
 			case "check":
 				s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-				myst.CheckVersionAndUpgrades(s.model, false)
+				updates.CheckVersionAndUpgrades(s.model, false)
 
 			case "upgrade":
 				s.upgrade(mystManager)
@@ -125,7 +126,7 @@ func (s *AppState) SuperviseDockerNode() {
 				s.model.Config.Enabled = true
 				s.model.Config.Save()
 				s.model.SetStateContainer(model.RunnableStateStarting)
-				mystManager.Start(s.model.GetConfig())
+				mystManager.Start(s.model)
 				s.model.SetStateContainer(model.RunnableStateRunning)
 
 			case "disable":
@@ -146,7 +147,7 @@ func (s *AppState) SuperviseDockerNode() {
 
 func (s *AppState) restart(mystManager *myst.Manager) {
 	s.model.SetStateContainer(model.RunnableStateInstalling)
-	err := mystManager.Restart(s.model.GetConfig())
+	err := mystManager.Restart(s.model)
 	if err != nil {
 		log.Println("restart", err)
 	}
@@ -154,24 +155,23 @@ func (s *AppState) restart(mystManager *myst.Manager) {
 
 func (s *AppState) upgrade(mystManager *myst.Manager) {
 	s.model.SetStateContainer(model.RunnableStateInstalling)
-	err := mystManager.Update(s.model.GetConfig())
+	err := mystManager.Update(s.model)
 	if err != nil {
 		log.Println("upgrade", err)
 	}
 
 	s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-	myst.CheckVersionAndUpgrades(s.model, false)
+	updates.CheckVersionAndUpgrades(s.model, false)
 }
 
 // check for image updates before starting container, offer upgrade interactively
 func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 
 	if s.model.Config.Enabled {
-
 		s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-		myst.CheckVersionAndUpgrades(s.model, true)
+		updates.CheckVersionAndUpgrades(s.model, true)
 
-		containerAlreadyRunning, err := mystManager.Start(s.model.GetConfig())
+		containerAlreadyRunning, err := mystManager.Start(s.model)
 		if err != nil {
 			s.model.SetStateContainer(model.RunnableStateUnknown)
 			log.Println("upgradeImageAndRun", err)
@@ -186,7 +186,7 @@ func (s *AppState) upgradeImageAndRun(mystManager *myst.Manager) {
 	}
 
 	s.model.ImgVer.CurrentImgDigest = mystManager.GetCurrentImageDigest()
-	myst.CheckVersionAndUpgrades(s.model, false)
+	updates.CheckVersionAndUpgrades(s.model, false)
 
 	if s.model.Config.AutoUpgrade && s.model.ImgVer.HasUpdate {
 		s.upgrade(mystManager)

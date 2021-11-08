@@ -5,8 +5,10 @@ go 1.16
 require (
 	github.com/Microsoft/go-winio v0.4.17
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
+	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/jsonparser v0.0.0-20180808090653-f4dd9f5a6b44
 	github.com/containerd/containerd v1.5.3 // indirect
+	github.com/coreos/go-semver v0.3.0
 	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/go-ole/go-ole v1.2.5
@@ -19,8 +21,8 @@ require (
 	github.com/tryor/gdiplus v0.0.0-20200830101413-c570de9579b3
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
 	github.com/winlabs/gowin32 v0.0.0-20210302152218-c9e40aa88058
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
-	golang.org/x/text v0.3.4
 	google.golang.org/grpc v1.39.0 // indirect
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 )

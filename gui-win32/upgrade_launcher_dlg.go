@@ -12,25 +12,25 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
-func (g *Gui) OpenUpgradeDlg() {
+func (g *Gui) OpenUpgradeLauncherDlg() {
 	var (
 		dialog             *walk.Dialog
 		acceptPB, cancelPB *walk.PushButton
 		lbVersionCurrent   *walk.Label
 		lbVersionLatest    *walk.Label
-		lbImageName        *walk.Label
 	)
 
 	refresh := func() {
-		lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
-		lbVersionLatest.SetText(g.model.ImgVer.VersionLatest)
-		lbImageName.SetText(g.model.ImgVer.ImageName)
-		acceptPB.SetEnabled(g.model.ImgVer.HasUpdate)
+		dialog.Synchronize(func() {
+			lbVersionCurrent.SetText(g.model.ProductVersion)
+			lbVersionLatest.SetText(g.model.ProductVersionLatest)
+			acceptPB.SetEnabled(g.model.LauncherHasUpdate)
+		})
 	}
 
 	err := Dialog{
 		AssignTo:      &dialog,
-		Title:         "Would you like to upgrade node?",
+		Title:         "Would you like to upgrade launcher?",
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		MinSize:       Size{400, 175},
@@ -42,44 +42,37 @@ func (g *Gui) OpenUpgradeDlg() {
 		Children: []Widget{
 			VSpacer{ColumnSpan: 2},
 			Label{
-				Text: "Docker Hub image name",
+				ColumnSpan: 2,
+				Text:       "Mysterium Network launcher",
 			},
+
 			Label{
-				Text:     "-",
-				AssignTo: &lbImageName,
-			},
-			Label{
-				Text: "Node version installed",
+				Text: "Installed Version",
 			},
 			Label{
 				Text:     "-",
 				AssignTo: &lbVersionCurrent,
 			},
 			Label{
-				Text: "Node version latest",
+				Text: "Latest Version",
 			},
 			Label{
 				Text:     "-",
 				AssignTo: &lbVersionLatest,
 			},
+
 			VSpacer{ColumnSpan: 2},
 			Composite{
 				ColumnSpan: 2,
 				Layout:     HBox{},
 				Children: []Widget{
 					PushButton{
-						AssignTo: &acceptPB,
-						Text:     "Yes",
+						AssignTo:    &acceptPB,
+						Text:        "Download latest version",
+						ToolTipText: "Open link in browser",
 						OnClicked: func() {
 							dialog.Accept()
-							g.model.App.TriggerAction("upgrade")
-						},
-					},
-					PushButton{
-						AssignTo: &cancelPB,
-						Text:     "No",
-						OnClicked: func() {
-							dialog.Cancel()
+							openUrlInBrowser(g.model.ProductVersionLatestUrl)
 						},
 					},
 				},

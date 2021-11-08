@@ -18,7 +18,6 @@ import (
 
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 
@@ -174,7 +173,7 @@ func (s *AppState) tryInstall() bool {
 		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
 	}
-	if err := myst.StartDockerDesktop(); err != nil {
+	if err := StartDockerDesktop(); err != nil {
 		log.Println("Failed starting docker:", err)
 
 		s.model.SwitchState(model.UIStateInstallError)

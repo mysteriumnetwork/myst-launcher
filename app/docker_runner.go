@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package myst
+package app
 
 import (
 	"errors"
+	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"log"
 	"os"
 	"os/exec"
@@ -17,19 +18,19 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
-type DockerMonitor struct {
+type DockerRunner struct {
 	tryStartCount int
-	m             *Manager
+	m             *myst.Manager
 }
 
-func NewDockerMonitor(m *Manager) *DockerMonitor {
-	return &DockerMonitor{
+func NewDockerMonitor(m *myst.Manager) *DockerRunner {
+	return &DockerRunner{
 		tryStartCount: 0,
 		m:             m,
 	}
 }
 
-func (r *DockerMonitor) IsRunningSimple() bool {
+func (r *DockerRunner) IsRunningShort() bool {
 	canPingDocker := r.m.CanPingDocker()
 	if canPingDocker {
 		r.tryStartCount = 0
@@ -38,7 +39,7 @@ func (r *DockerMonitor) IsRunningSimple() bool {
 }
 
 // return values: isRunning, couldNotStart
-func (r *DockerMonitor) IsRunning() (bool, bool) {
+func (r *DockerRunner) IsRunning() (bool, bool) {
 	canPingDocker := r.m.CanPingDocker()
 
 	if !canPingDocker {
@@ -54,7 +55,7 @@ func (r *DockerMonitor) IsRunning() (bool, bool) {
 	return true, false
 }
 
-func (r *DockerMonitor) tryStartDockerDesktop() bool {
+func (r *DockerRunner) tryStartDockerDesktop() bool {
 	exe := "Docker Desktop.exe"
 	if runtime.GOOS == "darwin" {
 		exe = "Docker"

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package myst
+package updates
 
 import (
 	"io/ioutil"
@@ -33,10 +33,8 @@ func checkVersionRequirement(v string, minVersion []int) bool {
 		return false
 	}
 	versionParts := versionRegex.FindAllStringSubmatch(v, -1)
-	// log.Println("versionParts", versionParts[0][1:])
 
 	verMatches := false
-
 	for k, v := range versionParts[0][1:] {
 		i, _ := strconv.Atoi(v)
 
@@ -137,7 +135,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 		updateUI()
 	}
 	if checkVersionRequirement(currentVersion, minVersion) {
-		mod.GetConfig().CurrentImgHasOptionReportVersion = true
+		mod.CurrentImgHasOptionReportVersion = true
 	}
 
 	// Reload image list if cache has no info about current version
@@ -150,7 +148,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 			updateUI()
 
 			if checkVersionRequirement(currentVersion, minVersion) {
-				mod.GetConfig().CurrentImgHasOptionReportVersion = true
+				mod.CurrentImgHasOptionReportVersion = true
 			}
 		}
 	}

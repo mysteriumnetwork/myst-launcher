@@ -262,6 +262,7 @@ func (g *Gui) stateDlg() Widget {
 		},
 
 		Children: []Widget{
+
 			Composite{
 				AssignTo: &g.cmp,
 				MinSize:  Size{Height: 120},
@@ -291,7 +292,6 @@ func (g *Gui) stateDlg() Widget {
 									Bold:      true,
 								},
 							},
-
 							LinkLabel{
 								Text:     "<a>Node UI</a>",
 								AssignTo: &g.lbNodeUI,
@@ -305,6 +305,15 @@ func (g *Gui) stateDlg() Widget {
 								AssignTo: &g.lbMMN,
 								OnLinkActivated: func(link *walk.LinkLabelLink) {
 									OpenMMN()
+								},
+								Alignment: AlignHNearVNear,
+							},
+							LinkLabel{
+								Visible:  false,
+								Text:     "<a>Update for launcher</a>",
+								AssignTo: &g.lbUpdateLauncher,
+								OnLinkActivated: func(link *walk.LinkLabelLink) {
+									g.OpenUpgradeLauncherDlg()
 								},
 								Alignment: AlignHNearVNear,
 							},
@@ -426,14 +435,19 @@ func (g *Gui) stateDlg() Widget {
 					Composite{
 						Layout: HBox{
 							MarginsZero: true,
+							//Margins:   Margins{},
+							Alignment: AlignHNearVNear,
+							Spacing:   0,
 						},
 						Children: []Widget{
 							StatusView{
-								AssignTo:        &g.stDocker,
-								MaxSize:         Size{Height: 20, Width: 20},
-								OnBoundsChanged: func() {},
+								AssignTo: &g.stDocker,
+								MaxSize:  Size{Height: 20, Width: 20},
 							},
 							Label{
+								Accessibility: Accessibility{
+									Role: AccRoleStatictext,
+								},
 								Text:     "-",
 								AssignTo: &g.lbDocker,
 								Font: Font{

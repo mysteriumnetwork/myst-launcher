@@ -91,7 +91,7 @@ func (m *Manager) CanPingDocker() bool {
 }
 
 // Returns: alreadyRunning, error
-func (m *Manager) Start(c *model.Config) (bool, error) {
+func (m *Manager) Start(mm *model.UIModel) (bool, error) {
 
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
@@ -99,7 +99,7 @@ func (m *Manager) Start(c *model.Config) (bool, error) {
 			log.Println("pullMystLatest >", err)
 			return false, err
 		}
-		if err := m.createMystContainer(c); err != nil {
+		if err := m.createMystContainer(mm); err != nil {
 			fmt.Println("createMystContainer >", err)
 			return false, err
 		}
@@ -111,8 +111,8 @@ func (m *Manager) Start(c *model.Config) (bool, error) {
 
 	// container isn't running yet
 	// refresh config if image has support of a given option
-	if c.CurrentImgHasOptionReportVersion && !strings.Contains(mystContainer.Command, reportVerFlag) {
-		return true, m.Restart(c)
+	if mm.CurrentImgHasOptionReportVersion && !strings.Contains(mystContainer.Command, reportVerFlag) {
+		return true, m.Restart(mm)
 	}
 
 	if mystContainer.IsRunning() {
@@ -135,7 +135,7 @@ func (m *Manager) Stop() error {
 }
 
 // stop, apply settings and start
-func (m *Manager) Restart(c *model.Config) error {
+func (m *Manager) Restart(mm *model.UIModel) error {
 	log.Println("Restart >")
 	mystContainer, err := m.findMystContainer()
 	if err != nil && err != ErrContainerNotFound {
@@ -151,15 +151,15 @@ func (m *Manager) Restart(c *model.Config) error {
 		return wrap(err, ErrCouldNotRemoveImage)
 	}
 
-	c.CurrentImage = mystContainer.Image // possibly don't update an image
-	err = m.createMystContainer(c)
+	mm.CurrentImage = mystContainer.Image // possibly don't update an image
+	err = m.createMystContainer(mm)
 	if err != nil {
 		return err
 	}
 	return m.startMystContainer()
 }
 
-func (m *Manager) Update(c *model.Config) error {
+func (m *Manager) Update(mm *model.UIModel) error {
 	err := m.pullMystLatest()
 	if err != nil {
 		return err
@@ -180,8 +180,8 @@ func (m *Manager) Update(c *model.Config) error {
 		}
 	}
 
-	c.CurrentImage = "" // force update an image
-	err = m.createMystContainer(c)
+	mm.CurrentImage = "" // force update an image
+	err = m.createMystContainer(mm)
 	if err != nil {
 		return err
 	}
@@ -232,7 +232,8 @@ func (m *Manager) pullMystLatest() error {
 	return nil
 }
 
-func (m *Manager) createMystContainer(c *model.Config) error {
+func (m *Manager) createMystContainer(mm *model.UIModel) error {
+	c := mm.Config
 	log.Println("createMystContainer >")
 	portSpecs := []string{
 		"4449/tcp",
@@ -240,8 +241,8 @@ func (m *Manager) createMystContainer(c *model.Config) error {
 	cmdArgs := []string{
 		"service", "--agreed-terms-and-conditions",
 	}
-	if c.CurrentImgHasOptionReportVersion {
-		versionArg := fmt.Sprintf("%s=%s/%s", reportVerFlag, c.ProductVersion, runtime.GOOS)
+	if mm.CurrentImgHasOptionReportVersion {
+		versionArg := fmt.Sprintf("%s=%s/%s", reportVerFlag, mm.ProductVersion, runtime.GOOS)
 		cmdArgs = append([]string{versionArg}, cmdArgs...)
 	}
 
@@ -260,8 +261,8 @@ func (m *Manager) createMystContainer(c *model.Config) error {
 	}
 
 	image := _const.GetImageName()
-	if c.CurrentImage != "" {
-		image = c.CurrentImage
+	if mm.CurrentImage != "" {
+		image = mm.CurrentImage
 	}
 
 	config := &container.Config{

@@ -32,10 +32,10 @@ type Config struct {
 	PortRangeEnd         int  `json:"port_range_end"`
 
 	// state
-	CurrentImgHasOptionReportVersion bool   `json:"-"`
-	DuplicateLogToConsole            bool   `json:"-"`
-	CurrentImage                     string `json:"-"`
-	ProductVersion                   string `json:"-"`
+	//CurrentImgHasOptionReportVersion bool   `json:"-"`
+	//DuplicateLogToConsole bool `json:"-"`
+	//CurrentImage                     string `json:"-"`
+	//ProductVersion                   string `json:"-"`
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {
@@ -87,15 +87,4 @@ func (c *Config) Save() {
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", " ")
 	enc.Encode(&c)
-}
-
-///
-type ImageVersionInfo struct {
-	ImageName        string
-	CurrentImgDigest string // input value
-
-	// calculated values
-	HasUpdate      bool
-	VersionCurrent string
-	VersionLatest  string
 }

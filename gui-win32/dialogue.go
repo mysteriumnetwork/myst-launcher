@@ -85,15 +85,16 @@ type Gui struct {
 	icoActive   *walk.Icon
 
 	model              *model2.UIModel
-	LastNotificationID NotificationTypeID
+	lastNotificationID NotificationTypeID
 
 	waitClick chan int
 	bus       EventBus.Bus
 
-	cmp             *walk.Composite
-	headerContainer *walk.Composite
-	lbNodeUI        *walk.LinkLabel
-	lbMMN           *walk.LinkLabel
+	cmp              *walk.Composite
+	headerContainer  *walk.Composite
+	lbNodeUI         *walk.LinkLabel
+	lbMMN            *walk.LinkLabel
+	lbUpdateLauncher *walk.LinkLabel
 }
 
 func NewGui(m *model2.UIModel) *Gui {
@@ -158,9 +159,9 @@ func (g *Gui) CreateMainWindow() {
 	g.lbContainer.SetBounds(walk.Rectangle{25, 0, 70, 20})
 	g.lbNodeUI.SetBounds(walk.Rectangle{120, 4, 150, 20})
 	g.lbMMN.SetBounds(walk.Rectangle{120, 24, 150, 20})
+	g.lbUpdateLauncher.SetBounds(walk.Rectangle{120, 44, 150, 20})
 
 	g.dlg.SetVisible(!g.model.App.GetInTray())
-
 	g.setImage()
 
 	// Events
@@ -271,6 +272,8 @@ func (g *Gui) refresh() {
 		g.lbImageName.SetText(g.model.ImgVer.ImageName)
 		g.btnOpenNodeUI.SetFocus()
 
+		g.lbUpdateLauncher.SetVisible(g.model.LauncherHasUpdate)
+
 	case model2.UIStateInstallNeeded:
 		g.enableMenu(false)
 		g.changeView(frameInsNeed)
@@ -380,6 +383,16 @@ func (g *Gui) ShowMain() {
 	g.bringMainToTop()
 }
 
+func openUrlInBrowser(url string) {
+	native.ShellExecuteAndWait(
+		0,
+		"",
+		"rundll32",
+		"url.dll,FileProtocolHandler "+url,
+		"",
+		syscall.SW_NORMAL)
+}
+
 func OpenNodeUI() {
 	native.ShellExecuteAndWait(
 		0,
@@ -398,30 +411,6 @@ func OpenMMN() {
 		"url.dll,FileProtocolHandler https://my.mysterium.network/",
 		"",
 		syscall.SW_NORMAL)
-}
-
-func (g *Gui) ShowNotificationInstalled() {
-	//g.LastNotificationID = NotificationContainerStarted
-	if g.ni == nil {
-		return
-	}
-
-	g.ni.ShowCustom(
-		"Mysterium Node successfully installed!",
-		"Click this notification to open Node UI in browser",
-		g.icon)
-}
-
-func (g *Gui) ShowNotificationUpgrade() {
-	//g.LastNotificationID = NotificationUpgrade
-	if g.ni == nil {
-		return
-	}
-
-	g.ni.ShowCustom(
-		"Upgrade available",
-		"Click this notification to see details.",
-		g.icon)
 }
 
 func (g *Gui) getModalOwner() walk.Form {

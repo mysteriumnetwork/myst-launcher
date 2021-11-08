@@ -8,7 +8,6 @@
 package main
 
 import (
-	"github.com/mysteriumnetwork/myst-launcher/ipc"
 	"log"
 	"os"
 	"runtime"
@@ -16,20 +15,18 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
+	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-	"github.com/tryor/gdiplus"
-	"github.com/tryor/winapi"
 )
 
 func main() {
 	defer utils.PanicHandler("main")
-
 	runtime.LockOSThread()
 	utils.Win32Initialize()
 
 	ap := app.NewApp()
-	p := ipc.NewPipeHandler()
+	ipc := ipc_.NewHandler()
 
 	if len(os.Args) > 1 {
 		ap.InTray = os.Args[1] == _const.FlagTray
@@ -41,7 +38,7 @@ func main() {
 			return
 
 		case _const.FlagUninstall:
-			p.SendStopApp()
+			ipc.SendStopApp()
 			utils.UninstallExe()
 			return
 		}
@@ -49,20 +46,15 @@ func main() {
 
 	mod := model.NewUIModel()
 	mod.SetApp(ap)
-	mod.Config.DuplicateLogToConsole = true
-	mod.Config.ProductVersion, _ = utils.GetProductVersion()
+	mod.DuplicateLogToConsole = true
 
-	log.Println("Initializing GDI+ ....")
-	var gpToken winapi.ULONG_PTR
-	var input gdiplus.GdiplusStartupInput
-	input.GdiplusVersion = 1
-	_, err := gdiplus.Startup(&gpToken, &input, nil)
-	if err != nil {
-		panic(err)
-	}
+	prodVersion, _ := utils.GetProductVersion()
+	prodVersion = "1.0.0"
+	mod.SetProductVersion(prodVersion)
 
+	gui_win32.InitGDIPlus()
 	ui := gui_win32.NewGui(mod)
-	if updateLauncherFromNewBinary(ui, p) {
+	if updateLauncherFromNewBinary(ui, ipc) {
 		return
 	}
 
@@ -74,23 +66,23 @@ func main() {
 	ap.WaitGroup.Add(1)
 
 	go ap.SuperviseDockerNode()
-	p.Listen(ui)
+	go ap.CheckLauncherUpdates()
+
+	ipc.Listen(ui)
 
 	log.SetOutput(ap)
 
 	// Run the message loop
 	ui.Run()
-	gdiplus.GdiplusShutdown(gpToken)
+	gui_win32.ShutdownGDIPlus()
 
 	// send stop action to SuperviseDockerNode
 	ap.TriggerAction("stop")
-
-	// wait for SuperviseDockerNode to finish its work
-	ap.WaitGroup.Wait()
+	ap.Shutdown()
 }
 
 // return: bool exit
-func updateLauncherFromNewBinary(ui *gui_win32.Gui, p *ipc.PipeHandler) bool {
+func updateLauncherFromNewBinary(ui *gui_win32.Gui, p *ipc_.Handler) bool {
 	if utils.LauncherUpgradeAvailable() {
 		update := ui.YesNoModal("Mysterium launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
 		if model.IDYES == update {

@@ -21,25 +21,25 @@ import (
 
 const launcherPipeName = `\\.\pipe\mysterium_node_launcher`
 
-type PipeHandler struct {
+type Handler struct {
 	pipe net.Listener
 }
 
-func NewPipeHandler() *PipeHandler {
-	h := &PipeHandler{}
+func NewHandler() *Handler {
+	h := &Handler{}
 	h.OpenPipe()
 	return h
 }
-func (p *PipeHandler) OwnsPipe() bool {
+func (p *Handler) OwnsPipe() bool {
 	return p.pipe != nil
 }
 
-func (p *PipeHandler) OpenPipe() {
+func (p *Handler) OpenPipe() {
 	l, _ := winio.ListenPipe(launcherPipeName, nil)
 	p.pipe = l
 }
 
-func (p *PipeHandler) SendPopupApp() bool {
+func (p *Handler) SendPopupApp() bool {
 	pipe, err := winio.DialPipe(launcherPipeName, nil)
 	if err == nil {
 		pipe.Write([]byte("popup\n"))
@@ -49,7 +49,7 @@ func (p *PipeHandler) SendPopupApp() bool {
 }
 
 // send stop and own the pipe
-func (p *PipeHandler) SendStopApp() bool {
+func (p *Handler) SendStopApp() bool {
 	pipe, err := winio.DialPipe(launcherPipeName, nil)
 	if err == nil {
 		pipe.Write([]byte("stop\n"))
@@ -58,7 +58,7 @@ func (p *PipeHandler) SendStopApp() bool {
 	return false
 }
 
-func (p *PipeHandler) Listen(ui model.Gui_) {
+func (p *Handler) Listen(ui model.Gui_) {
 	if p.pipe == nil {
 		return
 	}

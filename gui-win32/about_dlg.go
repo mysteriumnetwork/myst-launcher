@@ -24,7 +24,7 @@ func (g *Gui) OpenAboutDlg() {
 	)
 
 	data := &AboutDlgData{}
-	data.Version = "Version: " + g.model.Config.ProductVersion
+	data.Version = "Version: " + g.model.ProductVersion
 
 	dlg := Dialog{
 		AssignTo:      &dialog,
