@@ -49,7 +49,6 @@ func main() {
 	mod.DuplicateLogToConsole = true
 
 	prodVersion, _ := utils.GetProductVersion()
-	prodVersion = "1.0.0"
 	mod.SetProductVersion(prodVersion)
 
 	gui_win32.InitGDIPlus()
