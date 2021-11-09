@@ -30,7 +30,7 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 
 	err := Dialog{
 		AssignTo:      &dialog,
-		Title:         "Would you like to upgrade launcher?",
+		Title:         "New version of launcher available",
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		MinSize:       Size{400, 175},
@@ -82,14 +82,13 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 	if err != nil {
 		return
 	}
+	dialog.Activating().Once(func() {
+		dialog.SetX(g.dlg.X() + 300)
+		refresh()
+		g.model.UIBus.Subscribe("model-change", refresh)
+	})
 	dialog.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
 		g.model.UIBus.Unsubscribe("model-change", refresh)
 	})
-	dialog.Disposing()
-
-	dialog.Show()
-	dialog.SetX(g.dlg.X() + 300)
-	refresh()
-
-	g.model.UIBus.Subscribe("model-change", refresh)
+	dialog.Run()
 }

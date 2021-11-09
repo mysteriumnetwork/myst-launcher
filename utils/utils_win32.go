@@ -109,7 +109,7 @@ func LauncherUpgradeAvailable() bool {
 		return false
 	}
 
-	return strings.Compare(verToStr(ver.FixedInfo().FileVersion), verToStr(verDst.FixedInfo().FileVersion)) > 0
+	return strings.Compare(verToStr(ver.FixedInfo().ProductVersion), verToStr(verDst.FixedInfo().ProductVersion)) > 0
 }
 
 // install exe if n/e

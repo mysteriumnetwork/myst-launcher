@@ -340,6 +340,51 @@ func (g *Gui) stateDlg() Widget {
 					Label{
 						Text: "",
 					},
+
+					Label{
+						Text: "Network",
+					},
+					Composite{
+						Alignment: AlignHNearVCenter,
+						Layout: HBox{
+							MarginsZero: true,
+							Spacing:     0,
+						},
+
+						Children: []Widget{
+							Label{
+								Text:      "-",
+								AssignTo:  &g.lbNetwork,
+								Alignment: AlignHNearVCenter,
+							},
+							PushButton{
+								Alignment: AlignHNearVCenter,
+								Enabled:   true,
+								AssignTo:  &g.btnMainNet,
+								Text:      "Update to MainNet..",
+
+								OnSizeChanged: func() {
+									g.btnMainNet.SetWidthPixels(115)
+								},
+								OnClicked: func() {
+									g.OpenUpgradeNetworkDlg()
+								},
+							},
+							//HSpacer{StretchFactor: 0},
+						},
+					},
+					Label{
+						Text: "",
+					},
+					LinkLabel{
+						Text: "<a>Information about MainNet</a>",
+						OnLinkActivated: func(link *walk.LinkLabelLink) {
+							openUrlInBrowser("https://mysterium.network/")
+						},
+						Alignment: AlignHNearVNear,
+					},
+					VSpacer{ColumnSpan: 2, Size: 10},
+
 					Label{
 						Text: "Docker Hub image name",
 					},

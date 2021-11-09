@@ -18,7 +18,6 @@ import (
 
 	"github.com/buger/jsonparser"
 
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -85,6 +84,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 	latestVersion := ""
 	currentVersion := ""
 
+	imageTag := mod.Config.GetImageTag()
 	parseJson := func() {
 		jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err_ error) {
 			name, err := jsonparser.GetString(value, "name")
@@ -99,11 +99,11 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 					return
 				}
 
-				if name == _const.ImageTag {
+				if name == imageTag {
 					latestDigest = digest
 				}
-				// a work-around for testnet3, b/c there's only 1 version of image
-				if _const.ImageTag == "testnet3" {
+				// a work-around for custom tags like testnet3, which have only 1 version of image
+				if imageTag != "latest" {
 					match = true
 				}
 

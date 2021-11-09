@@ -64,6 +64,9 @@ type Gui struct {
 	lbNetworkMode *walk.Label
 	btnOpenNodeUI *walk.PushButton
 
+	lbNetwork  *walk.Label
+	btnMainNet *walk.PushButton
+
 	// install
 	lbInstallationStatus *walk.TextEdit
 	btnBegin             *walk.PushButton
@@ -200,6 +203,11 @@ func (g *Gui) CreateMainWindow() {
 			g.refresh()
 		})
 	})
+	g.model.UIBus.Subscribe("launcher-update", func() {
+		g.dlg.Synchronize(func() {
+			g.OpenUpgradeLauncherDlg()
+		})
+	})
 
 	// prevent closing the app
 	g.dlg.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
@@ -269,10 +277,13 @@ func (g *Gui) refresh() {
 		g.lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
 		g.lbVersionLatest.SetText(g.model.ImgVer.VersionLatest)
 
-		g.lbImageName.SetText(g.model.ImgVer.ImageName)
+		g.lbImageName.SetText(g.model.Config.GetFullImageName())
 		g.btnOpenNodeUI.SetFocus()
 
 		g.lbUpdateLauncher.SetVisible(g.model.LauncherHasUpdate)
+
+		g.lbNetwork.SetText(g.model.Config.GetNetworkCaption())
+		g.btnMainNet.SetVisible(g.model.Config.Network != "mainnet")
 
 	case model2.UIStateInstallNeeded:
 		g.enableMenu(false)
@@ -394,23 +405,11 @@ func openUrlInBrowser(url string) {
 }
 
 func OpenNodeUI() {
-	native.ShellExecuteAndWait(
-		0,
-		"",
-		"rundll32",
-		"url.dll,FileProtocolHandler http://localhost:4449/",
-		"",
-		syscall.SW_NORMAL)
+	openUrlInBrowser("http://localhost:4449/")
 }
 
 func OpenMMN() {
-	native.ShellExecuteAndWait(
-		0,
-		"",
-		"rundll32",
-		"url.dll,FileProtocolHandler https://my.mysterium.network/",
-		"",
-		syscall.SW_NORMAL)
+	openUrlInBrowser("https://my.mysterium.network/")
 }
 
 func (g *Gui) getModalOwner() walk.Form {

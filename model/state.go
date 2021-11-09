@@ -9,6 +9,7 @@ package model
 
 import (
 	"encoding/json"
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"log"
 	"os"
 	"time"
@@ -31,11 +32,29 @@ type Config struct {
 	PortRangeBegin       int  `json:"port_range_begin"`
 	PortRangeEnd         int  `json:"port_range_end"`
 
-	// state
-	//CurrentImgHasOptionReportVersion bool   `json:"-"`
-	//DuplicateLogToConsole bool `json:"-"`
-	//CurrentImage                     string `json:"-"`
-	//ProductVersion                   string `json:"-"`
+	Network string `json:"network"`
+}
+
+func (c *Config) GetImageTag() string {
+	if c.Network == "" {
+		return "latest"
+	}
+	return c.Network
+}
+
+func (c *Config) GetFullImageName() string {
+	return _const.ImageNamePrefix + ":" + c.GetImageTag()
+}
+
+func (c *Config) GetNetworkCaption() string {
+	switch c.Network {
+	case "mainnet":
+		return "MainNet"
+	case "testnet3":
+		return "TestNet3"
+	default:
+		return "TestNet3"
+	}
 }
 
 func (c *Config) RefreshLastUpgradeCheck() {

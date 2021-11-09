@@ -32,9 +32,15 @@ func (s *AppState) CheckLauncherUpdates() {
 			}
 
 			if launcherHasUpdate != s.model.LauncherHasUpdate {
+				new := s.model.ProductVersionLatestUrl != release.Assets[0].URL
+
 				s.model.LauncherHasUpdate = launcherHasUpdate
 				s.model.ProductVersionLatestUrl = release.Assets[0].URL
 				s.model.Update()
+
+				if new {
+					s.model.Publish("launcher-update")
+				}
 			}
 		}()
 

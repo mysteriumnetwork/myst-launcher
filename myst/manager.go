@@ -25,7 +25,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -53,8 +52,9 @@ var (
 )
 
 type Manager struct {
-	dockerAPI *client.Client
-	cfg       ManagerConfig
+	dockerAPI   *client.Client
+	cfg         ManagerConfig
+	launcherCfg *model.Config
 }
 
 type ManagerConfig struct {
@@ -63,11 +63,11 @@ type ManagerConfig struct {
 	DataDir      string
 }
 
-func NewManagerWithDefaults() (*Manager, error) {
-	return NewManager(defaultConfig)
+func NewManagerWithDefaults(launcherCfg *model.Config) (*Manager, error) {
+	return NewManager(defaultConfig, launcherCfg)
 }
 
-func NewManager(cfg ManagerConfig) (*Manager, error) {
+func NewManager(cfg ManagerConfig, launcherCfg *model.Config) (*Manager, error) {
 	dc, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, wrap(err, ErrCouldNotConnect)
@@ -77,8 +77,9 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 		return nil, err
 	}
 	return &Manager{
-		dockerAPI: dc,
-		cfg:       cfg,
+		dockerAPI:   dc,
+		cfg:         cfg,
+		launcherCfg: launcherCfg,
 	}, nil
 }
 
@@ -151,7 +152,6 @@ func (m *Manager) Restart(mm *model.UIModel) error {
 		return wrap(err, ErrCouldNotRemoveImage)
 	}
 
-	mm.CurrentImage = mystContainer.Image // possibly don't update an image
 	err = m.createMystContainer(mm)
 	if err != nil {
 		return err
@@ -180,7 +180,6 @@ func (m *Manager) Update(mm *model.UIModel) error {
 		}
 	}
 
-	mm.CurrentImage = "" // force update an image
 	err = m.createMystContainer(mm)
 	if err != nil {
 		return err
@@ -223,8 +222,8 @@ func (m *Manager) findMystContainer() (*Container, error) {
 }
 
 func (m *Manager) pullMystLatest() error {
-
-	out, err := m.dockerAPI.ImagePull(m.ctx(), _const.GetImageName(), types.ImagePullOptions{})
+	image := m.launcherCfg.GetFullImageName()
+	out, err := m.dockerAPI.ImagePull(m.ctx(), image, types.ImagePullOptions{})
 	if err != nil {
 		return wrap(err, ErrCouldNotPullImage)
 	}
@@ -260,11 +259,7 @@ func (m *Manager) createMystContainer(mm *model.UIModel) error {
 		return err
 	}
 
-	image := _const.GetImageName()
-	if mm.CurrentImage != "" {
-		image = mm.CurrentImage
-	}
-
+	image := m.launcherCfg.GetFullImageName()
 	config := &container.Config{
 		Image:        image,
 		ExposedPorts: nat.PortSet(exposedPorts),
@@ -293,6 +288,8 @@ func (m *Manager) createMystContainer(mm *model.UIModel) error {
 		},
 	}
 
+	//m.dockerAPI.ImageLoad()
+	//m.dockerAPI.Image
 	_, err = m.dockerAPI.ContainerCreate(m.ctx(),
 		config,
 		hostConfig,

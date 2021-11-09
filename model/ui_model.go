@@ -12,7 +12,6 @@ import (
 
 	"github.com/asaskevich/EventBus"
 
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -43,8 +42,8 @@ type UIModel struct {
 
 	// state
 	CurrentImgHasOptionReportVersion bool
-	CurrentImage                     string
 	DuplicateLogToConsole            bool
+
 	// launcher update
 	LauncherHasUpdate       bool
 	ProductVersion          string
@@ -53,7 +52,6 @@ type UIModel struct {
 }
 
 type ImageVersionInfo struct {
-	ImageName        string
 	CurrentImgDigest string // input value
 
 	// calculated values
@@ -66,7 +64,6 @@ func NewUIModel() *UIModel {
 	m := &UIModel{}
 	m.UIBus = EventBus.New()
 	m.Config.Read()
-	m.ImgVer.ImageName = _const.GetImageName()
 
 	return m
 }

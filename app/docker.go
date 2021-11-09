@@ -8,13 +8,13 @@
 package app
 
 import (
-	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"log"
 	"runtime"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
+	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -25,7 +25,7 @@ func (s *AppState) SuperviseDockerNode() {
 	utils.Win32Initialize()
 	defer s.WaitGroup.Done()
 
-	mystManager, err := myst.NewManagerWithDefaults()
+	mystManager, err := myst.NewManagerWithDefaults(&s.model.Config)
 	if err != nil {
 		panic(err) // TODO handle gracefully
 	}
