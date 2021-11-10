@@ -16,9 +16,7 @@ var (
 	APITimeout = 30 * time.Second
 
 	// BaseURL is exported for tests
-	BaseURL    = "https://api.github.com/repos/%s/%s/releases/latest"
-	gitHubOrg  = "mysteriumnetwork"
-	gitHubRepo = "myst-launcher"
+	BaseURL = "https://api.github.com/repos/%s/%s/releases/latest"
 )
 
 // Asset is a GitHub release asset
@@ -41,14 +39,12 @@ type Release struct {
 }
 
 // FetchLatestLauncherRelease fetches meta-data about the latest release from GitHub
-func FetchLatestLauncherRelease(ctx context.Context) (Release, error) {
-	owner := gitHubOrg
-	repo := gitHubRepo
+func FetchLatestLauncherRelease(ctx context.Context, githubOrg, githubRepo string) (Release, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, APITimeout)
 	defer cancel()
 
-	url := fmt.Sprintf(BaseURL, owner, repo)
+	url := fmt.Sprintf(BaseURL, githubOrg, githubRepo)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return Release{}, nil

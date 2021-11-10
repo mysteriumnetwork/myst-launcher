@@ -20,6 +20,11 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
+const (
+	gitHubOrg  = "mysteriumnetwork"
+	gitHubRepo = "myst-launcher"
+)
+
 func main() {
 	defer utils.PanicHandler("main")
 	runtime.LockOSThread()
@@ -65,7 +70,7 @@ func main() {
 	ap.WaitGroup.Add(1)
 
 	go ap.SuperviseDockerNode()
-	go ap.CheckLauncherUpdates()
+	go ap.CheckLauncherUpdates(gitHubOrg, gitHubRepo)
 
 	ipc.Listen(ui)
 

@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-func (s *AppState) CheckLauncherUpdates() {
+func (s *AppState) CheckLauncherUpdates(githubOrg, githubRepo string) {
 	ctx := context.TODO()
 
 	for {
 		func() {
-			release, err := updates.FetchLatestLauncherRelease(ctx)
+			release, err := updates.FetchLatestLauncherRelease(ctx, githubOrg, githubRepo)
 			if err != nil {
 				fmt.Println(err)
 				return
