@@ -313,7 +313,7 @@ func (g *Gui) stateDlg() Widget {
 								Text:     "<a>Update for launcher</a>",
 								AssignTo: &g.lbUpdateLauncher,
 								OnLinkActivated: func(link *walk.LinkLabelLink) {
-									g.OpenUpgradeLauncherDlg()
+									g.OpenDialogue(1)
 								},
 								Alignment: AlignHNearVNear,
 							},

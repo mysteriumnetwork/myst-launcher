@@ -204,9 +204,7 @@ func (g *Gui) CreateMainWindow() {
 		})
 	})
 	g.model.UIBus.Subscribe("launcher-update", func() {
-		g.dlg.Synchronize(func() {
-			g.OpenUpgradeLauncherDlg()
-		})
+		g.OpenDialogue(1)
 	})
 
 	// prevent closing the app
@@ -435,6 +433,14 @@ func (g *Gui) SetModalReturnCode(rc int) {}
 
 func (g *Gui) Run() {
 	g.mw.Run()
+}
+
+func (g *Gui) OpenDialogue(id int) {
+	if id == 1 {
+		g.dlg.Synchronize(func() {
+			g.OpenUpgradeLauncherDlg()
+		})
+	}
 }
 
 // returns false, if dialogue was terminated

@@ -22,9 +22,7 @@ func (g *Gui) OpenUpgradeNetworkDlg() {
 	refresh := func() {
 		dialog.Synchronize(func() {
 			lbCurrentNet.SetText(g.model.Config.GetNetworkCaption())
-			acceptPB.SetEnabled(g.model.LauncherHasUpdate)
-			acceptPB.SetFocus()
-
+			cancelPB.SetFocus()
 		})
 	}
 
@@ -33,7 +31,7 @@ func (g *Gui) OpenUpgradeNetworkDlg() {
 		Title:         "Update to MainNet..",
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
-		MinSize:       Size{300, 220},
+		MinSize:       Size{400, 220},
 		Icon:          g.icon,
 
 		Layout: Grid{
@@ -80,7 +78,8 @@ func (g *Gui) OpenUpgradeNetworkDlg() {
 						},
 					},
 					PushButton{
-						Text: "Cancel",
+						AssignTo: &cancelPB,
+						Text:     "Cancel",
 						OnClicked: func() {
 							dialog.Cancel()
 						},

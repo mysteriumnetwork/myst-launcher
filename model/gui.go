@@ -10,6 +10,7 @@ package model
 type Gui_ interface {
 	CloseUI()
 
+	OpenDialogue(id int)
 	DialogueComplete()
 	WaitDialogueComplete() bool
 	TerminateWaitDialogueComplete()
