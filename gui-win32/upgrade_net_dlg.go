@@ -76,12 +76,7 @@ func (g *Gui) OpenUpgradeNetworkDlg() {
 						Text:     "Update to MainNet",
 						OnClicked: func() {
 							dialog.Accept()
-
-							g.model.Config.Network = "mainnet"
-							g.model.Config.Save()
-							g.model.Update()
-							g.model.App.TriggerAction("upgrade")
-
+							g.model.UpdateToMainnet()
 						},
 					},
 					PushButton{

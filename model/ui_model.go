@@ -68,6 +68,13 @@ func NewUIModel() *UIModel {
 	return m
 }
 
+func (m *UIModel) UpdateToMainnet() {
+	m.Config.Network = "mainnet"
+	m.Config.Save()
+	m.Update()
+	m.App.TriggerAction("upgrade")
+}
+
 func (m *UIModel) SetProductVersion(v string) {
 	m.ProductVersion = v
 	if v[0] == 'v' {
