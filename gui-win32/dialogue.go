@@ -407,7 +407,7 @@ func OpenNodeUI() {
 }
 
 func OpenMMN() {
-	openUrlInBrowser("https://my.mysterium.network/")
+	openUrlInBrowser("https://mystnodes.com/")
 }
 
 func (g *Gui) getModalOwner() walk.Form {
