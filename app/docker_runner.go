@@ -9,12 +9,12 @@ package app
 
 import (
 	"errors"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"log"
 	"os"
 	"os/exec"
 	"runtime"
 
+	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
