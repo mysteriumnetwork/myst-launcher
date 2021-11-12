@@ -1,4 +1,11 @@
-package myst
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+package updates
 
 import (
 	"io/ioutil"
@@ -11,7 +18,6 @@ import (
 
 	"github.com/buger/jsonparser"
 
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -26,10 +32,8 @@ func checkVersionRequirement(v string, minVersion []int) bool {
 		return false
 	}
 	versionParts := versionRegex.FindAllStringSubmatch(v, -1)
-	// log.Println("versionParts", versionParts[0][1:])
 
 	verMatches := false
-
 	for k, v := range versionParts[0][1:] {
 		i, _ := strconv.Atoi(v)
 
@@ -80,6 +84,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 	latestVersion := ""
 	currentVersion := ""
 
+	imageTag := mod.Config.GetImageTag()
 	parseJson := func() {
 		jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err_ error) {
 			name, err := jsonparser.GetString(value, "name")
@@ -94,11 +99,11 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 					return
 				}
 
-				if name == _const.ImageTag {
+				if name == imageTag {
 					latestDigest = digest
 				}
-				// a work-around for testnet3, b/c there's only 1 version of image
-				if _const.ImageTag == "testnet3" {
+				// a work-around for custom tags like testnet3, which have only 1 version of image
+				if imageTag != "latest" {
 					match = true
 				}
 
@@ -130,11 +135,11 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 		updateUI()
 	}
 	if checkVersionRequirement(currentVersion, minVersion) {
-		mod.GetConfig().CurrentImgHasOptionReportVersion = true
+		mod.CurrentImgHasOptionReportVersion = true
 	}
 
 	// Reload image list if cache has no info about current version
-	if !fastPath && len(data) == 0 || mod.Config.NeedToCheckUpgrade() || currentVersion=="" {
+	if !fastPath && len(data) == 0 || mod.Config.NeedToCheckUpgrade() || currentVersion == "" {
 		ok := getFile()
 		if ok {
 			os.WriteFile(f, data, 0777)
@@ -143,7 +148,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 			updateUI()
 
 			if checkVersionRequirement(currentVersion, minVersion) {
-				mod.GetConfig().CurrentImgHasOptionReportVersion = true
+				mod.CurrentImgHasOptionReportVersion = true
 			}
 		}
 	}

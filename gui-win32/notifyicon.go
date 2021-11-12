@@ -38,9 +38,6 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 		}
 
 		g.ni.SetIcon(i)
-		// g.dlg.Synchronize(func() {
-		// 	g.dlg.SetIcon(i)
-		// })
 	})
 
 	if err := g.ni.SetIcon(g.icon); err != nil {
@@ -57,8 +54,9 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 		}
 		g.ShowMain()
 	})
+
 	g.ni.MessageClicked().Attach(func() {
-		switch g.LastNotificationID {
+		switch g.lastNotificationID {
 		case NotificationUpgrade:
 			g.OpenUpgradeDlg()
 
@@ -95,4 +93,28 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 	g.ni.ContextMenu().Actions().Add(exitAction)
 
 	g.ni.SetVisible(true)
+}
+
+func (g *Gui) ShowNotificationInstalled() {
+	g.lastNotificationID = NotificationContainerStarted
+	if g.ni == nil {
+		return
+	}
+
+	g.ni.ShowCustom(
+		"Mysterium Node successfully installed!",
+		"Click this notification to open Node UI in browser",
+		g.icon)
+}
+
+func (g *Gui) ShowNotificationUpgrade() {
+	g.lastNotificationID = NotificationUpgrade
+	if g.ni == nil {
+		return
+	}
+
+	g.ni.ShowCustom(
+		"Upgrade available",
+		"Click this notification to see details.",
+		g.icon)
 }

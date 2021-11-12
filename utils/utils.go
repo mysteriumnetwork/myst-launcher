@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package utils
 
 import (
@@ -74,8 +81,8 @@ func PanicHandler(threadName string) {
 		defer f.Close()
 
 		var bu bytes.Buffer
-		
-		v,_ := GetProductVersion()
+
+		v, _ := GetProductVersion()
 		bu.WriteString(fmt.Sprintf("Version %s: \n", v))
 		bu.WriteString(fmt.Sprintf("Stacktrace %s: \n", threadName))
 		bu.Write(debug.Stack())

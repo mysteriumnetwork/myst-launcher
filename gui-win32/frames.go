@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package gui_win32
 
 import (
@@ -255,6 +262,7 @@ func (g *Gui) stateDlg() Widget {
 		},
 
 		Children: []Widget{
+
 			Composite{
 				AssignTo: &g.cmp,
 				MinSize:  Size{Height: 120},
@@ -284,7 +292,6 @@ func (g *Gui) stateDlg() Widget {
 									Bold:      true,
 								},
 							},
-
 							LinkLabel{
 								Text:     "<a>Node UI</a>",
 								AssignTo: &g.lbNodeUI,
@@ -294,10 +301,19 @@ func (g *Gui) stateDlg() Widget {
 								Alignment: AlignHNearVNear,
 							},
 							LinkLabel{
-								Text:     "<a>My Mysterium Network</a>",
+								Text:     "<a>Mystnodes.com</a>",
 								AssignTo: &g.lbMMN,
 								OnLinkActivated: func(link *walk.LinkLabelLink) {
 									OpenMMN()
+								},
+								Alignment: AlignHNearVNear,
+							},
+							LinkLabel{
+								Visible:  false,
+								Text:     "<a>Update for launcher</a>",
+								AssignTo: &g.lbUpdateLauncher,
+								OnLinkActivated: func(link *walk.LinkLabelLink) {
+									g.OpenDialogue(1)
 								},
 								Alignment: AlignHNearVNear,
 							},
@@ -324,6 +340,51 @@ func (g *Gui) stateDlg() Widget {
 					Label{
 						Text: "",
 					},
+
+					Label{
+						Text: "Network",
+					},
+					Composite{
+						Alignment: AlignHNearVCenter,
+						Layout: HBox{
+							MarginsZero: true,
+							Spacing:     0,
+						},
+
+						Children: []Widget{
+							Label{
+								Text:      "-",
+								AssignTo:  &g.lbNetwork,
+								Alignment: AlignHNearVCenter,
+							},
+							PushButton{
+								Alignment: AlignHNearVCenter,
+								Enabled:   true,
+								AssignTo:  &g.btnMainNet,
+								Text:      "Update to MainNet..",
+
+								OnSizeChanged: func() {
+									g.btnMainNet.SetWidthPixels(115)
+								},
+								OnClicked: func() {
+									g.OpenUpgradeNetworkDlg()
+								},
+							},
+							//HSpacer{StretchFactor: 0},
+						},
+					},
+					Label{
+						Text: "",
+					},
+					LinkLabel{
+						Text: "<a>Information about MainNet</a>",
+						OnLinkActivated: func(link *walk.LinkLabelLink) {
+							openUrlInBrowser("https://mysterium.network/")
+						},
+						Alignment: AlignHNearVNear,
+					},
+					VSpacer{ColumnSpan: 2, Size: 10},
+
 					Label{
 						Text: "Docker Hub image name",
 					},
@@ -392,7 +453,7 @@ func (g *Gui) stateDlg() Widget {
 
 						OnSizeChanged: func() {
 							g.btnOpenNodeUI.SetWidthPixels(75)
-						},						
+						},
 						OnClicked: func() {
 							g.NetworkingDlg()
 						},
@@ -415,18 +476,23 @@ func (g *Gui) stateDlg() Widget {
 					Label{
 						Text: "Status",
 					},
-					
+
 					Composite{
 						Layout: HBox{
 							MarginsZero: true,
+							//Margins:   Margins{},
+							Alignment: AlignHNearVNear,
+							Spacing:   0,
 						},
 						Children: []Widget{
 							StatusView{
-								AssignTo:        &g.stDocker,
-								MaxSize:         Size{Height: 20, Width: 20},
-								OnBoundsChanged: func() {},
+								AssignTo: &g.stDocker,
+								MaxSize:  Size{Height: 20, Width: 20},
 							},
 							Label{
+								Accessibility: Accessibility{
+									Role: AccRoleStatictext,
+								},
 								Text:     "-",
 								AssignTo: &g.lbDocker,
 								Font: Font{

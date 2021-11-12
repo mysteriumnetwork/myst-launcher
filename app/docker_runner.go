@@ -1,4 +1,11 @@
-package myst
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+package app
 
 import (
 	"errors"
@@ -7,22 +14,23 @@ import (
 	"os/exec"
 	"runtime"
 
+	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
-type DockerMonitor struct {
+type DockerRunner struct {
 	tryStartCount int
-	m             *Manager
+	m             *myst.Manager
 }
 
-func NewDockerMonitor(m *Manager) *DockerMonitor {
-	return &DockerMonitor{
+func NewDockerMonitor(m *myst.Manager) *DockerRunner {
+	return &DockerRunner{
 		tryStartCount: 0,
 		m:             m,
 	}
 }
 
-func (r *DockerMonitor) IsRunningSimple() bool {
+func (r *DockerRunner) IsRunningShort() bool {
 	canPingDocker := r.m.CanPingDocker()
 	if canPingDocker {
 		r.tryStartCount = 0
@@ -31,12 +39,12 @@ func (r *DockerMonitor) IsRunningSimple() bool {
 }
 
 // return values: isRunning, couldNotStart
-func (r *DockerMonitor) IsRunning() (bool, bool) {
+func (r *DockerRunner) IsRunning() (bool, bool) {
 	canPingDocker := r.m.CanPingDocker()
 
 	if !canPingDocker {
 		r.tryStartCount++
-		
+
 		if !r.tryStartDockerDesktop() || r.tryStartCount >= 20 {
 			r.tryStartCount = 0
 			return false, true
@@ -47,7 +55,7 @@ func (r *DockerMonitor) IsRunning() (bool, bool) {
 	return true, false
 }
 
-func (r *DockerMonitor) tryStartDockerDesktop() bool {
+func (r *DockerRunner) tryStartDockerDesktop() bool {
 	exe := "Docker Desktop.exe"
 	if runtime.GOOS == "darwin" {
 		exe = "Docker"

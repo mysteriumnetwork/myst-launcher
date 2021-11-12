@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package app
 
 import (
@@ -28,6 +35,11 @@ func NewApp() *AppState {
 	return s
 }
 
+func (s *AppState) Shutdown() {
+	// wait for SuperviseDockerNode to finish its work
+	s.WaitGroup.Wait()
+}
+
 func (s *AppState) SetModel(ui *model2.UIModel) {
 	s.model = ui
 }
@@ -42,7 +54,7 @@ func (s *AppState) Write(b []byte) (int, error) {
 	bCopy := make([]byte, len(b))
 	copy(bCopy, b)
 
-	if s.model.Config.DuplicateLogToConsole {
+	if s.model.DuplicateLogToConsole {
 		fmt.Print(string(bCopy))
 	}
 

@@ -1,6 +1,13 @@
 //go:build windows
 // +build windows
 
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package app
 
 import (
@@ -11,7 +18,6 @@ import (
 
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 
@@ -44,7 +50,7 @@ func (s *AppState) tryInstall() bool {
 
 		s.ui.ConfirmModal("Installation", "Please update to Windows 10 version 2004 or above.")
 		s.model.SwitchState(model.UIStateInstallError)
-		s.model.UpdateProperties(model.UIProps{"CheckWindowsVersion":  model.StepFailed})
+		s.model.UpdateProperties(model.UIProps{"CheckWindowsVersion": model.StepFailed})
 		return true
 	}
 	s.model.UpdateProperties(model.UIProps{"CheckWindowsVersion": model.StepFinished})
@@ -54,7 +60,7 @@ func (s *AppState) tryInstall() bool {
 		log.Println("Install executable")
 		if err := utils.CheckAndInstallExe(); err != nil {
 			log.Println("Failed to install executable")
-			
+
 			s.model.SwitchState(model.UIStateInstallError)
 			return true
 		}
@@ -83,11 +89,10 @@ func (s *AppState) tryInstall() bool {
 		return true
 	}
 	// proceeding install after reboot
-	s.model.UpdateProperties(model.UIProps{"RebootAfterWSLEnable":  model.StepFinished})
-
+	s.model.UpdateProperties(model.UIProps{"RebootAfterWSLEnable": model.StepFinished})
 
 	// Instead of chechking VT-x check vmcompute service is running
-	s.model.UpdateProperties(model.UIProps{"CheckVTx":  model.StepInProgress})
+	s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepInProgress})
 	log.Println("Checking vmcompute (Hyper-V Host Compute Service)")
 	isVMComputeRunning := utils.IsVMComputeRunning()
 	if !isVMComputeRunning {
@@ -96,16 +101,16 @@ func (s *AppState) tryInstall() bool {
 		s.ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service) is not running.\r\n\r\n"+
 			"Please enable virtualization in a system BIOS: VT-x and EPT options for Intel, SVM for AMD")
 		s.model.SwitchState(model.UIStateInstallError)
-		s.model.UpdateProperties(model.UIProps{"CheckVTx":  model.StepFailed})
+		s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepFailed})
 		return true
 	}
-	s.model.UpdateProperties(model.UIProps{"CheckVTx":  model.StepFinished})
+	s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepFinished})
 
 	utils.CreateAutostartShortcut(_const.FlagTray)
 	utils.CreateDesktopShortcut("")
 	utils.CreateStartMenuShortcut("")
 
-	s.model.UpdateProperties(model.UIProps{"DownloadFiles":  model.StepInProgress})
+	s.model.UpdateProperties(model.UIProps{"DownloadFiles": model.StepInProgress})
 	download := func() error {
 		list := []struct{ url, name string }{
 			{"https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe", "DockerDesktopInstaller.exe"},
@@ -113,9 +118,9 @@ func (s *AppState) tryInstall() bool {
 		}
 		for fi, v := range list {
 			log.Println(fmt.Sprintf("Downloading %d of %d: %s", fi+1, len(list), v.name))
-			if _, err := os.Stat(os.Getenv("TMP") + "\\" + v.name); err != nil {
+			if _, err := os.Stat(utils.GetTmpDir() + "\\" + v.name); err != nil {
 
-				err := utils.DownloadFile(os.Getenv("TMP")+"\\"+v.name, v.url, func(progress int) {
+				err := utils.DownloadFile(utils.GetTmpDir()+"\\"+v.name, v.url, func(progress int) {
 					if progress%10 == 0 {
 						log.Println(fmt.Sprintf("%s - %d%%", v.name, progress))
 					}
@@ -139,45 +144,45 @@ func (s *AppState) tryInstall() bool {
 		}
 
 		s.model.SwitchState(model.UIStateInstallError)
-		s.model.UpdateProperties(model.UIProps{"DownloadFiles":  model.StepFailed})
+		s.model.UpdateProperties(model.UIProps{"DownloadFiles": model.StepFailed})
 		return true
 	}
-	s.model.UpdateProperties(model.UIProps{"DownloadFiles":  model.StepFinished})
+	s.model.UpdateProperties(model.UIProps{"DownloadFiles": model.StepFinished})
 
-	s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate":  model.StepInProgress})
+	s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate": model.StepInProgress})
 	log.Println("Installing wsl_update_x64.msi")
 	gowin32.SetInstallerInternalUI(gowin32.InstallUILevelProgressOnly) // UI Level for a prompt
-	err = gowin32.InstallProduct(os.Getenv("TMP")+"\\wsl_update_x64.msi", "ACTION=INSTALL")
+	err = gowin32.InstallProduct(utils.GetTmpDir()+"\\wsl_update_x64.msi", "ACTION=INSTALL")
 	if err != nil {
 		log.Println("InstallProduct failed (wsl_update_x64.msi)", err)
 
 		s.model.SwitchState(model.UIStateInstallError)
-		s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate":  model.StepFailed})
+		s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate": model.StepFailed})
 		return true
 	}
-	s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate":  model.StepFinished})
+	s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate": model.StepFinished})
 
-	s.model.UpdateProperties(model.UIProps{"InstallDocker":  model.StepInProgress})
+	s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepInProgress})
 	log.Println("Installing docker desktop (wait ~5 minutes)")
-	exe := os.Getenv("TMP") + "\\DockerDesktopInstaller.exe"
-	err = native.ShellExecuteAndWait(0, "runas", exe, "install --quiet", os.Getenv("TMP"), syscall.SW_NORMAL)
+	exe := utils.GetTmpDir() + "\\DockerDesktopInstaller.exe"
+	err = native.ShellExecuteAndWait(0, "runas", exe, "install --quiet", utils.GetTmpDir(), syscall.SW_NORMAL)
 	if err != nil {
 		log.Println("DockerDesktopInstaller failed:", err)
 
 		s.model.SwitchState(model.UIStateInstallError)
-		s.model.UpdateProperties(model.UIProps{"InstallDocker":  model.StepFailed})
+		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
 	}
-	if err := myst.StartDockerDesktop(); err != nil {
+	if err := StartDockerDesktop(); err != nil {
 		log.Println("Failed starting docker:", err)
 
 		s.model.SwitchState(model.UIStateInstallError)
-		s.model.UpdateProperties(model.UIProps{"InstallDocker":  model.StepFailed})
+		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
 	}
-	s.model.UpdateProperties(model.UIProps{"InstallDocker":  model.StepFinished})
+	s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFinished})
 
-	s.model.UpdateProperties(model.UIProps{"CheckGroupMembership":  model.StepInProgress})
+	s.model.UpdateProperties(model.UIProps{"CheckGroupMembership": model.StepInProgress})
 	log.Println("Checking current group membership")
 	if !utils.CurrentGroupMembership(group) {
 		// request a logout //
@@ -189,10 +194,10 @@ func (s *AppState) tryInstall() bool {
 		}
 
 		s.model.SwitchState(model.UIStateInstallError)
-		s.model.UpdateProperties(model.UIProps{"CheckGroupMembership":  model.StepFailed})
+		s.model.UpdateProperties(model.UIProps{"CheckGroupMembership": model.StepFailed})
 		return true
 	}
-	s.model.UpdateProperties(model.UIProps{"CheckGroupMembership":  model.StepFinished})
+	s.model.UpdateProperties(model.UIProps{"CheckGroupMembership": model.StepFinished})
 	s.model.Config.AutoStart = true
 	s.model.Config.Save()
 

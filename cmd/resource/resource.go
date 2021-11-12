@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package main
 
 import (
@@ -8,6 +15,13 @@ import (
 
 	"github.com/tc-hib/winres"
 	"github.com/tc-hib/winres/version"
+)
+
+var (
+	// fixed non-string version. used for launcher version checks
+	intVersion = [4]uint16{1, 0, 19, 0}
+	// display version
+	strVersion = "1.0.19"
 )
 
 func getIcon(path string) *winres.Icon {
@@ -39,10 +53,10 @@ func main() {
 
 	// Make a VersionInfo structure
 	vi := version.Info{
-		FileVersion:    [4]uint16{1, 0, 18, 0},
-		ProductVersion: [4]uint16{1, 0, 18, 0},
+		FileVersion:    intVersion,
+		ProductVersion: intVersion,
 	}
-	vi.Set(0x0409, version.ProductVersion, "v1.0.18")
+	vi.Set(0x0409, version.ProductVersion, strVersion)
 	vi.Set(0x0409, version.ProductName, "Mysterium Network Node Launcher")
 	vi.Set(0x0409, version.CompanyName, "Mysterium Network")
 	vi.Set(0x0409, version.LegalCopyright, "Copyright \u00a9 2021 Mysterium Network")

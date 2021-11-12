@@ -12,30 +12,26 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
-func (g *Gui) OpenUpgradeDlg() {
+func (g *Gui) OpenUpgradeNetworkDlg() {
 	var (
 		dialog             *walk.Dialog
 		acceptPB, cancelPB *walk.PushButton
-		lbVersionCurrent   *walk.Label
-		lbVersionLatest    *walk.Label
-		lbImageName        *walk.Label
+		lbCurrentNet       *walk.Label
 	)
 
 	refresh := func() {
 		dialog.Synchronize(func() {
-			lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
-			lbVersionLatest.SetText(g.model.ImgVer.VersionLatest)
-			lbImageName.SetText(g.model.Config.GetFullImageName())
-			acceptPB.SetEnabled(g.model.ImgVer.HasUpdate)
+			lbCurrentNet.SetText(g.model.Config.GetNetworkCaption())
+			cancelPB.SetFocus()
 		})
 	}
 
 	err := Dialog{
 		AssignTo:      &dialog,
-		Title:         "Would you like to upgrade node?",
+		Title:         "Update to MainNet..",
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
-		MinSize:       Size{400, 175},
+		MinSize:       Size{400, 220},
 		Icon:          g.icon,
 
 		Layout: Grid{
@@ -43,27 +39,31 @@ func (g *Gui) OpenUpgradeDlg() {
 		},
 		Children: []Widget{
 			VSpacer{ColumnSpan: 2},
+
 			Label{
-				Text: "Docker Hub image name",
+				Text: "Current network",
 			},
 			Label{
 				Text:     "-",
-				AssignTo: &lbImageName,
+				AssignTo: &lbCurrentNet,
 			},
 			Label{
-				Text: "Node version installed",
+				Text: "Update to",
 			},
 			Label{
-				Text:     "-",
-				AssignTo: &lbVersionCurrent,
+				Text: "MainNet",
 			},
 			Label{
-				Text: "Node version latest",
+				Text: "",
 			},
-			Label{
-				Text:     "-",
-				AssignTo: &lbVersionLatest,
+			LinkLabel{
+				Text: "<a>Information about MainNet</a>",
+				OnLinkActivated: func(link *walk.LinkLabelLink) {
+					openUrlInBrowser("https://mysterium.network/")
+				},
+				Alignment: AlignHNearVNear,
 			},
+
 			VSpacer{ColumnSpan: 2},
 			Composite{
 				ColumnSpan: 2,
@@ -71,15 +71,15 @@ func (g *Gui) OpenUpgradeDlg() {
 				Children: []Widget{
 					PushButton{
 						AssignTo: &acceptPB,
-						Text:     "Yes",
+						Text:     "Update to MainNet",
 						OnClicked: func() {
 							dialog.Accept()
-							g.model.App.TriggerAction("upgrade")
+							g.model.UpdateToMainnet()
 						},
 					},
 					PushButton{
 						AssignTo: &cancelPB,
-						Text:     "No",
+						Text:     "Cancel",
 						OnClicked: func() {
 							dialog.Cancel()
 						},

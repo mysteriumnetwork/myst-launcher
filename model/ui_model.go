@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 package model
 
 import (
@@ -11,7 +12,6 @@ import (
 
 	"github.com/asaskevich/EventBus"
 
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -39,15 +39,47 @@ type UIModel struct {
 	App    AppInterface
 	ImgVer ImageVersionInfo
 	Config Config
+
+	// state
+	CurrentImgHasOptionReportVersion bool
+	DuplicateLogToConsole            bool
+
+	// launcher update
+	LauncherHasUpdate       bool
+	ProductVersion          string
+	ProductVersionLatest    string
+	ProductVersionLatestUrl string
+}
+
+type ImageVersionInfo struct {
+	CurrentImgDigest string // input value
+
+	// calculated values
+	HasUpdate      bool
+	VersionCurrent string
+	VersionLatest  string
 }
 
 func NewUIModel() *UIModel {
 	m := &UIModel{}
 	m.UIBus = EventBus.New()
 	m.Config.Read()
-	m.ImgVer.ImageName = _const.GetImageName()
 
 	return m
+}
+
+func (m *UIModel) UpdateToMainnet() {
+	m.Config.Network = "mainnet"
+	m.Config.Save()
+	m.Update()
+	m.App.TriggerAction("upgrade")
+}
+
+func (m *UIModel) SetProductVersion(v string) {
+	m.ProductVersion = v
+	if v[0] == 'v' {
+		m.ProductVersion = v[1:]
+	}
 }
 
 func (m *UIModel) GetConfig() *Config {
@@ -148,7 +180,6 @@ func (m *UIModel) TriggerAction(action string) {
 }
 
 func (m *UIModel) TriggerAutostartAction() {
-
 	m.Config.AutoStart = !m.Config.AutoStart
 	m.Config.Save()
 	m.UIBus.Publish("model-change")

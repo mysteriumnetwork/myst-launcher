@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2021 BlockDev AG
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package gui_win32
 
 import (
@@ -17,7 +24,7 @@ func (g *Gui) OpenAboutDlg() {
 	)
 
 	data := &AboutDlgData{}
-	data.Version = "Version: " + g.model.Config.ProductVersion
+	data.Version = "Version: " + g.model.ProductVersion
 
 	dlg := Dialog{
 		AssignTo:      &dialog,
@@ -36,14 +43,14 @@ func (g *Gui) OpenAboutDlg() {
 		Children: []Widget{
 			VSpacer{ColumnSpan: 2},
 			Label{
-				Text: "Mysterium Launcher",
+				Text:       "Mysterium Launcher",
 				ColumnSpan: 2,
-				Alignment: AlignHCenterVCenter,
+				Alignment:  AlignHCenterVCenter,
 			},
 			Label{
 				ColumnSpan: 2,
-				Text: Bind("Version"),
-				Alignment: AlignHCenterVCenter,
+				Text:       Bind("Version"),
+				Alignment:  AlignHCenterVCenter,
 			},
 
 			VSpacer{ColumnSpan: 2},

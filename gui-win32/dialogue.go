@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 package gui_win32
 
 import (
@@ -63,6 +64,9 @@ type Gui struct {
 	lbNetworkMode *walk.Label
 	btnOpenNodeUI *walk.PushButton
 
+	lbNetwork  *walk.Label
+	btnMainNet *walk.PushButton
+
 	// install
 	lbInstallationStatus *walk.TextEdit
 	btnBegin             *walk.PushButton
@@ -84,15 +88,16 @@ type Gui struct {
 	icoActive   *walk.Icon
 
 	model              *model2.UIModel
-	LastNotificationID NotificationTypeID
+	lastNotificationID NotificationTypeID
 
 	waitClick chan int
 	bus       EventBus.Bus
 
-	cmp             *walk.Composite
-	headerContainer *walk.Composite
-	lbNodeUI        *walk.LinkLabel
-	lbMMN           *walk.LinkLabel
+	cmp              *walk.Composite
+	headerContainer  *walk.Composite
+	lbNodeUI         *walk.LinkLabel
+	lbMMN            *walk.LinkLabel
+	lbUpdateLauncher *walk.LinkLabel
 }
 
 func NewGui(m *model2.UIModel) *Gui {
@@ -157,9 +162,9 @@ func (g *Gui) CreateMainWindow() {
 	g.lbContainer.SetBounds(walk.Rectangle{25, 0, 70, 20})
 	g.lbNodeUI.SetBounds(walk.Rectangle{120, 4, 150, 20})
 	g.lbMMN.SetBounds(walk.Rectangle{120, 24, 150, 20})
+	g.lbUpdateLauncher.SetBounds(walk.Rectangle{120, 44, 150, 20})
 
 	g.dlg.SetVisible(!g.model.App.GetInTray())
-
 	g.setImage()
 
 	// Events
@@ -197,6 +202,9 @@ func (g *Gui) CreateMainWindow() {
 		g.dlg.Synchronize(func() {
 			g.refresh()
 		})
+	})
+	g.model.UIBus.Subscribe("launcher-update", func() {
+		g.OpenDialogue(1)
 	})
 
 	// prevent closing the app
@@ -267,8 +275,13 @@ func (g *Gui) refresh() {
 		g.lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
 		g.lbVersionLatest.SetText(g.model.ImgVer.VersionLatest)
 
-		g.lbImageName.SetText(g.model.ImgVer.ImageName)
+		g.lbImageName.SetText(g.model.Config.GetFullImageName())
 		g.btnOpenNodeUI.SetFocus()
+
+		g.lbUpdateLauncher.SetVisible(g.model.LauncherHasUpdate)
+
+		g.lbNetwork.SetText(g.model.Config.GetNetworkCaption())
+		g.btnMainNet.SetVisible(g.model.Config.Network != "mainnet")
 
 	case model2.UIStateInstallNeeded:
 		g.enableMenu(false)
@@ -379,48 +392,22 @@ func (g *Gui) ShowMain() {
 	g.bringMainToTop()
 }
 
-func OpenNodeUI() {
+func openUrlInBrowser(url string) {
 	native.ShellExecuteAndWait(
 		0,
 		"",
 		"rundll32",
-		"url.dll,FileProtocolHandler http://localhost:4449/",
+		"url.dll,FileProtocolHandler "+url,
 		"",
 		syscall.SW_NORMAL)
+}
+
+func OpenNodeUI() {
+	openUrlInBrowser("http://localhost:4449/")
 }
 
 func OpenMMN() {
-	native.ShellExecuteAndWait(
-		0,
-		"",
-		"rundll32",
-		"url.dll,FileProtocolHandler https://my.mysterium.network/",
-		"",
-		syscall.SW_NORMAL)
-}
-
-func (g *Gui) ShowNotificationInstalled() {
-	//g.LastNotificationID = NotificationContainerStarted
-	if g.ni == nil {
-		return
-	}
-
-	g.ni.ShowCustom(
-		"Mysterium Node successfully installed!",
-		"Click this notification to open Node UI in browser",
-		g.icon)
-}
-
-func (g *Gui) ShowNotificationUpgrade() {
-	//g.LastNotificationID = NotificationUpgrade
-	if g.ni == nil {
-		return
-	}
-
-	g.ni.ShowCustom(
-		"Upgrade available",
-		"Click this notification to see details.",
-		g.icon)
+	openUrlInBrowser("https://mystnodes.com/")
 }
 
 func (g *Gui) getModalOwner() walk.Form {
@@ -446,6 +433,14 @@ func (g *Gui) SetModalReturnCode(rc int) {}
 
 func (g *Gui) Run() {
 	g.mw.Run()
+}
+
+func (g *Gui) OpenDialogue(id int) {
+	if id == 1 {
+		g.dlg.Synchronize(func() {
+			g.OpenUpgradeLauncherDlg()
+		})
+	}
 }
 
 // returns false, if dialogue was terminated
