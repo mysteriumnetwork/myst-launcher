@@ -288,8 +288,6 @@ func (m *Manager) createMystContainer(mm *model.UIModel) error {
 		},
 	}
 
-	//m.dockerAPI.ImageLoad()
-	//m.dockerAPI.Image
 	_, err = m.dockerAPI.ContainerCreate(m.ctx(),
 		config,
 		hostConfig,
