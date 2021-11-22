@@ -64,8 +64,15 @@ func NewUIModel() *UIModel {
 	m := &UIModel{}
 	m.UIBus = EventBus.New()
 	m.Config.Read()
-
+	if m.Config.Network == "mainnet" {
+		m.Config.Network = ""
+		m.Config.Save()
+	}
 	return m
+}
+
+func (m *UIModel) CurrentNetIsMainNet() bool {
+	return m.Config.Network == "mainnet" || m.Config.Network == ""
 }
 
 func (m *UIModel) UpdateToMainnet() {

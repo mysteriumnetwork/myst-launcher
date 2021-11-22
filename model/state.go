@@ -53,7 +53,7 @@ func (c *Config) GetNetworkCaption() string {
 	case "testnet3":
 		return "TestNet3"
 	default:
-		return "TestNet3"
+		return "MainNet"
 	}
 }
 
