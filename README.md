@@ -17,3 +17,6 @@ On the right side of the window, system information is displayed. Make sure the 
 * Download and run myst-node-launcher
 * On finish click "Open Node UI". It will open http://localhost:4449 in browser
 * Remark: A logout might be required during an installation, if your current desktop session has no effective membership in a "docker-users" group
+
+## Screenshot
+![](screenshots/screenshot.png)
