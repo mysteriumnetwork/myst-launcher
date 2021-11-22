@@ -230,6 +230,11 @@ func (s *AppState) tryInstall() bool {
 
 func IsWSLUpdated() (bool, error) {
 	const WSLUpdateProductCode = "{36EF257E-21D5-44F7-8451-07923A8C465E}"
+	state := gowin32.GetInstalledProductState(WSLUpdateProductCode)
+	if state != gowin32.InstallStateDefault {
+		return false, nil
+	}
+
 	installedVer, err := gowin32.GetInstalledProductProperty(WSLUpdateProductCode, gowin32.InstallPropertyVersionString)
 	if err != nil {
 		return false, wrap(err, errors.New("gowin32.GetInstalledProductProperty"))
