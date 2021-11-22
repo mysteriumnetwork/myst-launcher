@@ -10,6 +10,7 @@ package myst
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -111,8 +112,13 @@ func (m *Manager) Start(mm *model.UIModel) (bool, error) {
 	}
 
 	// container isn't running yet
+
+	launcherVer := getVersionFromCommand(mystContainer.Command)
+	currentVersion := mm.ProductVersion + "/" + runtime.GOOS
+	launcherVersionChanged := launcherVer != currentVersion
+
 	// refresh config if image has support of a given option
-	if mm.CurrentImgHasOptionReportVersion && !strings.Contains(mystContainer.Command, reportVerFlag) {
+	if mm.CurrentImgHasReportVersionAbility && !strings.Contains(mystContainer.Command, reportVerFlag) || launcherVersionChanged {
 		return true, m.Restart(mm)
 	}
 
@@ -120,6 +126,22 @@ func (m *Manager) Start(mm *model.UIModel) (bool, error) {
 		return true, nil
 	}
 	return false, m.startMystContainer()
+}
+
+func getVersionFromCommand(cmd string) string {
+	fmt.Println(cmd)
+
+	set := &flag.FlagSet{}
+	env := set.String("launcher.ver", "1", "1")
+	_ = env
+	args := strings.Split(cmd, " ")
+	if len(args) > 1 {
+		err := set.Parse(args[1:])
+		if err == nil {
+			return *env
+		}
+	}
+	return ""
 }
 
 func (m *Manager) Stop() error {
@@ -240,7 +262,7 @@ func (m *Manager) createMystContainer(mm *model.UIModel) error {
 	cmdArgs := []string{
 		"service", "--agreed-terms-and-conditions",
 	}
-	if mm.CurrentImgHasOptionReportVersion {
+	if mm.CurrentImgHasReportVersionAbility {
 		versionArg := fmt.Sprintf("%s=%s/%s", reportVerFlag, mm.ProductVersion, runtime.GOOS)
 		cmdArgs = append([]string{versionArg}, cmdArgs...)
 	}

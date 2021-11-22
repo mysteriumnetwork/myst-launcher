@@ -41,8 +41,8 @@ type UIModel struct {
 	Config Config
 
 	// state
-	CurrentImgHasOptionReportVersion bool
-	DuplicateLogToConsole            bool
+	CurrentImgHasReportVersionAbility bool
+	DuplicateLogToConsole             bool
 
 	// launcher update
 	LauncherHasUpdate       bool
@@ -76,7 +76,7 @@ func (m *UIModel) CurrentNetIsMainNet() bool {
 }
 
 func (m *UIModel) UpdateToMainnet() {
-	m.Config.Network = "mainnet"
+	m.Config.Network = ""
 	m.Config.Save()
 	m.Update()
 	m.App.TriggerAction("upgrade")
