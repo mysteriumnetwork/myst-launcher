@@ -281,7 +281,7 @@ func (g *Gui) refresh() {
 		g.lbUpdateLauncher.SetVisible(g.model.LauncherHasUpdate)
 
 		g.lbNetwork.SetText(g.model.Config.GetNetworkCaption())
-		g.btnMainNet.SetVisible(g.model.Config.Network != "mainnet")
+		g.btnMainNet.SetVisible(!g.model.CurrentNetIsMainNet())
 
 	case model2.UIStateInstallNeeded:
 		g.enableMenu(false)

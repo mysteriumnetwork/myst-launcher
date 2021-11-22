@@ -135,7 +135,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 		updateUI()
 	}
 	if checkVersionRequirement(currentVersion, minVersion) {
-		mod.CurrentImgHasOptionReportVersion = true
+		mod.CurrentImgHasReportVersionAbility = true
 	}
 
 	// Reload image list if cache has no info about current version
@@ -148,7 +148,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 			updateUI()
 
 			if checkVersionRequirement(currentVersion, minVersion) {
-				mod.CurrentImgHasOptionReportVersion = true
+				mod.CurrentImgHasReportVersionAbility = true
 			}
 		}
 	}

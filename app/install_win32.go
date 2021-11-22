@@ -11,7 +11,9 @@
 package app
 
 import (
+	"errors"
 	"fmt"
+	"github.com/blang/semver/v4"
 	"log"
 	"os"
 	"syscall"
@@ -151,14 +153,27 @@ func (s *AppState) tryInstall() bool {
 
 	s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate": model.StepInProgress})
 	log.Println("Installing wsl_update_x64.msi")
+
 	gowin32.SetInstallerInternalUI(gowin32.InstallUILevelProgressOnly) // UI Level for a prompt
-	err = gowin32.InstallProduct(utils.GetTmpDir()+"\\wsl_update_x64.msi", "ACTION=INSTALL")
+	wslIsUpdated, err := IsWSLUpdated()
 	if err != nil {
 		log.Println("InstallProduct failed (wsl_update_x64.msi)", err)
 
 		s.model.SwitchState(model.UIStateInstallError)
 		s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate": model.StepFailed})
 		return true
+	}
+	if !wslIsUpdated {
+		err = gowin32.InstallProduct(utils.GetTmpDir()+"\\wsl_update_x64.msi", "ACTION=INSTALL")
+		if err != nil {
+			log.Println("InstallProduct failed (wsl_update_x64.msi)", err)
+
+			s.model.SwitchState(model.UIStateInstallError)
+			s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate": model.StepFailed})
+			return true
+		}
+	} else {
+		log.Println("WSL is already updated!")
 	}
 	s.model.UpdateProperties(model.UIProps{"InstallWSLUpdate": model.StepFinished})
 
@@ -211,4 +226,38 @@ func (s *AppState) tryInstall() bool {
 	}
 	s.model.SwitchState(model.UIStateInitial)
 	return false
+}
+
+func IsWSLUpdated() (bool, error) {
+	const WSLUpdateProductCode = "{36EF257E-21D5-44F7-8451-07923A8C465E}"
+	installedVer, err := gowin32.GetInstalledProductProperty(WSLUpdateProductCode, gowin32.InstallPropertyVersionString)
+	if err != nil {
+		return false, wrap(err, errors.New("gowin32.GetInstalledProductProperty"))
+	}
+
+	pkg, err := gowin32.OpenInstallerPackage(utils.GetTmpDir() + "\\wsl_update_x64.msi")
+	if err != nil {
+		return false, wrap(err, errors.New("gowin32.OpenInstallerPackage"))
+	}
+	defer pkg.Close()
+
+	fileVer, err := pkg.GetProductProperty("ProductVersion")
+	if err != nil {
+		return false, wrap(err, errors.New("gowin32.GetProductProperty"))
+	}
+	semverFileVer, err := semver.Parse(fileVer)
+	if err != nil {
+		return false, wrap(err, errors.New("semver.Parse"))
+	}
+	semverInstalledVer, err := semver.Parse(installedVer)
+	if err != nil {
+		return false, wrap(err, errors.New("semver.Parse"))
+	}
+
+	// semverInstalledVer >= semverFileVer
+	return semverInstalledVer.Compare(semverFileVer) >= 0, nil
+}
+
+func wrap(external, internal error) error {
+	return fmt.Errorf(external.Error()+": %w", internal)
 }
