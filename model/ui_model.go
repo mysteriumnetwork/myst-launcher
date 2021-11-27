@@ -68,6 +68,11 @@ func NewUIModel() *UIModel {
 		m.Config.Network = ""
 		m.Config.Save()
 	}
+	if m.Config.AutoUpgrade == true {
+		m.Config.AutoUpgrade = false
+		m.Config.Save()
+	}
+
 	return m
 }
 

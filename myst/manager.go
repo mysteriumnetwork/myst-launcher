@@ -115,7 +115,7 @@ func (m *Manager) Start(mm *model.UIModel) (bool, error) {
 
 	launcherVer := getVersionFromCommand(mystContainer.Command)
 	currentVersion := mm.ProductVersion + "/" + runtime.GOOS
-	launcherVersionChanged := launcherVer != currentVersion
+	launcherVersionChanged := launcherVer != currentVersion && launcherVer != ""
 
 	// refresh config if image has support of a given option
 	if mm.CurrentImgHasReportVersionAbility && !strings.Contains(mystContainer.Command, reportVerFlag) || launcherVersionChanged {
@@ -132,7 +132,7 @@ func getVersionFromCommand(cmd string) string {
 	fmt.Println(cmd)
 
 	set := &flag.FlagSet{}
-	env := set.String("launcher.ver", "1", "1")
+	env := set.String("launcher.ver", "", "")
 	_ = env
 	args := strings.Split(cmd, " ")
 	if len(args) > 1 {
