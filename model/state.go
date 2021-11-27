@@ -35,15 +35,21 @@ type Config struct {
 	Network string `json:"network"`
 }
 
-func (c *Config) GetImageTag() string {
+func (c *Config) GetLatestImageTag() string {
 	if c.Network == "" {
+		//return "0.67.2-alpine"
+		//return "1.0.5-alpine"
 		return "latest"
 	}
 	return c.Network
 }
 
 func (c *Config) GetFullImageName() string {
-	return _const.ImageNamePrefix + ":" + c.GetImageTag()
+	return _const.ImageNamePrefix + ":" + c.GetLatestImageTag()
+}
+
+func (c *Config) GetImageNamePrefix() string {
+	return _const.ImageNamePrefix
 }
 
 func (c *Config) GetNetworkCaption() string {

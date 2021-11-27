@@ -20,7 +20,7 @@ import (
 )
 
 // returns exit mode: true means exit
-func (s *AppState) tryInstall() bool {
+func (s *AppState) tryInstallDocker() bool {
 	s.model.SwitchState(model.UIStateInstallNeeded)
 	if !s.ui.WaitDialogueComplete() {
 		return true

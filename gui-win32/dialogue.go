@@ -272,8 +272,8 @@ func (g *Gui) refresh() {
 		}
 		g.btnOpenNodeUI.SetEnabled(g.model.IsRunning())
 
-		g.lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
-		g.lbVersionLatest.SetText(g.model.ImgVer.VersionLatest)
+		g.lbVersionCurrent.SetText(g.model.ImageInfo.VersionCurrent)
+		g.lbVersionLatest.SetText(g.model.ImageInfo.VersionLatest)
 
 		g.lbImageName.SetText(g.model.Config.GetFullImageName())
 		g.btnOpenNodeUI.SetFocus()

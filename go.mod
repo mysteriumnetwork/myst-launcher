@@ -6,7 +6,6 @@ require (
 	github.com/Microsoft/go-winio v0.5.1
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/blang/semver/v4 v4.0.0
-	github.com/buger/jsonparser v1.1.1
 	github.com/containerd/containerd v1.5.8 // indirect
 	github.com/docker/docker v20.10.10+incompatible
 	github.com/docker/go-connections v0.4.0
