@@ -10,12 +10,13 @@ package app
 import (
 	"context"
 	"errors"
-	"github.com/docker/docker/client"
 	"log"
 	"os"
 	"os/exec"
 	"runtime"
 	"time"
+
+	"github.com/docker/docker/client"
 
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )

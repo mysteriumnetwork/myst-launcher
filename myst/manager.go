@@ -12,7 +12,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"io"
 	"io/ioutil"
 	"log"
@@ -29,6 +28,7 @@ import (
 	"github.com/docker/go-connections/nat"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 

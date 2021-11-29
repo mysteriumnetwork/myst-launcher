@@ -9,11 +9,11 @@ package model
 
 import (
 	"encoding/json"
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"log"
 	"os"
 	"time"
 
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
