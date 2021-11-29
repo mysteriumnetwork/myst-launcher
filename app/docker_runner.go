@@ -41,7 +41,7 @@ func (r *DockerRunner) canPingDocker() bool {
 	return err == nil
 }
 
-func (r *DockerRunner) IsRunningShort() bool {
+func (r *DockerRunner) IsRunning() bool {
 	canPingDocker := r.canPingDocker()
 	if canPingDocker {
 		r.tryStartCount = 0
@@ -50,10 +50,9 @@ func (r *DockerRunner) IsRunningShort() bool {
 }
 
 // return values: isRunning, couldNotStart
-func (r *DockerRunner) IsRunning() (bool, bool) {
-	canPingDocker := r.canPingDocker()
+func (r *DockerRunner) IsRunningOrTryStart() (bool, bool) {
 
-	if !canPingDocker {
+	if !r.canPingDocker() {
 		r.tryStartCount++
 
 		if !r.tryStartDockerDesktop() || r.tryStartCount >= 20 {
