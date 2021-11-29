@@ -8,19 +8,55 @@
 package updates
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
-
-	"github.com/buger/jsonparser"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
+
+type Tags struct {
+	Detail   string      `json:"detail"`
+	Count    int64       `json:"count"`
+	Next     string      `json:"next"`
+	Previous string      `json:"previous"`
+	Results  []TagResult `json:"results"`
+}
+
+type TagResult struct {
+	Creator             int         `json:"creator"`
+	ID                  int         `json:"id"`
+	Images              []ImageInfo `json:"images"`
+	LastUpdated         string      `json:"last_updated"`
+	LastUpdater         int         `json:"last_updater"`
+	LastUpdaterUsername string      `json:"last_updater_username"`
+	Name                string      `json:"name"`
+	Repository          int         `json:"repository"`
+	FullSize            int         `json:"full_size"`
+	V2                  bool        `json:"v2"`
+	TagStatus           string      `json:"tag_status"`
+	TagLastPulled       string      `json:"tag_last_pulled"`
+	TagLastPushed       string      `json:"tag_last_pushed"`
+}
+
+type ImageInfo struct {
+	Architecture string `json:"architecture"`
+	Features     string `json:"features"`
+	Variant      string `json:"variant"`
+	Digest       string `json:"digest"`
+	OS           string `json:"os"`
+	OSFeatures   string `json:"os_features"`
+	OSVersion    string `json:"os_version"`
+	Size         int64  `json:"size"`
+	Status       string `json:"status"`
+	LastPulled   string `json:"last_pulled"`
+	LastPushed   string `json:"last_pushed"`
+}
 
 var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+).*$`)
 var minVersion = []int{0, 66, 3}
@@ -52,11 +88,11 @@ func checkVersionRequirement(v string, minVersion []int) bool {
 }
 
 func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
-	// log.Println("CheckVersionAndUpgrades 1>")
+	log.Println("CheckCurrentVersionAndUpgrades>")
 
 	var data []byte
 	getFile := func() bool {
-		url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=30"
+		url := "https://registry.hub.docker.com/v2/repositories/mysteriumnetwork/myst/tags?page_size=10"
 		resp, err := http.Get(url)
 		if err != nil {
 			return false
@@ -83,50 +119,60 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 	latestDigest := ""
 	latestVersion := ""
 	currentVersion := ""
+	imageTag := mod.Config.GetLatestImageTag()
 
-	imageTag := mod.Config.GetImageTag()
 	parseJson := func() {
-		jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err_ error) {
-			name, err := jsonparser.GetString(value, "name")
-			if err != nil {
-				return
-			}
-			match := versionRegex.MatchString(name)
+		found := false
 
-			jsonparser.ArrayEach(value, func(value []byte, dataType jsonparser.ValueType, offset int, err_ error) {
-				digest, err := jsonparser.GetString(value, "digest")
-				if err != nil {
-					return
-				}
+		var queryResults Tags
+		if err := json.Unmarshal(data, &queryResults); err != nil {
+			return
+		}
 
-				if name == imageTag {
-					latestDigest = digest
+		for _, res := range queryResults.Results {
+			matchVersionRegex := versionRegex.MatchString(res.Name)
+			for _, im := range res.Images {
+
+				if res.Name == imageTag && im.Architecture == "amd64" {
+					latestDigest = im.Digest
 				}
 				// a work-around for custom tags like testnet3, which have only 1 version of image
 				if imageTag != "latest" {
-					match = true
+					matchVersionRegex = true
 				}
 
-				if match {
-					if latestDigest == digest {
-						latestVersion = name
+				if matchVersionRegex {
+					if latestDigest == im.Digest {
+						latestVersion = res.Name
 					}
-					digestsMatch := strings.EqualFold(digest, mod.ImgVer.CurrentImgDigest)
-					if digestsMatch {
-						currentVersion = name
+
+					// multi-arch images have 2 digests: one for image itself, second - for manifest
+					if mod.ImageInfo.HasDigest(im.Digest) {
+						currentVersion = res.Name
+						found = true
 					}
 				}
+			}
+		}
 
-			}, "images")
-		}, "results")
+		if !found {
+			currentVersion = ""
+		}
 	}
+
 	hasUpdate := func() bool {
-		return (latestDigest != "" && mod.ImgVer.CurrentImgDigest != "") && latestDigest != mod.ImgVer.CurrentImgDigest
+		if latestDigest != "" {
+			// has a digest of the latest version
+			return !mod.ImageInfo.HasDigest(latestDigest)
+		}
+		return false
 	}
+
 	updateUI := func() {
-		mod.ImgVer.VersionCurrent = currentVersion
-		mod.ImgVer.VersionLatest = latestVersion
-		mod.ImgVer.HasUpdate = hasUpdate()
+		mod.ImageInfo.DigestLatest = latestDigest
+		mod.ImageInfo.VersionCurrent = currentVersion
+		mod.ImageInfo.VersionLatest = latestVersion
+		mod.ImageInfo.HasUpdate = hasUpdate()
 		mod.Update()
 	}
 
@@ -135,7 +181,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 		updateUI()
 	}
 	if checkVersionRequirement(currentVersion, minVersion) {
-		mod.CurrentImgHasReportVersionAbility = true
+		mod.CurrentImgHasReportVersionOption = true
 	}
 
 	// Reload image list if cache has no info about current version
@@ -148,7 +194,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 			updateUI()
 
 			if checkVersionRequirement(currentVersion, minVersion) {
-				mod.CurrentImgHasReportVersionAbility = true
+				mod.CurrentImgHasReportVersionOption = true
 			}
 		}
 	}

@@ -8,30 +8,41 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"log"
 	"os"
 	"os/exec"
 	"runtime"
+	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/myst"
+	"github.com/docker/docker/client"
+
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 type DockerRunner struct {
 	tryStartCount int
-	m             *myst.Manager
+	dockerAPI     *client.Client
 }
 
-func NewDockerMonitor(m *myst.Manager) *DockerRunner {
+func NewDockerMonitor(docker *client.Client) *DockerRunner {
 	return &DockerRunner{
 		tryStartCount: 0,
-		m:             m,
+		dockerAPI:     docker,
 	}
 }
 
-func (r *DockerRunner) IsRunningShort() bool {
-	canPingDocker := r.m.CanPingDocker()
+func (r *DockerRunner) canPingDocker() bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := r.dockerAPI.Ping(ctx)
+	return err == nil
+}
+
+func (r *DockerRunner) IsRunning() bool {
+	canPingDocker := r.canPingDocker()
 	if canPingDocker {
 		r.tryStartCount = 0
 	}
@@ -39,10 +50,9 @@ func (r *DockerRunner) IsRunningShort() bool {
 }
 
 // return values: isRunning, couldNotStart
-func (r *DockerRunner) IsRunning() (bool, bool) {
-	canPingDocker := r.m.CanPingDocker()
+func (r *DockerRunner) IsRunningOrTryStart() (bool, bool) {
 
-	if !canPingDocker {
+	if !r.canPingDocker() {
 		r.tryStartCount++
 
 		if !r.tryStartDockerDesktop() || r.tryStartCount >= 20 {

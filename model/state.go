@@ -9,11 +9,11 @@ package model
 
 import (
 	"encoding/json"
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"log"
 	"os"
 	"time"
 
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -35,7 +35,7 @@ type Config struct {
 	Network string `json:"network"`
 }
 
-func (c *Config) GetImageTag() string {
+func (c *Config) GetLatestImageTag() string {
 	if c.Network == "" {
 		return "latest"
 	}
@@ -43,7 +43,11 @@ func (c *Config) GetImageTag() string {
 }
 
 func (c *Config) GetFullImageName() string {
-	return _const.ImageNamePrefix + ":" + c.GetImageTag()
+	return _const.ImageNamePrefix + ":" + c.GetLatestImageTag()
+}
+
+func (c *Config) GetImageNamePrefix() string {
+	return _const.ImageNamePrefix
 }
 
 func (c *Config) GetNetworkCaption() string {

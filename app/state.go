@@ -26,7 +26,7 @@ type AppState struct {
 	ui     model2.Gui_
 
 	// state
-	didInstallation bool
+	didDockerInstallation bool
 }
 
 func NewApp() *AppState {

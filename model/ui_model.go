@@ -9,6 +9,7 @@ package model
 
 import (
 	"log"
+	"strings"
 
 	"github.com/asaskevich/EventBus"
 
@@ -36,13 +37,13 @@ type UIModel struct {
 	InstallDocker        InstallStep
 	CheckGroupMembership InstallStep
 
-	App    AppInterface
-	ImgVer ImageVersionInfo
-	Config Config
+	App       AppInterface
+	ImageInfo ImageInfo
+	Config    Config
 
 	// state
-	CurrentImgHasReportVersionAbility bool
-	DuplicateLogToConsole             bool
+	CurrentImgHasReportVersionOption bool
+	DuplicateLogToConsole            bool
 
 	// launcher update
 	LauncherHasUpdate       bool
@@ -51,8 +52,13 @@ type UIModel struct {
 	ProductVersionLatestUrl string
 }
 
-type ImageVersionInfo struct {
-	CurrentImgDigest string // input value
+type ImageInfo struct {
+	// used by pullLatest for the case of multi-arch image with 2 digests
+	DigestLatest string
+
+	CurrentImgDigest  string
+	CurrentImageID    string
+	CurrentImgDigests []string
 
 	// calculated values
 	HasUpdate      bool
@@ -60,16 +66,24 @@ type ImageVersionInfo struct {
 	VersionLatest  string
 }
 
+func (i *ImageInfo) HasDigest(digest string) bool {
+	// multi-arch images have 2 digests: one for image itself, second - for manifest
+
+	for _, d := range i.CurrentImgDigests {
+		if strings.EqualFold(digest, d) {
+			return true
+		}
+	}
+	return false
+}
+
 func NewUIModel() *UIModel {
 	m := &UIModel{}
 	m.UIBus = EventBus.New()
 	m.Config.Read()
+
 	if m.Config.Network == "mainnet" {
 		m.Config.Network = ""
-		m.Config.Save()
-	}
-	if m.Config.AutoUpgrade == true {
-		m.Config.AutoUpgrade = false
 		m.Config.Save()
 	}
 

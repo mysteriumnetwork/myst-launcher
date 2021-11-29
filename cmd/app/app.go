@@ -13,7 +13,7 @@ import (
 	"runtime"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/const"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"

@@ -31,7 +31,7 @@ import (
 const group = "docker-users"
 
 // returns exit model: true means exit
-func (s *AppState) tryInstall() bool {
+func (s *AppState) tryInstallDocker() bool {
 	s.model.ResetProperties()
 
 	var err error
@@ -217,7 +217,7 @@ func (s *AppState) tryInstall() bool {
 	s.model.Config.Save()
 
 	log.Println("Installation succeeded")
-	s.didInstallation = true
+	s.didDockerInstallation = true
 
 	s.model.SwitchState(model.UIStateInstallFinished)
 	ok := s.ui.WaitDialogueComplete()

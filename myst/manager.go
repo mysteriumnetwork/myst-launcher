@@ -13,6 +13,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -27,12 +28,15 @@ import (
 	"github.com/docker/go-connections/nat"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 const (
 	containerName = "myst"
 	reportVerFlag = "--launcher.ver"
+
+	operationTimeout = 10 * time.Second
 )
 
 var (
@@ -44,88 +48,135 @@ var (
 	ErrCouldNotCreateImage = errors.New("could not create myst image")
 	ErrCouldNotStop        = errors.New("could not stop myst container")
 	ErrCouldNotRemoveImage = errors.New("could not remove myst image")
-
-	defaultConfig = ManagerConfig{
-		CTX:          context.Background(),
-		ActionTimout: 10 * time.Second,
-		DataDir:      fmt.Sprintf("%s.mysterium-node", utils.GetUserProfileDir()+string(os.PathSeparator)),
-	}
 )
 
 type Manager struct {
-	dockerAPI   *client.Client
-	cfg         ManagerConfig
-	launcherCfg *model.Config
+	dockerAPI *client.Client
+	//launcherCfg *model.Config
+	model   *model.UIModel
+	dataDir string
 }
 
-type ManagerConfig struct {
-	CTX          context.Context
-	ActionTimout time.Duration
-	DataDir      string
-}
-
-func NewManagerWithDefaults(launcherCfg *model.Config) (*Manager, error) {
-	return NewManager(defaultConfig, launcherCfg)
-}
-
-func NewManager(cfg ManagerConfig, launcherCfg *model.Config) (*Manager, error) {
+func NewManager(model *model.UIModel) (*Manager, error) {
 	dc, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, wrap(err, ErrCouldNotConnect)
 	}
+	dataDir := fmt.Sprintf("%s.mysterium-node", utils.GetUserProfileDir()+string(os.PathSeparator))
 
-	if err := utils.MakeDirectoryIfNotExists(cfg.DataDir); err != nil {
+	if err := utils.MakeDirectoryIfNotExists(dataDir); err != nil {
 		return nil, err
 	}
 	return &Manager{
-		dockerAPI:   dc,
-		cfg:         cfg,
-		launcherCfg: launcherCfg,
+		dockerAPI: dc,
+		model:     model,
+		dataDir:   dataDir,
 	}, nil
 }
 
-func (m *Manager) CanPingDocker() bool {
-	ctx, cancel := context.WithTimeout(m.cfg.CTX, 10*time.Second)
-	defer cancel()
-
-	_, err := m.dockerAPI.Ping(ctx)
-	return err == nil
+func (m *Manager) GetDockerClient() *client.Client {
+	return m.dockerAPI
 }
 
 // Returns: alreadyRunning, error
-func (m *Manager) Start(mm *model.UIModel) (bool, error) {
+func (m *Manager) Start() (bool, error) {
+	fmt.Println("Start >")
 
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
+
 		if err := m.pullMystLatest(); err != nil {
-			log.Println("pullMystLatest >", err)
-			return false, err
+			return false, wrap(err, errors.New("pullMystLatest"))
 		}
-		if err := m.createMystContainer(mm); err != nil {
-			fmt.Println("createMystContainer >", err)
-			return false, err
+		if err := m.pullMystLatestByDigestLatest(); err != nil {
+			return false, wrap(err, errors.New("pullMystLatestByDigestLatest"))
+		}
+
+		if err := m.createMystContainer(); err != nil {
+			return false, wrap(err, errors.New("createMystContainer"))
 		}
 		mystContainer, err = m.findMystContainer()
 	}
 	if err != nil {
+		log.Println("err >", err)
 		return false, err
 	}
 
-	// container isn't running yet
+	// refresh config if image has support of a ReportVersion option
+	if m.model.CurrentImgHasReportVersionOption &&
+		!strings.Contains(mystContainer.Command, reportVerFlag) ||
+		m.launcherVersionChanged(mystContainer) {
 
-	launcherVer := getVersionFromCommand(mystContainer.Command)
-	currentVersion := mm.ProductVersion + "/" + runtime.GOOS
-	launcherVersionChanged := launcherVer != currentVersion && launcherVer != ""
-
-	// refresh config if image has support of a given option
-	if mm.CurrentImgHasReportVersionAbility && !strings.Contains(mystContainer.Command, reportVerFlag) || launcherVersionChanged {
-		return true, m.Restart(mm)
+		return true, m.Restart()
 	}
 
-	if mystContainer.IsRunning() {
+	if mystContainer.isRunning() {
+		log.Println("is running >")
 		return true, nil
 	}
 	return false, m.startMystContainer()
+}
+
+// stop, apply settings and start
+func (m *Manager) Restart() error {
+	log.Println("Restart >")
+	mystContainer, err := m.findMystContainer()
+	if err != nil && err != ErrContainerNotFound {
+		return err
+	}
+
+	// if found
+	if mystContainer != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
+		defer cancel()
+		err = m.dockerAPI.ContainerStop(ctx, mystContainer.ID, nil)
+		if err != nil {
+			return wrap(err, ErrCouldNotStop)
+		}
+
+		ctx2, cancel2 := context.WithTimeout(context.Background(), operationTimeout)
+		defer cancel2()
+		err = m.dockerAPI.ContainerRemove(ctx2, mystContainer.ID, types.ContainerRemoveOptions{})
+		if err != nil {
+			return wrap(err, ErrCouldNotRemoveImage)
+		}
+	}
+
+	if err = m.createMystContainer(); err != nil {
+		return err
+	}
+	return m.startMystContainer()
+}
+
+func (m *Manager) Update() error {
+	log.Println("Update >")
+
+	// pull image by tag and by digest
+	// b/c docker client api returns additional digest (manifest) for mult-iarch images
+
+	if err := m.pullMystLatest(); err != nil {
+		return wrap(err, errors.New("pullMystLatest"))
+	}
+	if err := m.pullMystLatestByDigestLatest(); err != nil {
+		return wrap(err, errors.New("pullMystLatestByDigestLatest"))
+	}
+
+	return m.Restart()
+}
+
+func extractRepoDigests(repoDigests []string) []string {
+	a := make([]string, 0)
+	for _, d := range repoDigests {
+		a = append(a, strings.Split(d, "@")[1])
+	}
+	return a
+}
+
+func (m *Manager) launcherVersionChanged(mystContainer *Container) bool {
+	launcherVer := getVersionFromCommand(mystContainer.Command)
+	currentVersion := m.model.ProductVersion + "/" + runtime.GOOS
+
+	return launcherVer != currentVersion && launcherVer != ""
 }
 
 func getVersionFromCommand(cmd string) string {
@@ -133,7 +184,7 @@ func getVersionFromCommand(cmd string) string {
 
 	set := &flag.FlagSet{}
 	env := set.String("launcher.ver", "", "")
-	_ = env
+
 	args := strings.Split(cmd, " ")
 	if len(args) > 1 {
 		err := set.Parse(args[1:])
@@ -150,64 +201,13 @@ func (m *Manager) Stop() error {
 		return err
 	}
 
-	err = m.dockerAPI.ContainerStop(m.ctx(), mystContainer.ID, m.timeout())
+	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
+	defer cancel()
+	err = m.dockerAPI.ContainerStop(ctx, mystContainer.ID, m.timeout())
 	if err != nil {
 		return wrap(err, ErrCouldNotStop)
 	}
 	return nil
-}
-
-// stop, apply settings and start
-func (m *Manager) Restart(mm *model.UIModel) error {
-	log.Println("Restart >")
-	mystContainer, err := m.findMystContainer()
-	if err != nil && err != ErrContainerNotFound {
-		return err
-	}
-
-	err = m.dockerAPI.ContainerStop(m.ctx(), mystContainer.ID, nil)
-	if err != nil {
-		return wrap(err, ErrCouldNotStop)
-	}
-	err = m.dockerAPI.ContainerRemove(m.ctx(), mystContainer.ID, types.ContainerRemoveOptions{})
-	if err != nil {
-		return wrap(err, ErrCouldNotRemoveImage)
-	}
-
-	err = m.createMystContainer(mm)
-	if err != nil {
-		return err
-	}
-	return m.startMystContainer()
-}
-
-func (m *Manager) Update(mm *model.UIModel) error {
-	err := m.pullMystLatest()
-	if err != nil {
-		return err
-	}
-
-	mystContainer, err := m.findMystContainer()
-	if err != nil && err != ErrContainerNotFound {
-		return err
-	}
-	if !errors.Is(err, ErrContainerNotFound) {
-		err = m.dockerAPI.ContainerStop(m.ctx(), mystContainer.ID, nil)
-		if err != nil {
-			return wrap(err, ErrCouldNotStop)
-		}
-		err = m.dockerAPI.ContainerRemove(m.ctx(), mystContainer.ID, types.ContainerRemoveOptions{})
-		if err != nil {
-			return wrap(err, ErrCouldNotRemoveImage)
-		}
-	}
-
-	err = m.createMystContainer(mm)
-	if err != nil {
-		return err
-	}
-	err = m.startMystContainer()
-	return err
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -216,11 +216,15 @@ func wrap(external, internal error) error {
 }
 
 func (m *Manager) startMystContainer() error {
+	fmt.Println("startMystContainer >")
 	mystContainer, err := m.findMystContainer()
 	if err != nil {
 		return err
 	}
-	err = m.dockerAPI.ContainerStart(m.ctx(), mystContainer.ID, types.ContainerStartOptions{})
+
+	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
+	defer cancel()
+	err = m.dockerAPI.ContainerStart(ctx, mystContainer.ID, types.ContainerStartOptions{})
 	if err != nil {
 		return wrap(err, ErrContainerStart)
 	}
@@ -228,7 +232,10 @@ func (m *Manager) startMystContainer() error {
 }
 
 func (m *Manager) findMystContainer() (*Container, error) {
-	list, err := m.dockerAPI.ContainerList(m.ctx(), types.ContainerListOptions{All: true})
+	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
+	defer cancel()
+
+	list, err := m.dockerAPI.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		return nil, wrap(err, ErrCouldNotList)
 	}
@@ -243,30 +250,52 @@ func (m *Manager) findMystContainer() (*Container, error) {
 	return nil, ErrContainerNotFound
 }
 
-func (m *Manager) pullMystLatest() error {
-	image := m.launcherCfg.GetFullImageName()
-	out, err := m.dockerAPI.ImagePull(m.ctx(), image, types.ImagePullOptions{})
+func (m *Manager) pullMystImage(image string) error {
+	fmt.Println("pullMystImage >", image)
+
+	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
+	defer cancel()
+
+	out, err := m.dockerAPI.ImagePull(ctx, image, types.ImagePullOptions{})
 	if err != nil {
 		return wrap(err, ErrCouldNotPullImage)
 	}
-	io.Copy(os.Stdout, out)
-	return nil
+	defer out.Close()
+
+	_, err = io.Copy(ioutil.Discard, out)
+	return err
 }
 
-func (m *Manager) createMystContainer(mm *model.UIModel) error {
-	c := mm.Config
+func (m *Manager) pullMystLatestByDigestLatest() error {
+	if m.model.ImageInfo.DigestLatest == "" {
+		fmt.Println("pullMystByDigest > no DigestLatest !")
+		return nil
+	}
+
+	image := "docker.io/" + m.model.Config.GetImageNamePrefix() + "@" + m.model.ImageInfo.DigestLatest
+	return m.pullMystImage(image)
+}
+
+func (m *Manager) pullMystLatest() error {
+	image := m.model.Config.GetFullImageName()
+	return m.pullMystImage(image)
+}
+
+func (m *Manager) createMystContainer() error {
 	log.Println("createMystContainer >")
+
 	portSpecs := []string{
 		"4449/tcp",
 	}
 	cmdArgs := []string{
 		"service", "--agreed-terms-and-conditions",
 	}
-	if mm.CurrentImgHasReportVersionAbility {
-		versionArg := fmt.Sprintf("%s=%s/%s", reportVerFlag, mm.ProductVersion, runtime.GOOS)
+	if m.model.CurrentImgHasReportVersionOption {
+		versionArg := fmt.Sprintf("%s=%s/%s", reportVerFlag, m.model.ProductVersion, runtime.GOOS)
 		cmdArgs = append([]string{versionArg}, cmdArgs...)
 	}
 
+	c := m.model.Config
 	if c.EnablePortForwarding {
 		p := fmt.Sprintf("%d-%d:%d-%d/udp", c.PortRangeBegin, c.PortRangeEnd, c.PortRangeBegin, c.PortRangeEnd)
 		portSpecs = append(portSpecs, p)
@@ -281,13 +310,13 @@ func (m *Manager) createMystContainer(mm *model.UIModel) error {
 		return err
 	}
 
-	image := m.launcherCfg.GetFullImageName()
-	config := &container.Config{
+	image := c.GetFullImageName()
+	containerConfig := &container.Config{
 		Image:        image,
 		ExposedPorts: nat.PortSet(exposedPorts),
 		Cmd:          strslice.StrSlice(cmdArgs),
 	}
-	log.Println("createMystContainer >", config.Cmd)
+	log.Println("createMystContainer >", containerConfig)
 
 	hostConfig := &container.HostConfig{
 		CapAdd: strslice.StrSlice{
@@ -304,14 +333,16 @@ func (m *Manager) createMystContainer(mm *model.UIModel) error {
 		Mounts: []mount.Mount{
 			{
 				Type:   mount.TypeBind,
-				Source: m.cfg.DataDir,
+				Source: m.dataDir,
 				Target: "/var/lib/mysterium-node",
 			},
 		},
 	}
 
-	_, err = m.dockerAPI.ContainerCreate(m.ctx(),
-		config,
+	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
+	defer cancel()
+	_, err = m.dockerAPI.ContainerCreate(ctx,
+		containerConfig,
 		hostConfig,
 		nil,
 		nil,
@@ -323,35 +354,35 @@ func (m *Manager) createMystContainer(mm *model.UIModel) error {
 	return nil
 }
 
-func (m *Manager) ctx() context.Context {
-	return m.cfg.CTX
-}
-
 func (m *Manager) timeout() *time.Duration {
-	return &m.cfg.ActionTimout
+	t := operationTimeout
+	return &t
 }
 
-func (m *Manager) GetCurrentImageDigest() string {
-	c, err := m.findMystContainer()
+func (m *Manager) CheckCurrentVersionAndUpgrades() {
+	m.getCurrentImageDigest()
+	updates.CheckVersionAndUpgrades(m.model, false)
+}
+
+func (m *Manager) getCurrentImageDigest() {
+	mystContainer, err := m.findMystContainer()
 	if err != nil {
-		return ""
+		return
 	}
 
-	images, err := m.dockerAPI.ImageList(m.ctx(), types.ImageListOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
+	defer cancel()
+	images, err := m.dockerAPI.ImageList(ctx, types.ImageListOptions{})
 	if err != nil {
-		return ""
+		return
 	}
 
-	imageDigest := ""
-	for _, image := range images {
-		if c.ImageID == image.ID {
-			for _, rd := range image.RepoDigests {
-				digestArr := strings.Split(rd, "@")
-				imageDigest = digestArr[1]
-			}
+	for _, i := range images {
+		if i.ID == mystContainer.ImageID {
+			fmt.Println("getCurrentImageDigest >", i.RepoDigests)
+			m.model.ImageInfo.CurrentImgDigests = extractRepoDigests(i.RepoDigests)
 		}
 	}
-	return imageDigest
 }
 
 // extend Container with method
@@ -359,6 +390,6 @@ type Container struct {
 	*types.Container
 }
 
-func (c *Container) IsRunning() bool {
+func (c *Container) isRunning() bool {
 	return c.State == "running"
 }

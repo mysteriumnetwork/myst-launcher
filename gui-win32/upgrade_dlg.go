@@ -23,10 +23,10 @@ func (g *Gui) OpenUpgradeDlg() {
 
 	refresh := func() {
 		dialog.Synchronize(func() {
-			lbVersionCurrent.SetText(g.model.ImgVer.VersionCurrent)
-			lbVersionLatest.SetText(g.model.ImgVer.VersionLatest)
+			lbVersionCurrent.SetText(g.model.ImageInfo.VersionCurrent)
+			lbVersionLatest.SetText(g.model.ImageInfo.VersionLatest)
 			lbImageName.SetText(g.model.Config.GetFullImageName())
-			acceptPB.SetEnabled(g.model.ImgVer.HasUpdate)
+			acceptPB.SetEnabled(g.model.ImageInfo.HasUpdate)
 		})
 	}
 
