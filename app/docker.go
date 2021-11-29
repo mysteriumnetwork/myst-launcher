@@ -8,7 +8,6 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -157,7 +156,6 @@ func (s *AppState) restart(mystManager *myst.Manager) {
 }
 
 func (s *AppState) upgrade(mystManager *myst.Manager) {
-	fmt.Println("upgrade >>>>>>>>>>>>>>>>>>>>>>", s.model.ImageInfo.HasUpdate)
 	if !s.model.ImageInfo.HasUpdate {
 		return
 	}

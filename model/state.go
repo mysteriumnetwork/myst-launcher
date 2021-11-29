@@ -37,8 +37,6 @@ type Config struct {
 
 func (c *Config) GetLatestImageTag() string {
 	if c.Network == "" {
-		//return "0.67.2-alpine"
-		//return "1.0.5-alpine"
 		return "latest"
 	}
 	return c.Network

@@ -80,7 +80,7 @@ func (m *Manager) GetDockerClient() *client.Client {
 
 // Returns: alreadyRunning, error
 func (m *Manager) Start() (bool, error) {
-	fmt.Println("Start  >>>>>>>>>>>>>>>")
+	fmt.Println("Start >")
 
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
@@ -149,6 +149,8 @@ func (m *Manager) Restart() error {
 }
 
 func (m *Manager) Update() error {
+	log.Println("Update >")
+
 	// pull image by tag and by digest
 	// b/c docker client api returns additional digest (manifest) for mult-iarch images
 
@@ -375,33 +377,12 @@ func (m *Manager) getCurrentImageDigest() {
 		return
 	}
 
-	//imageDigest := ""
-	//for _, image := range images {
-	//	fmt.Println("im>", image.ID)
-	//	fmt.Println("im>", image.RepoTags)
-	//	fmt.Println("rd>", image.RepoDigests)
-	//	fmt.Println("pa>", image.ParentID)
-	//
-	//	//fmt.Println("im>", image.Created)
-	//
-	//	if mystContainer.ImageID == image.ID {
-	//		for _, rd := range image.RepoDigests {
-	//			imageDigest = strings.Split(rd, "@")[1]
-	//			//break
-	//		}
-	//	}
-	//}
-	//fmt.Println("getCurrentImageDigest >", imageDigest)
-	//return imageDigest
-
-	fmt.Println("getCurrentImageDigest >>>", mystContainer.ImageID)
 	for _, i := range images {
 		if i.ID == mystContainer.ImageID {
-			fmt.Println("im digests>", i.RepoDigests)
+			fmt.Println("getCurrentImageDigest >", i.RepoDigests)
 			m.model.ImageInfo.CurrentImgDigests = extractRepoDigests(i.RepoDigests)
 		}
 	}
-
 }
 
 // extend Container with method
