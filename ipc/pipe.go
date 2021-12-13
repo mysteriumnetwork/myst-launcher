@@ -30,6 +30,7 @@ func NewHandler() *Handler {
 	h.OpenPipe()
 	return h
 }
+
 func (p *Handler) OwnsPipe() bool {
 	return p.pipe != nil
 }

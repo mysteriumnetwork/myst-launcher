@@ -18,6 +18,8 @@ import (
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
+
+	"github.com/gonutz/w32"
 )
 
 const (
@@ -35,6 +37,7 @@ func main() {
 
 	if len(os.Args) > 1 {
 		ap.InTray = os.Args[1] == _const.FlagTray
+		ap.InstallStage1 = os.Args[1] == _const.FlagInstallStage1
 		ap.InstallStage2 = os.Args[1] == _const.FlagInstallStage2
 
 		switch os.Args[1] {
@@ -58,7 +61,9 @@ func main() {
 
 	gui_win32.InitGDIPlus()
 	ui := gui_win32.NewGui(mod)
-	if updateLauncherFromNewBinary(ui, ipc) {
+
+	// skip update if IsUserAnAdmin
+	if !w32.SHIsUserAnAdmin() && updateLauncherFromNewBinary(ui, ipc) {
 		return
 	}
 

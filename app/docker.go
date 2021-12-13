@@ -8,6 +8,7 @@
 package app
 
 import (
+	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -33,73 +34,78 @@ func (s *AppState) SuperviseDockerNode() {
 	t1 := time.NewTicker(15 * time.Second)
 	s.model.Update()
 
-	for {
-		tryStartOrInstallDocker := func() bool {
-			log.Println("tryStartOrInstallDocker")
-
-			if docker.IsRunning() {
-				s.model.SetStateDocker(model.RunnableStateRunning)
-				return false
-			}
-
-			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
-			isUnderVM, needSetup, err := false, false, error(nil)
-			err = utils.Retry(3, time.Second, func() error {
-				isUnderVM, err = utils.SystemUnderVm()
-				if err != nil {
-					return err
-				}
-				features, err := utils.QueryFeatures()
-				if err != nil {
-					return err
-				}
-				if len(features) > 0 {
-					needSetup = true
-				}
-				hasDocker, _ := utils.HasDocker()
-				if !hasDocker {
-					needSetup = true
-				}
-				return nil
-			})
-			if err != nil {
-				log.Println("error", err)
-				s.ui.ErrorModal("Application error", err.Error())
-				return true
-			}
-
-			if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
-				ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
-				if ret == model.IDNO {
-					s.ui.TerminateWaitDialogueComplete()
-					s.ui.CloseUI()
-					return true
-				}
-				s.model.Config.CheckVMSettingsConfirm = true
-				s.model.Config.Save()
-			}
-
-			if needSetup {
-				return s.tryInstallDocker()
-			}
-
-			isRunning, couldNotStart := docker.IsRunningOrTryStart()
-			if isRunning {
-				s.model.SetStateDocker(model.RunnableStateRunning)
-				return false
-			}
-			s.model.SetStateDocker(model.RunnableStateStarting)
-			if couldNotStart {
-				s.model.SetStateDocker(model.RunnableStateUnknown)
-				return s.tryInstallDocker()
-			}
-
+	tryStartOrInstallDocker := func() bool {
+		log.Println("tryStartOrInstallDocker")
+		if s.InstallStage1 {
+			return s.tryInstallDocker()
+		}
+		if docker.IsRunning() {
+			s.model.SetStateDocker(model.RunnableStateRunning)
 			return false
 		}
+
+		// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
+		isUnderVM, needSetup, err := false, false, error(nil)
+		err = utils.Retry(3, time.Second, func() error {
+			isUnderVM, err = utils.SystemUnderVm()
+			if err != nil {
+				return err
+			}
+			features, err := utils.QueryFeatures()
+			if err != nil {
+				return err
+			}
+			if len(features) > 0 {
+				needSetup = true
+			}
+			hasDocker, _ := utils.HasDocker()
+			if !hasDocker {
+				needSetup = true
+			}
+			return nil
+		})
+		if err != nil {
+			log.Println("error", err)
+			s.ui.ErrorModal("Application error", err.Error())
+			return true
+		}
+
+		if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
+			ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
+			if ret == model.IDNO {
+				s.ui.TerminateWaitDialogueComplete()
+				s.ui.CloseUI()
+				return true
+			}
+			s.model.Config.CheckVMSettingsConfirm = true
+			s.model.Config.Save()
+		}
+
+		if needSetup {
+			return s.tryInstallDocker()
+		}
+
+		isRunning, couldNotStart := docker.IsRunningOrTryStart()
+		if isRunning {
+			s.model.SetStateDocker(model.RunnableStateRunning)
+			return false
+		}
+		s.model.SetStateDocker(model.RunnableStateStarting)
+		if couldNotStart {
+			s.model.SetStateDocker(model.RunnableStateUnknown)
+			return s.tryInstallDocker()
+		}
+
+		return false
+	}
+
+	for {
 		if wantExit := tryStartOrInstallDocker(); wantExit {
+			fmt.Println("wantExit", wantExit)
 			s.model.SetWantExit()
 			return
 		}
+		s.model.SwitchState(model.UIStateInitial)
 
 		// docker is running now
 		s.startContainer(mystManager)

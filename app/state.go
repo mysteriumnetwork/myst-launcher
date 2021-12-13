@@ -9,14 +9,22 @@ package app
 
 import (
 	"fmt"
-	"sync"
-
 	model2 "github.com/mysteriumnetwork/myst-launcher/model"
+	"os"
+	"sync"
 )
+
+var f *os.File
+
+func init() {
+
+	//f, _ = os.Create("log_" + time.Now().GoString())
+}
 
 type AppState struct {
 	// flags
 	InTray        bool
+	InstallStage1 bool
 	InstallStage2 bool
 
 	WaitGroup sync.WaitGroup // for graceful shutdown
@@ -56,6 +64,8 @@ func (s *AppState) Write(b []byte) (int, error) {
 
 	if s.model.DuplicateLogToConsole {
 		fmt.Print(string(bCopy))
+		//f.WriteString(string(bCopy))
+		//f.Sync()
 	}
 
 	s.model.Publish("log", bCopy)

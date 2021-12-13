@@ -125,6 +125,18 @@ func CheckAndInstallExe() error {
 	return nil
 }
 
+func RunasWithArgsAndWait(cmdArgs string) error {
+	fullExe, _ := os.Executable()
+	err := native.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+	return err
+}
+
+func RunasWithArgsNoWait(cmdArgs string) error {
+	fullExe, _ := os.Executable()
+	err := native.ShellExecuteNowait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+	return err
+}
+
 // should be executed with admin's privileges
 func InstallExe() error {
 	fullExe_, _ := os.Executable()
