@@ -14,19 +14,18 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"syscall"
-
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
-	"github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/native"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 
 	"github.com/blang/semver/v4"
 	"github.com/gonutz/w32"
 	"github.com/lxn/win"
 	"github.com/winlabs/gowin32"
 	"golang.org/x/sys/windows"
+
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/native"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 const dockerUsersGroup = "docker-users"
@@ -119,17 +118,17 @@ func (s *AppState) tryInstallDocker() bool {
 			}
 			for fi, v := range list {
 				log.Println(fmt.Sprintf("Downloading %d of %d: %s", fi+1, len(list), v.name))
-				if _, err := os.Stat(utils.GetTmpDir() + "\\" + v.name); err != nil {
-
-					err := utils.DownloadFile(utils.GetTmpDir()+"\\"+v.name, v.url, func(progress int) {
-						if progress%10 == 0 {
-							log.Println(fmt.Sprintf("%s - %d%%", v.name, progress))
-						}
-					})
-					if err != nil {
-						return err
-					}
-				}
+				//if _, err := os.Stat(utils.GetTmpDir() + "\\" + v.name); err != nil {
+				//
+				//	err := utils.DownloadFile(utils.GetTmpDir()+"\\"+v.name, v.url, func(progress int) {
+				//		if progress%10 == 0 {
+				//			log.Println(fmt.Sprintf("%s - %d%%", v.name, progress))
+				//		}
+				//	})
+				//	if err != nil {
+				//		return err
+				//	}
+				//}
 			}
 			return nil
 		}
@@ -205,18 +204,20 @@ func (s *AppState) tryInstallDocker() bool {
 		log.Println("Installation have failed")
 		return true
 	}
+	utils.DiscoverDockerPathAndPatchEnv(true)
 
 	log.Println("Installation succeeded")
 	s.didDockerInstallation = true
 	s.model.SwitchState(model.UIStateInstallFinished)
+
 	ok := s.ui.WaitDialogueComplete()
 	if !ok {
 		return true
 	}
 
-	// TODO: restart in normal mode b/c launcher cannot find docker command (b/c ENV is not applied)
-	s.model.SwitchState(model.UIStateInitial)
-	return false
+	utils.RunWithArgsNoWait("")
+	s.ui.CloseUI()
+	return true
 }
 
 func IsWSLUpdated() (bool, error) {

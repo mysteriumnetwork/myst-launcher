@@ -253,7 +253,7 @@ func (m *Manager) findMystContainer() (*Container, error) {
 func (m *Manager) pullMystImage(image string) error {
 	fmt.Println("pullMystImage >", image)
 
-	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	out, err := m.dockerAPI.ImagePull(ctx, image, types.ImagePullOptions{})

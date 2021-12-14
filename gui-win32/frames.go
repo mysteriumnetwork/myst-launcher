@@ -10,6 +10,7 @@ package gui_win32
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+
 	. "github.com/mysteriumnetwork/myst-launcher/widget/declarative"
 )
 

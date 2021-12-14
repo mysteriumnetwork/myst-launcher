@@ -19,9 +19,11 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
+	"github.com/gonutz/w32"
 	"github.com/lxn/walk"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
@@ -134,6 +136,11 @@ func RunasWithArgsAndWait(cmdArgs string) error {
 func RunasWithArgsNoWait(cmdArgs string) error {
 	fullExe, _ := os.Executable()
 	err := native.ShellExecuteNowait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+	return err
+}
+func RunWithArgsNoWait(cmdArgs string) error {
+	fullExe, _ := os.Executable()
+	err := native.ShellExecuteNowait(0, "", fullExe, cmdArgs, "", syscall.SW_NORMAL)
 	return err
 }
 
@@ -461,4 +468,37 @@ func GetProductVersion() (string, error) {
 
 func ErrorModal(title, message string) int {
 	return walk.MsgBox(nil, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
+}
+
+func DiscoverDockerPathAndPatchEnv(wait bool) {
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SYSTEM\CurrentControlSet\Control\Session Manager\Environment`, registry.QUERY_VALUE)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer k.Close()
+
+	sfx := ""
+	for i := 0; i <= 10; i++ {
+		pathValue, _, err := k.GetStringValue("PATH")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		pp := strings.Split(pathValue, ";")
+		for _, v := range pp {
+			if strings.Contains(strings.ToLower(v), "docker") {
+				sfx = sfx + ";" + v
+			}
+		}
+		if sfx != "" {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+
+	if sfx != "" {
+		fmt.Println(sfx)
+		w32.SetEnvironmentVariable("PATH", os.Getenv("PATH")+sfx)
+	}
+
 }

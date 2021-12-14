@@ -8,18 +8,17 @@
 package main
 
 import (
-	"log"
-	"os"
-	"runtime"
-
+	"github.com/gonutz/w32"
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/const"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-
-	"github.com/gonutz/w32"
+	"log"
+	"os"
+	"runtime"
 )
 
 const (
@@ -28,6 +27,12 @@ const (
 )
 
 func main() {
+	//utils.DiscoverDockerPathAndPatchEnv()
+	//fmt.Println(os.Getenv("PATH"))
+	////bufio.NewReader(os.Stdin).ReadBytes('\n')
+	//native.ShellExecuteNowait(0, "", "bin\\myst-launcher-dbg-amd64.exe", "", "", syscall.SW_NORMAL)
+	//return
+
 	defer utils.PanicHandler("main")
 	runtime.LockOSThread()
 	utils.Win32Initialize()
@@ -63,7 +68,7 @@ func main() {
 	ui := gui_win32.NewGui(mod)
 
 	// skip update if IsUserAnAdmin
-	if !w32.SHIsUserAnAdmin() && updateLauncherFromNewBinary(ui, ipc) {
+	if !w32.SHIsUserAnAdmin() && updates.UpdateLauncherFromNewBinary(ui, ipc) {
 		return
 	}
 
@@ -88,25 +93,4 @@ func main() {
 	// send stop action to SuperviseDockerNode
 	ap.TriggerAction("stop")
 	ap.Shutdown()
-}
-
-// return: bool exit
-func updateLauncherFromNewBinary(ui *gui_win32.Gui, p *ipc_.Handler) bool {
-	if utils.LauncherUpgradeAvailable() {
-		update := ui.YesNoModal("Mysterium launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
-		if model.IDYES == update {
-			if !p.OwnsPipe() {
-				p.SendStopApp()
-				p.OpenPipe()
-			}
-			utils.UpdateExe()
-			return false
-		}
-	}
-
-	if !p.OwnsPipe() {
-		p.SendPopupApp()
-		return true
-	}
-	return false
 }
