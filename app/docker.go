@@ -10,7 +10,6 @@ package app
 import (
 	"fmt"
 	"log"
-	"runtime"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -20,9 +19,11 @@ import (
 
 func (s *AppState) SuperviseDockerNode() {
 	defer utils.PanicHandler("app")
+	err := s.initialize()
+	if err != nil {
+		panic(err)
+	}
 
-	runtime.LockOSThread()
-	utils.Win32Initialize()
 	defer s.WaitGroup.Done()
 
 	mystManager, err := myst.NewManager(s.model)
@@ -34,73 +35,8 @@ func (s *AppState) SuperviseDockerNode() {
 	t1 := time.NewTicker(15 * time.Second)
 	s.model.Update()
 
-	tryStartOrInstallDocker := func() bool {
-		log.Println("tryStartOrInstallDocker")
-		if s.InstallStage1 {
-			return s.tryInstallDocker()
-		}
-		if docker.IsRunning() {
-			s.model.SetStateDocker(model.RunnableStateRunning)
-			return false
-		}
-
-		// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
-		isUnderVM, needSetup, err := false, false, error(nil)
-		err = utils.Retry(3, time.Second, func() error {
-			isUnderVM, err = utils.SystemUnderVm()
-			if err != nil {
-				return err
-			}
-			features, err := utils.QueryFeatures()
-			if err != nil {
-				return err
-			}
-			if len(features) > 0 {
-				needSetup = true
-			}
-			hasDocker, _ := utils.HasDocker()
-			if !hasDocker {
-				needSetup = true
-			}
-			return nil
-		})
-		if err != nil {
-			log.Println("error", err)
-			s.ui.ErrorModal("Application error", err.Error())
-			return true
-		}
-
-		if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
-			ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
-			if ret == model.IDNO {
-				s.ui.TerminateWaitDialogueComplete()
-				s.ui.CloseUI()
-				return true
-			}
-			s.model.Config.CheckVMSettingsConfirm = true
-			s.model.Config.Save()
-		}
-
-		if needSetup {
-			return s.tryInstallDocker()
-		}
-
-		isRunning, couldNotStart := docker.IsRunningOrTryStart()
-		if isRunning {
-			s.model.SetStateDocker(model.RunnableStateRunning)
-			return false
-		}
-		s.model.SetStateDocker(model.RunnableStateStarting)
-		if couldNotStart {
-			s.model.SetStateDocker(model.RunnableStateUnknown)
-			return s.tryInstallDocker()
-		}
-
-		return false
-	}
-
 	for {
-		if wantExit := tryStartOrInstallDocker(); wantExit {
+		if wantExit := s.tryStartOrInstallDocker(docker); wantExit {
 			fmt.Println("wantExit", wantExit)
 			s.model.SetWantExit()
 			return
@@ -150,6 +86,74 @@ func (s *AppState) SuperviseDockerNode() {
 		case <-t1.C:
 		}
 	}
+}
+
+func (s *AppState) tryStartOrInstallDocker(docker *DockerRunner) bool {
+	log.Println("tryStartOrInstallDocker")
+
+	if s.InstallStage1 {
+		return s.tryInstallDocker()
+	}
+
+	if docker.IsRunning() {
+		s.model.SetStateDocker(model.RunnableStateRunning)
+		return false
+	}
+
+	// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
+	isUnderVM, needSetup, err := false, false, error(nil)
+	err = utils.Retry(3, time.Second, func() error {
+		isUnderVM, err = s.wmi.SystemUnderVm()
+		if err != nil {
+			return err
+		}
+
+		featuresOk, err := s.wmi.Features()
+		if err != nil {
+			return err
+		}
+		if !featuresOk {
+			needSetup = true
+		}
+
+		hasDocker, _ := utils.HasDocker()
+		if !hasDocker {
+			needSetup = true
+		}
+		return nil
+	})
+	if err != nil {
+		log.Println("error", err)
+		s.ui.ErrorModal("Application error", err.Error())
+		return true
+	}
+
+	if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
+		ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
+		if ret == model.IDNO {
+			s.ui.TerminateWaitDialogueComplete()
+			s.ui.CloseUI()
+			return true
+		}
+		s.model.Config.CheckVMSettingsConfirm = true
+		s.model.Config.Save()
+	}
+	if needSetup {
+		return s.tryInstallDocker()
+	}
+
+	isRunning, couldNotStart := docker.IsRunningOrTryStart()
+	if isRunning {
+		s.model.SetStateDocker(model.RunnableStateRunning)
+		return false
+	}
+	s.model.SetStateDocker(model.RunnableStateStarting)
+	if couldNotStart {
+		s.model.SetStateDocker(model.RunnableStateUnknown)
+		return s.tryInstallDocker()
+	}
+
+	return false
 }
 
 func (s *AppState) restart(mystManager *myst.Manager) {

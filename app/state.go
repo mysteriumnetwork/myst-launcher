@@ -10,7 +10,9 @@ package app
 import (
 	"fmt"
 	model2 "github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/wmi"
 	"os"
+	"runtime"
 	"sync"
 )
 
@@ -35,12 +37,25 @@ type AppState struct {
 
 	// state
 	didDockerInstallation bool
+	wmi                   *wmi.Manager
 }
 
 func NewApp() *AppState {
 	s := &AppState{}
 	s.action = make(chan string, 1)
+
 	return s
+}
+
+func (s *AppState) initialize() error {
+	runtime.LockOSThread()
+
+	var err error
+	s.wmi, err = wmi.NewSysManager()
+	if err != nil {
+		fmt.Println(">>>", err)
+	}
+	return err
 }
 
 func (s *AppState) Shutdown() {

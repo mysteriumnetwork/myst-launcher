@@ -27,15 +27,8 @@ const (
 )
 
 func main() {
-	//utils.DiscoverDockerPathAndPatchEnv()
-	//fmt.Println(os.Getenv("PATH"))
-	////bufio.NewReader(os.Stdin).ReadBytes('\n')
-	//native.ShellExecuteNowait(0, "", "bin\\myst-launcher-dbg-amd64.exe", "", "", syscall.SW_NORMAL)
-	//return
-
 	defer utils.PanicHandler("main")
 	runtime.LockOSThread()
-	utils.Win32Initialize()
 
 	ap := app.NewApp()
 	ipc := ipc_.NewHandler()

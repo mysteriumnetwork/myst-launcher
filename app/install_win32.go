@@ -72,37 +72,68 @@ func (s *AppState) tryInstallDocker() bool {
 	})
 
 	executor.AddStep("CheckVTx", func() bool {
+		ok, err := s.wmi.Features()
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+		if !ok {
+			s.wmi.EnableHyperVPlatform()
 
-		// Don't check VT-x / EPT as it's just enough to check VMPlatform WSL and vmcompute
-		features, err := utils.QueryFeatures()
-		if err != nil {
-			log.Println("Failed to query feature:", err)
-			return false
-		}
-		err = utils.InstallFeatures(features, nil)
-		if err != nil {
-			return false
-		}
-		if len(features) > 0 {
 			ret := s.ui.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+"Click Yes to reboot now")
 			if ret == win.IDYES {
 				native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
 			}
 			return false
 		}
+
 		// proceeding install after reboot
 		s.model.UpdateProperties(model.UIProps{"RebootAfterWSLEnable": model.StepFinished})
 
 		log.Println("Checking vmcompute (Hyper-V Host Compute Service)")
-		isVMComputeRunning := utils.IsVMComputeRunning()
-		if !isVMComputeRunning {
-			log.Println("Vmcompute (Hyper-V Host Compute Service) is not running")
-
-			s.ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service) is not running.\r\n\r\n"+
-				"Please enable virtualization in a system BIOS: VT-x and EPT options for Intel, SVM for AMD")
-
+		ok, err = s.wmi.IsVMcomputeRunning()
+		if err != nil {
+			log.Println(err)
 			return false
 		}
+		if !ok {
+			log.Println("Vmcompute (Hyper-V Host Compute Service) is not running")
+			s.ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service) is not running.\r\n\r\n"+
+				"Please enable virtualization in a system BIOS: VT-x and EPT options for Intel, SVM for AMD")
+			return false
+		}
+
+		//// Don't check VT-x / EPT as it's just enough to check VMPlatform WSL and vmcompute
+		//features, err := utils.QueryFeatures()
+		//if err != nil {
+		//	log.Println("Failed to query feature:", err)
+		//	return false
+		//}
+		//err = utils.InstallFeatures(features, nil)
+		//if err != nil {
+		//	return false
+		//}
+		//if len(features) > 0 {
+		//	ret := s.ui.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+"Click Yes to reboot now")
+		//	if ret == win.IDYES {
+		//		native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
+		//	}
+		//	return false
+		//}
+		//
+		//// proceeding install after reboot
+		//s.model.UpdateProperties(model.UIProps{"RebootAfterWSLEnable": model.StepFinished})
+		//
+		//log.Println("Checking vmcompute (Hyper-V Host Compute Service)")
+		//if !utils.IsVMComputeRunning() {
+		//	log.Println("Vmcompute (Hyper-V Host Compute Service) is not running")
+		//
+		//	s.ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service) is not running.\r\n\r\n"+
+		//		"Please enable virtualization in a system BIOS: VT-x and EPT options for Intel, SVM for AMD")
+		//
+		//	return false
+		//}
+
 		return true
 	})
 	executor.AddStep("DownloadFiles", func() bool {
