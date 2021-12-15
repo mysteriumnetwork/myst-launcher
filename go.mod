@@ -9,11 +9,10 @@ require (
 	github.com/containerd/containerd v1.5.8 // indirect
 	github.com/docker/docker v20.10.10+incompatible
 	github.com/docker/go-connections v0.4.0
-	github.com/gabriel-samfira/go-wmi v0.0.0-20200311221200-7c023ba1e6b4 // indirect
+	github.com/gabriel-samfira/go-wmi v0.0.0-20200311221200-7c023ba1e6b4
 	github.com/go-ole/go-ole v1.2.6
 	github.com/gonutz/w32 v1.0.0
-	github.com/google/glazier v0.0.0-20211213200644-0506347f83ee // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/google/glazier v0.0.0-20211213200644-0506347f83ee
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/iamacarpet/go-win64api v0.0.0-20211130162011-82e31fe23f80 // indirect
 	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
@@ -22,7 +21,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mysteriumnetwork/go-fileversion v1.0.0-fix1
 	github.com/opencontainers/image-spec v1.0.2 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pkg/errors v0.9.1
 	github.com/tc-hib/winres v0.1.5
 	github.com/tryor/gdiplus v0.0.0-20200830101413-c570de9579b3
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
