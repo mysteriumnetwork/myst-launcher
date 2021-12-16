@@ -36,9 +36,8 @@ require (
 )
 
 replace (
-	//tag:shlwapi-r1
-	//github.com/gonutz/w32 => github.com/mysteriumnetwork/w32 v1.0.1-0.20211020171222-078e36ca2fb8
-	github.com/gonutz/w32 => ../w32/
+	//tag:shlwapi-r4
+	github.com/gonutz/w32 => github.com/mysteriumnetwork/w32 v1.0.1-0.20211216070125-4741b8b8111b
 
 	//tag:stream-r1
 	github.com/tryor/gdiplus => github.com/mysteriumnetwork/gdiplus v0.0.0-20211020173905-2bd21ea15fae
