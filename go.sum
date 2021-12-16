@@ -487,6 +487,8 @@ github.com/mysteriumnetwork/gdiplus v0.0.0-20211020173905-2bd21ea15fae h1:OCNWyw
 github.com/mysteriumnetwork/gdiplus v0.0.0-20211020173905-2bd21ea15fae/go.mod h1:vPW3wMwJNynS4wCzfJx0Izy3NHX+mbuuT0UKuw6NKzE=
 github.com/mysteriumnetwork/go-fileversion v1.0.0-fix1 h1:5hXvl45QKdd+IY9rVbFLnZJ7sVvzzhkvZHMcxQ16HKo=
 github.com/mysteriumnetwork/go-fileversion v1.0.0-fix1/go.mod h1:VM+SiWjSJROa/fvPsFV24bWoHcCvyXnI0mmwKv9dVjc=
+github.com/mysteriumnetwork/go-wmi v0.0.0-20211216181752-dbce75057213 h1:Ywxv9qzd1zXjtopGSUBV6ACtTDolRugjU0eB7FqtkSI=
+github.com/mysteriumnetwork/go-wmi v0.0.0-20211216181752-dbce75057213/go.mod h1:4i91vCsWTxVaXLNe8XYtK1D1kRUSkZtJqQbY3FvBIgU=
 github.com/mysteriumnetwork/w32 v1.0.1-0.20211216070125-4741b8b8111b h1:7jQ0RQA4Jq7Hm0/U23rj8kwJLWRvrwH7MQwXIIJqotg=
 github.com/mysteriumnetwork/w32 v1.0.1-0.20211216070125-4741b8b8111b/go.mod h1:4lsdGqaSKAwKr+BJzdLFv1Ujmeq6kiuwllZmEP1mKLg=
 github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/ZM=

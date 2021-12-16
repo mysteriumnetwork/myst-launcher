@@ -58,7 +58,7 @@ func (m *Manager) initializeDism() error {
 
 func (m *Manager) queryOptionalFeature(feature string) (error, bool) {
 	log.Println("Query optional feature:", feature)
-	res, err := m.con.ExecMethod("ExecQuery", fmt.Sprintf("SELECT * FROM Win32_OptionalFeature Where Name='%s'", feature))
+	res, err := m.con.CallMethod("ExecQuery", fmt.Sprintf("SELECT * FROM Win32_OptionalFeature Where Name='%s'", feature))
 	if err != nil {
 		return errors.Wrap(err, "ExecQuery"), false
 	}
@@ -96,7 +96,7 @@ func (m *Manager) Features() (bool, error) {
 }
 
 func (m *Manager) IsVMcomputeRunning() (bool, error) {
-	res, err := m.con.ExecMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
+	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
 	if err != nil {
 		return false, errors.Wrap(err, "ExecQuery")
 	}
@@ -113,8 +113,9 @@ func (m *Manager) IsVMcomputeRunning() (bool, error) {
 }
 
 func (m *Manager) SystemUnderVm() (bool, error) {
-	res, err := m.con.ExecMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
+	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
 	if err != nil {
+		fmt.Println("err1>", err)
 		return false, errors.Wrap(err, "ExecQuery")
 	}
 	item, err := res.ItemAtIndex(0)
@@ -141,7 +142,7 @@ func (m *Manager) SystemUnderVm() (bool, error) {
 // We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
 // see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
 func (m *Manager) HasVTx() (bool, error) {
-	res, err := m.con.ExecMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
+	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
 	if err != nil {
 		return false, errors.Wrap(err, "ExecQuery")
 	}

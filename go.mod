@@ -36,6 +36,9 @@ require (
 )
 
 replace (
+	//tag:patch-v1
+	github.com/gabriel-samfira/go-wmi => github.com/mysteriumnetwork/go-wmi v0.0.0-20211216181752-dbce75057213
+
 	//tag:shlwapi-r4
 	github.com/gonutz/w32 => github.com/mysteriumnetwork/w32 v1.0.1-0.20211216070125-4741b8b8111b
 
