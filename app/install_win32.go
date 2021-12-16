@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"syscall"
 
 	"github.com/blang/semver/v4"
@@ -149,17 +150,17 @@ func (s *AppState) tryInstallDocker() bool {
 			}
 			for fi, v := range list {
 				log.Println(fmt.Sprintf("Downloading %d of %d: %s", fi+1, len(list), v.name))
-				//if _, err := os.Stat(utils.GetTmpDir() + "\\" + v.name); err != nil {
-				//
-				//	err := utils.DownloadFile(utils.GetTmpDir()+"\\"+v.name, v.url, func(progress int) {
-				//		if progress%10 == 0 {
-				//			log.Println(fmt.Sprintf("%s - %d%%", v.name, progress))
-				//		}
-				//	})
-				//	if err != nil {
-				//		return err
-				//	}
-				//}
+				if _, err := os.Stat(utils.GetTmpDir() + "\\" + v.name); err != nil {
+
+					err := utils.DownloadFile(utils.GetTmpDir()+"\\"+v.name, v.url, func(progress int) {
+						if progress%10 == 0 {
+							log.Println(fmt.Sprintf("%s - %d%%", v.name, progress))
+						}
+					})
+					if err != nil {
+						return err
+					}
+				}
 			}
 			return nil
 		}
@@ -184,15 +185,16 @@ func (s *AppState) tryInstallDocker() bool {
 		gowin32.SetInstallerInternalUI(gowin32.InstallUILevelProgressOnly) // UI Level for a prompt
 		wslIsUpdated, err := IsWSLUpdated()
 		if err != nil {
-			log.Println("InstallProduct failed (wsl_update_x64.msi)", err)
+			log.Println("IsWSLUpdated err>", err)
 			return false
 		}
+
 		if !wslIsUpdated {
-			err = gowin32.InstallProduct(utils.GetTmpDir()+"\\wsl_update_x64.msi", "ACTION=INSTALL")
-			if err != nil {
-				log.Println("InstallProduct failed (wsl_update_x64.msi)", err)
-				return false
-			}
+			//err = gowin32.InstallProduct(utils.GetTmpDir()+"\\wsl_update_x64.msi", "ACTION=INSTALL")
+			//if err != nil {
+			//	log.Println("InstallProduct err>", err)
+			//	return false
+			//}
 		} else {
 			log.Println("WSL is already updated!")
 		}
@@ -262,6 +264,7 @@ func IsWSLUpdated() (bool, error) {
 	if err != nil {
 		return false, wrap(err, errors.New("gowin32.GetInstalledProductProperty"))
 	}
+	log.Println("IsWSLUpdated > installedVer", installedVer)
 
 	pkg, err := gowin32.OpenInstallerPackage(utils.GetTmpDir() + "\\wsl_update_x64.msi")
 	if err != nil {
@@ -273,6 +276,8 @@ func IsWSLUpdated() (bool, error) {
 	if err != nil {
 		return false, wrap(err, errors.New("gowin32.GetProductProperty"))
 	}
+	log.Println("IsWSLUpdated > fileVer", fileVer)
+
 	semverFileVer, err := semver.Parse(fileVer)
 	if err != nil {
 		return false, wrap(err, errors.New("semver.Parse"))
@@ -281,6 +286,7 @@ func IsWSLUpdated() (bool, error) {
 	if err != nil {
 		return false, wrap(err, errors.New("semver.Parse"))
 	}
+	log.Println("IsWSLUpdated > semverFileVer, semverInstalledVer >", semverFileVer, semverInstalledVer)
 
 	// semverInstalledVer >= semverFileVer
 	return semverInstalledVer.Compare(semverFileVer) >= 0, nil
