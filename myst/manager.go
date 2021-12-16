@@ -359,9 +359,9 @@ func (m *Manager) timeout() *time.Duration {
 	return &t
 }
 
-func (m *Manager) CheckCurrentVersionAndUpgrades() {
+func (m *Manager) CheckCurrentVersionAndUpgrades(refreshVersionCache bool) {
 	m.getCurrentImageDigest()
-	updates.CheckVersionAndUpgrades(m.model, false)
+	updates.CheckVersionAndUpgrades(m.model, refreshVersionCache)
 }
 
 func (m *Manager) getCurrentImageDigest() {

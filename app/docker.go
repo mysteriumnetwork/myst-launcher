@@ -46,7 +46,7 @@ func (s *AppState) SuperviseDockerNode() {
 		// docker is running now
 		s.startContainer(mystManager)
 		if s.model.Config.AutoUpgrade {
-			s.upgrade(mystManager)
+			s.upgradeContainer(mystManager, false)
 		}
 
 		select {
@@ -55,10 +55,10 @@ func (s *AppState) SuperviseDockerNode() {
 
 			switch act {
 			case "check":
-				mystManager.CheckCurrentVersionAndUpgrades()
+				mystManager.CheckCurrentVersionAndUpgrades(true)
 
 			case "upgrade":
-				s.upgrade(mystManager)
+				s.upgradeContainer(mystManager, false)
 
 			case "restart":
 				// restart to apply new settings
@@ -164,24 +164,27 @@ func (s *AppState) restart(mystManager *myst.Manager) {
 	}
 }
 
-func (s *AppState) upgrade(mystManager *myst.Manager) {
+func (s *AppState) upgradeContainer(mystManager *myst.Manager, refreshVersionCache bool) {
 	if !s.model.ImageInfo.HasUpdate {
 		return
 	}
 
+	if refreshVersionCache {
+		mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
+	}
 	s.model.SetStateContainer(model.RunnableStateInstalling)
 	err := mystManager.Update()
 	if err != nil {
 		log.Println("upgrade", err)
 	}
 
-	mystManager.CheckCurrentVersionAndUpgrades()
+	mystManager.CheckCurrentVersionAndUpgrades(false)
 }
 
 // check for image updates before starting container, offer upgrade interactively
 func (s *AppState) startContainer(mystManager *myst.Manager) {
 
-	mystManager.CheckCurrentVersionAndUpgrades()
+	mystManager.CheckCurrentVersionAndUpgrades(false)
 
 	if s.model.Config.Enabled {
 		containerAlreadyRunning, err := mystManager.Start()
@@ -197,5 +200,4 @@ func (s *AppState) startContainer(mystManager *myst.Manager) {
 			s.ui.ShowNotificationInstalled()
 		}
 	}
-
 }
