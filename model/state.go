@@ -17,13 +17,32 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
+type InitialState int
+
+// 0 - undef,
+// 1 - stage1, // after welcome dialogue; and elevation of rights
+// 2 - stage2, // after features / WSL update; and restart
+// 3 - first run after install (notify)
+// 4 - normal (start minimized)
+
+const (
+	InitialStateUndefined            = InitialState(0)
+	InitialStateStage1               = InitialState(1)
+	InitialStateStage2               = InitialState(2)
+	InitialStateFirstRunAfterInstall = InitialState(3)
+	InitialStateNormalRun            = InitialState(4)
+)
+
 type Config struct {
 	AutoStart              bool `json:"auto_start"`
 	Enabled                bool `json:"enabled"`
 	CheckVMSettingsConfirm bool `json:"check_vm_settings_confirm"`
 
+	InitialState InitialState `json:"state"`
+
 	// allow auto-upgrades
 	AutoUpgrade bool `json:"auto_upgrade"`
+
 	// the last time we checked for upgrade, Unix timestamp, [second]
 	LastUpgradeCheck int64 `json:"last_upgrade_check"` // once a day
 

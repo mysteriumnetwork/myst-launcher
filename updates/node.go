@@ -87,7 +87,7 @@ func checkVersionRequirement(v string, minVersion []int) bool {
 	return verMatches
 }
 
-func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
+func CheckVersionAndUpgrades(mod *model.UIModel, refreshVersionCache bool) {
 	log.Println("CheckCurrentVersionAndUpgrades>")
 
 	var data []byte
@@ -185,7 +185,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, fastPath bool) {
 	}
 
 	// Reload image list if cache has no info about current version
-	if !fastPath && len(data) == 0 || mod.Config.NeedToCheckUpgrade() || currentVersion == "" {
+	if refreshVersionCache || len(data) == 0 || mod.Config.NeedToCheckUpgrade() || currentVersion == "" {
 		ok := getFile()
 		if ok {
 			os.WriteFile(f, data, 0777)

@@ -93,6 +93,7 @@ func (g *Gui) OpenUpgradeDlg() {
 	}
 	dialog.Activating().Once(func() {
 		dialog.SetX(g.dlg.X() + 300)
+		g.model.App.TriggerAction("check")
 
 		refresh()
 		g.model.UIBus.Subscribe("model-change", refresh)

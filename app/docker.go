@@ -8,8 +8,8 @@
 package app
 
 import (
+	"fmt"
 	"log"
-	"runtime"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -19,9 +19,10 @@ import (
 
 func (s *AppState) SuperviseDockerNode() {
 	defer utils.PanicHandler("app")
-
-	runtime.LockOSThread()
-	utils.Win32Initialize()
+	err := s.initialize()
+	if err != nil {
+		panic(err)
+	}
 	defer s.WaitGroup.Done()
 
 	mystManager, err := myst.NewManager(s.model)
@@ -34,77 +35,17 @@ func (s *AppState) SuperviseDockerNode() {
 	s.model.Update()
 
 	for {
-		tryStartOrInstallDocker := func() bool {
-			log.Println("tryStartOrInstallDocker")
-
-			if docker.IsRunning() {
-				s.model.SetStateDocker(model.RunnableStateRunning)
-				return false
-			}
-
-			// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
-			isUnderVM, needSetup, err := false, false, error(nil)
-			err = utils.Retry(3, time.Second, func() error {
-				isUnderVM, err = utils.SystemUnderVm()
-				if err != nil {
-					return err
-				}
-				features, err := utils.QueryFeatures()
-				if err != nil {
-					return err
-				}
-				if len(features) > 0 {
-					needSetup = true
-				}
-				hasDocker, _ := utils.HasDocker()
-				if !hasDocker {
-					needSetup = true
-				}
-				return nil
-			})
-			if err != nil {
-				log.Println("error", err)
-				s.ui.ErrorModal("Application error", err.Error())
-				return true
-			}
-
-			if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
-				ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
-				if ret == model.IDNO {
-					s.ui.TerminateWaitDialogueComplete()
-					s.ui.CloseUI()
-					return true
-				}
-				s.model.Config.CheckVMSettingsConfirm = true
-				s.model.Config.Save()
-			}
-
-			if needSetup {
-				return s.tryInstallDocker()
-			}
-
-			isRunning, couldNotStart := docker.IsRunningOrTryStart()
-			if isRunning {
-				s.model.SetStateDocker(model.RunnableStateRunning)
-				return false
-			}
-			s.model.SetStateDocker(model.RunnableStateStarting)
-			if couldNotStart {
-				s.model.SetStateDocker(model.RunnableStateUnknown)
-				return s.tryInstallDocker()
-			}
-
-			return false
-		}
-		if wantExit := tryStartOrInstallDocker(); wantExit {
+		if wantExit := s.tryStartOrInstallDocker(docker); wantExit {
+			fmt.Println("wantExit", wantExit)
 			s.model.SetWantExit()
 			return
 		}
+		s.model.SwitchState(model.UIStateInitial)
 
 		// docker is running now
 		s.startContainer(mystManager)
 		if s.model.Config.AutoUpgrade {
-			s.upgrade(mystManager)
+			s.upgradeContainer(mystManager, false)
 		}
 
 		select {
@@ -113,10 +54,10 @@ func (s *AppState) SuperviseDockerNode() {
 
 			switch act {
 			case "check":
-				mystManager.CheckCurrentVersionAndUpgrades()
+				mystManager.CheckCurrentVersionAndUpgrades(true)
 
 			case "upgrade":
-				s.upgrade(mystManager)
+				s.upgradeContainer(mystManager, false)
 
 			case "restart":
 				// restart to apply new settings
@@ -146,6 +87,74 @@ func (s *AppState) SuperviseDockerNode() {
 	}
 }
 
+func (s *AppState) tryStartOrInstallDocker(docker *DockerRunner) bool {
+	log.Println("tryStartOrInstallDocker")
+
+	if s.model.Config.InitialState == model.InitialStateStage1 {
+		return s.tryInstallDocker()
+	}
+
+	if docker.IsRunning() {
+		s.model.SetStateDocker(model.RunnableStateRunning)
+		return false
+	}
+
+	// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
+	isUnderVM, needSetup, err := false, false, error(nil)
+	err = utils.Retry(3, time.Second, func() error {
+		isUnderVM, err = s.wmi.SystemUnderVm()
+		if err != nil {
+			return err
+		}
+
+		featuresOk, err := s.wmi.Features()
+		if err != nil {
+			return err
+		}
+		if !featuresOk {
+			needSetup = true
+		}
+
+		hasDocker, _ := utils.HasDocker()
+		if !hasDocker {
+			needSetup = true
+		}
+		return nil
+	})
+	if err != nil {
+		log.Println("error", err)
+		s.ui.ErrorModal("Application error", err.Error())
+		return true
+	}
+
+	if isUnderVM && !s.model.Config.CheckVMSettingsConfirm {
+		ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
+		if ret == model.IDNO {
+			s.ui.TerminateWaitDialogueComplete()
+			s.ui.CloseUI()
+			return true
+		}
+		s.model.Config.CheckVMSettingsConfirm = true
+		s.model.Config.Save()
+	}
+	if needSetup {
+		return s.tryInstallDocker()
+	}
+
+	isRunning, couldNotStart := docker.IsRunningOrTryStart()
+	if isRunning {
+		s.model.SetStateDocker(model.RunnableStateRunning)
+		return false
+	}
+	s.model.SetStateDocker(model.RunnableStateStarting)
+	if couldNotStart {
+		s.model.SetStateDocker(model.RunnableStateUnknown)
+		return s.tryInstallDocker()
+	}
+
+	return false
+}
+
 func (s *AppState) restart(mystManager *myst.Manager) {
 	s.model.SetStateContainer(model.RunnableStateInstalling)
 	err := mystManager.Restart()
@@ -154,24 +163,27 @@ func (s *AppState) restart(mystManager *myst.Manager) {
 	}
 }
 
-func (s *AppState) upgrade(mystManager *myst.Manager) {
+func (s *AppState) upgradeContainer(mystManager *myst.Manager, refreshVersionCache bool) {
 	if !s.model.ImageInfo.HasUpdate {
 		return
 	}
 
+	if refreshVersionCache {
+		mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
+	}
 	s.model.SetStateContainer(model.RunnableStateInstalling)
 	err := mystManager.Update()
 	if err != nil {
 		log.Println("upgrade", err)
 	}
 
-	mystManager.CheckCurrentVersionAndUpgrades()
+	mystManager.CheckCurrentVersionAndUpgrades(false)
 }
 
 // check for image updates before starting container, offer upgrade interactively
 func (s *AppState) startContainer(mystManager *myst.Manager) {
 
-	mystManager.CheckCurrentVersionAndUpgrades()
+	mystManager.CheckCurrentVersionAndUpgrades(false)
 
 	if s.model.Config.Enabled {
 		containerAlreadyRunning, err := mystManager.Start()
@@ -182,10 +194,11 @@ func (s *AppState) startContainer(mystManager *myst.Manager) {
 		}
 		s.model.SetStateContainer(model.RunnableStateRunning)
 
-		if !containerAlreadyRunning && s.didDockerInstallation {
-			s.didDockerInstallation = false
+		if !containerAlreadyRunning && s.model.Config.InitialState == model.InitialStateFirstRunAfterInstall {
+			s.model.Config.InitialState = model.InitialStateNormalRun
+			s.model.Config.Save()
+
 			s.ui.ShowNotificationInstalled()
 		}
 	}
-
 }

@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/asaskevich/EventBus"
+	"github.com/gonutz/w32"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
@@ -166,6 +167,9 @@ func (g *Gui) CreateMainWindow() {
 
 	g.dlg.SetVisible(!g.model.App.GetInTray())
 	g.setImage()
+	if !w32.SHIsUserAnAdmin() {
+		g.btnBegin.SetImage(walk.IconShield())
+	}
 
 	// Events
 	g.model.UIBus.Subscribe("want-exit", func() {

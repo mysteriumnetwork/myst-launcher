@@ -88,7 +88,7 @@ func PanicHandler(threadName string) {
 		bu.Write(debug.Stack())
 		f.Write(bu.Bytes())
 
-		OpenExceptionDlg(threadName, bu.String())
-		os.Exit(1)
+		//OpenExceptionDlg(threadName, bu.String())
+		//os.Exit(1)
 	}
 }

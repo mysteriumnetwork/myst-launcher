@@ -8,12 +8,17 @@ import (
 	"time"
 )
 
-func (s *AppState) CheckLauncherUpdates(githubOrg, githubRepo string) {
+const (
+	gitHubOrg  = "mysteriumnetwork"
+	gitHubRepo = "myst-launcher"
+)
+
+func (s *AppState) CheckLauncherUpdates() {
 	ctx := context.TODO()
 
 	for {
 		func() {
-			release, err := updates.FetchLatestLauncherRelease(ctx, githubOrg, githubRepo)
+			release, err := updates.FetchLatestLauncherRelease(ctx, gitHubOrg, gitHubRepo)
 			if err != nil {
 				fmt.Println(err)
 				return

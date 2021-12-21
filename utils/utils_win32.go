@@ -19,10 +19,15 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
+	"github.com/blang/semver/v4"
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
+	"github.com/gonutz/w32"
 	"github.com/lxn/walk"
+	"github.com/pkg/errors"
+	"github.com/winlabs/gowin32"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 
@@ -123,6 +128,24 @@ func CheckAndInstallExe() error {
 		}
 	}
 	return nil
+}
+
+func RunasWithArgsAndWait(cmdArgs string) error {
+	fullExe, _ := os.Executable()
+	err := native.ShellExecuteAndWait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+	return err
+}
+
+func RunasWithArgsNoWait(cmdArgs string) error {
+	fullExe, _ := os.Executable()
+	err := native.ShellExecuteNowait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+	return err
+}
+
+func RunWithArgsNoWait(cmdArgs string) error {
+	fullExe, _ := os.Executable()
+	err := native.ShellExecuteNowait(0, "", fullExe, cmdArgs, "", syscall.SW_NORMAL)
+	return err
 }
 
 // should be executed with admin's privileges
@@ -255,177 +278,6 @@ func isWindowsUpdateEnabled() bool {
 	return disableWUfBSafeguards == 1
 }
 
-func SystemUnderVm() (bool, error) {
-	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
-	defer unknown.Release()
-
-	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
-	defer wmi.Release()
-
-	// service is a SWbemServices
-	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
-	service := serviceRaw.ToIDispatch()
-	defer service.Release()
-
-	// result is a SWBemObjectSet
-	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_ComputerSystem")
-	result := resultRaw.ToIDispatch()
-	defer result.Release()
-
-	countVar, _ := oleutil.GetProperty(result, "Count")
-	count := int(countVar.Val)
-	model := ""
-	if count > 0 {
-		itemRaw, _ := oleutil.CallMethod(result, "ItemIndex", 0)
-		item := itemRaw.ToIDispatch()
-		defer item.Release()
-
-		variantModel, err := oleutil.GetProperty(item, "Model")
-		if err != nil {
-			return false, err
-		}
-		model = variantModel.ToString()
-	}
-	vmTest := []string{"virtual", "vmware", "kvm", "xen"}
-	isVM := false
-	for _, v := range vmTest {
-		if strings.Contains(strings.ToLower(model), v) {
-			isVM = true
-			break
-		}
-	}
-	return isVM, nil
-}
-
-// We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
-// see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
-func HasVTx() bool {
-	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
-	defer unknown.Release()
-
-	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
-	defer wmi.Release()
-
-	// service is a SWbemServices
-	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
-	service := serviceRaw.ToIDispatch()
-	defer service.Release()
-
-	// result is a SWBemObjectSet
-	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_ComputerSystem")
-	result := resultRaw.ToIDispatch()
-	defer result.Release()
-
-	countVar, _ := oleutil.GetProperty(result, "Count")
-	count := int(countVar.Val)
-
-	for i := 0; i < count; i++ {
-		itemRaw, _ := oleutil.CallMethod(result, "ItemIndex", i)
-		item := itemRaw.ToIDispatch()
-		defer item.Release()
-
-		variantHypervisorPresent, err := oleutil.GetProperty(item, "HypervisorPresent")
-		if err == nil {
-			return variantHypervisorPresent.Value().(bool)
-		}
-	}
-	return false
-}
-
-func IsVMComputeRunning() bool {
-	unknown, _ := oleutil.CreateObject("WbemScripting.SWbemLocator")
-	defer unknown.Release()
-
-	wmi, _ := unknown.QueryInterface(ole.IID_IDispatch)
-	defer wmi.Release()
-
-	// service is a SWbemServices
-	serviceRaw, _ := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
-	service := serviceRaw.ToIDispatch()
-	defer service.Release()
-
-	// result is a SWBemObjectSet
-	resultRaw, _ := oleutil.CallMethod(service, "ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
-	result := resultRaw.ToIDispatch()
-	defer result.Release()
-
-	countVar, _ := oleutil.GetProperty(result, "Count")
-	count := int(countVar.Val)
-
-	for i := 0; i < count; i++ {
-		itemRaw, _ := oleutil.CallMethod(result, "ItemIndex", i)
-		item := itemRaw.ToIDispatch()
-		defer item.Release()
-
-		variantHypervisorPresent, err := oleutil.GetProperty(item, "State")
-		if err == nil {
-			state := variantHypervisorPresent.Value().(string)
-			if state == "Running" {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// Returns: featureExists, featureEnabled, error
-func QueryWindowsFeature(feature string) (bool, bool, error) {
-	log.Println("Query feature:", feature)
-	unknown, err := oleutil.CreateObject("WbemScripting.SWbemLocator")
-	if err != nil {
-		return false, false, err
-	}
-	defer unknown.Release()
-
-	wmi, err := unknown.QueryInterface(ole.IID_IDispatch)
-	if err != nil {
-		return false, false, err
-	}
-	defer wmi.Release()
-
-	// service is a SWbemServices
-	serviceRaw, err := oleutil.CallMethod(wmi, "ConnectServer", nil, "root\\cimv2")
-	if err != nil {
-		return false, false, err
-	}
-	service := serviceRaw.ToIDispatch()
-	defer service.Release()
-
-	// result is a SWBemObjectSet
-	resultRaw, err := oleutil.CallMethod(service, "ExecQuery", fmt.Sprintf("SELECT * FROM Win32_OptionalFeature Where Name='%s'", feature))
-	if err != nil {
-		return false, false, err
-	}
-	result := resultRaw.ToIDispatch()
-	defer result.Release()
-	countVar, err := oleutil.GetProperty(result, "Count")
-	if err != nil {
-		return false, false, err
-	}
-	count := int(countVar.Val)
-	featureExists := count > 0
-
-	resultRaw, err = oleutil.CallMethod(service, "ExecQuery", fmt.Sprintf("SELECT * FROM Win32_OptionalFeature Where Name='%s' and InstallState=1", feature))
-	if err != nil {
-		return false, false, err
-	}
-	result = resultRaw.ToIDispatch()
-	defer result.Release()
-
-	countVar, err = oleutil.GetProperty(result, "Count")
-	if err != nil {
-		return false, false, err
-	}
-	count = int(countVar.Val)
-	featureEnabled := count > 0
-
-	return featureExists, featureEnabled, nil
-}
-
-func Win32Initialize() {
-	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED)
-}
-
 func HasDocker() (bool, error) {
 	res, err := CmdRun(nil, "docker", "version")
 	if err != nil {
@@ -449,4 +301,75 @@ func GetProductVersion() (string, error) {
 
 func ErrorModal(title, message string) int {
 	return walk.MsgBox(nil, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
+}
+
+func DiscoverDockerPathAndPatchEnv(wait bool) {
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SYSTEM\CurrentControlSet\Control\Session Manager\Environment`, registry.QUERY_VALUE)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer k.Close()
+
+	sfx := ""
+	for i := 0; i <= 10; i++ {
+		pathValue, _, err := k.GetStringValue("PATH")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		pp := strings.Split(pathValue, ";")
+		for _, v := range pp {
+			if strings.Contains(strings.ToLower(v), "docker") {
+				sfx = sfx + ";" + v
+			}
+		}
+		if sfx != "" {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+
+	if sfx != "" {
+		fmt.Println(sfx)
+		w32.SetEnvironmentVariable("PATH", os.Getenv("PATH")+sfx)
+	}
+}
+
+func IsWSLUpdated() (bool, error) {
+	const WSLUpdateProductCode = "{36EF257E-21D5-44F7-8451-07923A8C465E}"
+	state := gowin32.GetInstalledProductState(WSLUpdateProductCode)
+	if state != gowin32.InstallStateDefault {
+		return false, nil
+	}
+
+	installedVer, err := gowin32.GetInstalledProductProperty(WSLUpdateProductCode, gowin32.InstallPropertyVersionString)
+	if err != nil {
+		return false, errors.Wrap(err, "gowin32.GetInstalledProductProperty")
+	}
+	log.Println("IsWSLUpdated > installedVer", installedVer)
+
+	pkg, err := gowin32.OpenInstallerPackage(GetTmpDir() + "\\wsl_update_x64.msi")
+	if err != nil {
+		return false, errors.Wrap(err, "gowin32.OpenInstallerPackage")
+	}
+	defer pkg.Close()
+
+	fileVer, err := pkg.GetProductProperty("ProductVersion")
+	if err != nil {
+		return false, errors.Wrap(err, "gowin32.GetProductProperty")
+	}
+	log.Println("IsWSLUpdated > fileVer", fileVer)
+
+	semverFileVer, err := semver.Parse(fileVer)
+	if err != nil {
+		return false, errors.Wrap(err, "semver.Parse")
+	}
+	semverInstalledVer, err := semver.Parse(installedVer)
+	if err != nil {
+		return false, errors.Wrap(err, "semver.Parse")
+	}
+	log.Println("IsWSLUpdated > semverFileVer, semverInstalledVer >", semverFileVer, semverInstalledVer)
+
+	// semverInstalledVer >= semverFileVer
+	return semverInstalledVer.Compare(semverFileVer) >= 0, nil
 }

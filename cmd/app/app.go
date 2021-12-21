@@ -8,35 +8,25 @@
 package main
 
 import (
-	"log"
-	"os"
-	"runtime"
-
+	"github.com/gonutz/w32"
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	"github.com/mysteriumnetwork/myst-launcher/const"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-)
-
-const (
-	gitHubOrg  = "mysteriumnetwork"
-	gitHubRepo = "myst-launcher"
+	"log"
+	"os"
 )
 
 func main() {
 	defer utils.PanicHandler("main")
-	runtime.LockOSThread()
-	utils.Win32Initialize()
 
 	ap := app.NewApp()
 	ipc := ipc_.NewHandler()
 
 	if len(os.Args) > 1 {
-		ap.InTray = os.Args[1] == _const.FlagTray
-		ap.InstallStage2 = os.Args[1] == _const.FlagInstallStage2
-
 		switch os.Args[1] {
 		case _const.FlagInstall:
 			utils.InstallExe()
@@ -53,24 +43,35 @@ func main() {
 	mod.SetApp(ap)
 	mod.DuplicateLogToConsole = true
 
+	// in case of installation restart elevated
+	if mod.Config.InitialState == model.InitialStateStage1 || mod.Config.InitialState == model.InitialStateStage2 {
+		if !w32.SHIsUserAnAdmin() {
+			utils.RunasWithArgsNoWait("")
+			return
+		}
+	}
+
 	prodVersion, _ := utils.GetProductVersion()
 	mod.SetProductVersion(prodVersion)
 
 	gui_win32.InitGDIPlus()
 	ui := gui_win32.NewGui(mod)
-	if updateLauncherFromNewBinary(ui, ipc) {
+
+	// skip update if IsUserAnAdmin
+	if !w32.SHIsUserAnAdmin() && updates.UpdateLauncherFromNewBinary(ui, ipc) {
 		return
 	}
+
+	ap.SetModel(mod)
 
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
 
-	ap.SetModel(mod)
 	ap.SetUI(ui)
 	ap.WaitGroup.Add(1)
 
 	go ap.SuperviseDockerNode()
-	go ap.CheckLauncherUpdates(gitHubOrg, gitHubRepo)
+	go ap.CheckLauncherUpdates()
 
 	ipc.Listen(ui)
 
@@ -83,25 +84,5 @@ func main() {
 	// send stop action to SuperviseDockerNode
 	ap.TriggerAction("stop")
 	ap.Shutdown()
-}
 
-// return: bool exit
-func updateLauncherFromNewBinary(ui *gui_win32.Gui, p *ipc_.Handler) bool {
-	if utils.LauncherUpgradeAvailable() {
-		update := ui.YesNoModal("Mysterium launcher upgrade", "You are running a newer version of launcher.\r\nUpgrade launcher installation ?")
-		if model.IDYES == update {
-			if !p.OwnsPipe() {
-				p.SendStopApp()
-				p.OpenPipe()
-			}
-			utils.UpdateExe()
-			return false
-		}
-	}
-
-	if !p.OwnsPipe() {
-		p.SendPopupApp()
-		return true
-	}
-	return false
 }

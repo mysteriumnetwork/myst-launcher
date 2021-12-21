@@ -9,30 +9,38 @@ package app
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 
 	model2 "github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/wmi"
 )
 
 type AppState struct {
-	// flags
-	InTray        bool
-	InstallStage2 bool
-
 	WaitGroup sync.WaitGroup // for graceful shutdown
 
 	action chan string
 	model  *model2.UIModel //gui.Model
 	ui     model2.Gui_
-
-	// state
-	didDockerInstallation bool
+	wmi    *wmi.Manager
 }
 
 func NewApp() *AppState {
 	s := &AppState{}
 	s.action = make(chan string, 1)
+
 	return s
+}
+
+func (s *AppState) initialize() error {
+	runtime.LockOSThread()
+
+	var err error
+	s.wmi, err = wmi.NewSysManager()
+	if err != nil {
+		fmt.Println(">>>", err)
+	}
+	return err
 }
 
 func (s *AppState) Shutdown() {
@@ -67,5 +75,5 @@ func (s *AppState) TriggerAction(action string) {
 }
 
 func (s *AppState) GetInTray() bool {
-	return s.InTray
+	return s.model.Config.InitialState == model2.InitialStateNormalRun
 }
