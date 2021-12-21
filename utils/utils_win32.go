@@ -21,10 +21,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/blang/semver/v4"
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 	"github.com/gonutz/w32"
 	"github.com/lxn/walk"
+	"github.com/pkg/errors"
+	"github.com/winlabs/gowin32"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 
@@ -138,6 +141,7 @@ func RunasWithArgsNoWait(cmdArgs string) error {
 	err := native.ShellExecuteNowait(0, "runas", fullExe, cmdArgs, "", syscall.SW_NORMAL)
 	return err
 }
+
 func RunWithArgsNoWait(cmdArgs string) error {
 	fullExe, _ := os.Executable()
 	err := native.ShellExecuteNowait(0, "", fullExe, cmdArgs, "", syscall.SW_NORMAL)
@@ -329,5 +333,43 @@ func DiscoverDockerPathAndPatchEnv(wait bool) {
 		fmt.Println(sfx)
 		w32.SetEnvironmentVariable("PATH", os.Getenv("PATH")+sfx)
 	}
+}
 
+func IsWSLUpdated() (bool, error) {
+	const WSLUpdateProductCode = "{36EF257E-21D5-44F7-8451-07923A8C465E}"
+	state := gowin32.GetInstalledProductState(WSLUpdateProductCode)
+	if state != gowin32.InstallStateDefault {
+		return false, nil
+	}
+
+	installedVer, err := gowin32.GetInstalledProductProperty(WSLUpdateProductCode, gowin32.InstallPropertyVersionString)
+	if err != nil {
+		return false, errors.Wrap(err, "gowin32.GetInstalledProductProperty")
+	}
+	log.Println("IsWSLUpdated > installedVer", installedVer)
+
+	pkg, err := gowin32.OpenInstallerPackage(GetTmpDir() + "\\wsl_update_x64.msi")
+	if err != nil {
+		return false, errors.Wrap(err, "gowin32.OpenInstallerPackage")
+	}
+	defer pkg.Close()
+
+	fileVer, err := pkg.GetProductProperty("ProductVersion")
+	if err != nil {
+		return false, errors.Wrap(err, "gowin32.GetProductProperty")
+	}
+	log.Println("IsWSLUpdated > fileVer", fileVer)
+
+	semverFileVer, err := semver.Parse(fileVer)
+	if err != nil {
+		return false, errors.Wrap(err, "semver.Parse")
+	}
+	semverInstalledVer, err := semver.Parse(installedVer)
+	if err != nil {
+		return false, errors.Wrap(err, "semver.Parse")
+	}
+	log.Println("IsWSLUpdated > semverFileVer, semverInstalledVer >", semverFileVer, semverInstalledVer)
+
+	// semverInstalledVer >= semverFileVer
+	return semverInstalledVer.Compare(semverFileVer) >= 0, nil
 }

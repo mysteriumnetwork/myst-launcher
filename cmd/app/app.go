@@ -18,26 +18,15 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 	"log"
 	"os"
-	"runtime"
-)
-
-const (
-	gitHubOrg  = "mysteriumnetwork"
-	gitHubRepo = "myst-launcher"
 )
 
 func main() {
 	defer utils.PanicHandler("main")
-	runtime.LockOSThread()
 
 	ap := app.NewApp()
 	ipc := ipc_.NewHandler()
 
 	if len(os.Args) > 1 {
-		ap.InTray = os.Args[1] == _const.FlagTray
-		ap.InstallStage1 = os.Args[1] == _const.FlagInstallStage1
-		ap.InstallStage2 = os.Args[1] == _const.FlagInstallStage2
-
 		switch os.Args[1] {
 		case _const.FlagInstall:
 			utils.InstallExe()
@@ -54,6 +43,14 @@ func main() {
 	mod.SetApp(ap)
 	mod.DuplicateLogToConsole = true
 
+	// in case of installation restart elevated
+	if mod.Config.InitialState == model.InitialStateStage1 || mod.Config.InitialState == model.InitialStateStage2 {
+		if !w32.SHIsUserAnAdmin() {
+			utils.RunasWithArgsNoWait("")
+			return
+		}
+	}
+
 	prodVersion, _ := utils.GetProductVersion()
 	mod.SetProductVersion(prodVersion)
 
@@ -65,15 +62,16 @@ func main() {
 		return
 	}
 
+	ap.SetModel(mod)
+
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
 
-	ap.SetModel(mod)
 	ap.SetUI(ui)
 	ap.WaitGroup.Add(1)
 
 	go ap.SuperviseDockerNode()
-	go ap.CheckLauncherUpdates(gitHubOrg, gitHubRepo)
+	go ap.CheckLauncherUpdates()
 
 	ipc.Listen(ui)
 
@@ -86,4 +84,5 @@ func main() {
 	// send stop action to SuperviseDockerNode
 	ap.TriggerAction("stop")
 	ap.Shutdown()
+
 }

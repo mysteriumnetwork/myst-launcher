@@ -23,7 +23,6 @@ func (s *AppState) SuperviseDockerNode() {
 	if err != nil {
 		panic(err)
 	}
-
 	defer s.WaitGroup.Done()
 
 	mystManager, err := myst.NewManager(s.model)
@@ -91,7 +90,7 @@ func (s *AppState) SuperviseDockerNode() {
 func (s *AppState) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	log.Println("tryStartOrInstallDocker")
 
-	if s.InstallStage1 {
+	if s.model.Config.InitialState == model.InitialStateStage1 {
 		return s.tryInstallDocker()
 	}
 
@@ -195,8 +194,10 @@ func (s *AppState) startContainer(mystManager *myst.Manager) {
 		}
 		s.model.SetStateContainer(model.RunnableStateRunning)
 
-		if !containerAlreadyRunning && s.didDockerInstallation {
-			s.didDockerInstallation = false
+		if !containerAlreadyRunning && s.model.Config.InitialState == model.InitialStateFirstRunAfterInstall {
+			s.model.Config.InitialState = model.InitialStateNormalRun
+			s.model.Config.Save()
+
 			s.ui.ShowNotificationInstalled()
 		}
 	}

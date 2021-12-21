@@ -112,10 +112,40 @@ func (m *Manager) IsVMcomputeRunning() (bool, error) {
 	return state == "Running", nil
 }
 
+func (m *Manager) StartVmcomputeIfNotRunning() (bool, error) {
+	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
+	if err != nil {
+		return false, errors.Wrap(err, "ExecQuery")
+	}
+	item, err := res.ItemAtIndex(0)
+	if err != nil {
+		return false, errors.Wrap(err, "ItemAtIndex")
+	}
+	prop_, err := item.GetProperty("State")
+	if err != nil {
+		return false, errors.Wrap(err, "GetProperty")
+	}
+	state := prop_.Raw().ToString()
+	if state == "Running" {
+		return true, nil
+	}
+
+	res, err = item.Get("StartService")
+	if err != nil {
+		return false, errors.Wrap(err, "Get -> StartService")
+	}
+	res_ := res.Raw().Value().(int32)
+	fmt.Println(res_)
+	if res_ == 0 || res_ == 10 {
+		return true, nil
+
+	}
+	return false, nil
+}
+
 func (m *Manager) SystemUnderVm() (bool, error) {
 	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
 	if err != nil {
-		fmt.Println("err1>", err)
 		return false, errors.Wrap(err, "ExecQuery")
 	}
 	item, err := res.ItemAtIndex(0)

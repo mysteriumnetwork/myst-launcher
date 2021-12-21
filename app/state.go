@@ -9,35 +9,20 @@ package app
 
 import (
 	"fmt"
-	model2 "github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/wmi"
-	"os"
 	"runtime"
 	"sync"
+
+	model2 "github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/wmi"
 )
 
-var f *os.File
-
-func init() {
-
-	//f, _ = os.Create("log_" + time.Now().GoString())
-}
-
 type AppState struct {
-	// flags
-	InTray        bool
-	InstallStage1 bool
-	InstallStage2 bool
-
 	WaitGroup sync.WaitGroup // for graceful shutdown
 
 	action chan string
 	model  *model2.UIModel //gui.Model
 	ui     model2.Gui_
-
-	// state
-	didDockerInstallation bool
-	wmi                   *wmi.Manager
+	wmi    *wmi.Manager
 }
 
 func NewApp() *AppState {
@@ -79,8 +64,6 @@ func (s *AppState) Write(b []byte) (int, error) {
 
 	if s.model.DuplicateLogToConsole {
 		fmt.Print(string(bCopy))
-		//f.WriteString(string(bCopy))
-		//f.Sync()
 	}
 
 	s.model.Publish("log", bCopy)
@@ -92,5 +75,5 @@ func (s *AppState) TriggerAction(action string) {
 }
 
 func (s *AppState) GetInTray() bool {
-	return s.InTray
+	return s.model.Config.InitialState == model2.InitialStateNormalRun
 }
