@@ -21,7 +21,7 @@ var (
 	// fixed non-string version. used for launcher version checks
 	intVersion = [4]uint16{1, 0, 24, 0}
 	// display version
-	strVersion = "1.0.24-preview3"
+	strVersion = "1.0.24-preview4"
 )
 
 func getIcon(path string) *winres.Icon {
