@@ -28,14 +28,14 @@ func (s *AppState) tryInstallDocker() bool {
 	s.model.SwitchState(model.UIStateInstallInProgress)
 
 	s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepInProgress})
-	features, err := utils.QueryFeatures()
+	featuresOK, err := s.mgr.Features()
 	if err != nil {
 		log.Println("Failed to query feature:", err)
 		s.model.SwitchState(model.UIStateInstallError)
 		s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepFailed})
 		return true
 	}
-	if len(features) > 0 {
+	if !featuresOK {
 		log.Println("Virtualization is not supported !")
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
