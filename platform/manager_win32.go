@@ -5,17 +5,19 @@ package platform
 
 import (
 	"fmt"
-	"github.com/gabriel-samfira/go-wmi/wmi"
-	"github.com/google/glazier/go/dism"
-	"github.com/mysteriumnetwork/myst-launcher/native"
-	"github.com/pkg/errors"
-	"golang.org/x/sys/windows"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/mysteriumnetwork/myst-launcher/native"
+
+	"github.com/gabriel-samfira/go-wmi/wmi"
+	"github.com/google/glazier/go/dism"
+	"github.com/pkg/errors"
+	"golang.org/x/sys/windows"
 )
 
 const (

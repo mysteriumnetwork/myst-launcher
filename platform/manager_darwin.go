@@ -1,8 +1,11 @@
 package platform
 
 import (
+	"bytes"
 	"log"
 	"strings"
+
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 const (
@@ -24,7 +27,7 @@ func (m *Manager) Features() (bool, error) {
 
 	hasHV := func() bool {
 		var out bytes.Buffer
-		_, err := CmdRun(&out, "sysctl", "machdep.cpu.features")
+		_, err := utils.CmdRun(&out, "sysctl", "machdep.cpu.features")
 		if err != nil {
 			log.Println("QueryFeatures >", err)
 			return false
@@ -34,7 +37,7 @@ func (m *Manager) Features() (bool, error) {
 		}
 		out.Reset()
 
-		_, err = CmdRun(&out, "sysctl", "kern.hv_support")
+		_, err = utils.CmdRun(&out, "sysctl", "kern.hv_support")
 		if err != nil {
 			log.Println("QueryFeatures >", err)
 			return false
