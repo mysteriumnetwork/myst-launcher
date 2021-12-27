@@ -86,5 +86,6 @@ func main() {
 	err = rs.WriteObject(out, winres.ArchAMD64)
 	if err != nil {
 		log.Fatalln(err)
+
 	}
 }
