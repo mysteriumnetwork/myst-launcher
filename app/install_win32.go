@@ -23,6 +23,7 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/native"
+	"github.com/mysteriumnetwork/myst-launcher/platform"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -82,13 +83,13 @@ func (s *AppState) tryInstallDocker() bool {
 
 	executor.AddStep("CheckVTx", func() bool {
 		// Don't check VT-x / EPT as it's just enough to check VMPlatform WSL and vmcompute
-		ok, err := s.wmi.Features()
+		ok, err := s.mgr.Features()
 		if err != nil {
 			log.Println(err)
 			return false
 		}
 		if !ok {
-			s.wmi.EnableHyperVPlatform()
+			s.mgr.(*platform.Manager).EnableHyperVPlatform()
 
 			ret := s.ui.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+"Click Yes to reboot now")
 			if ret == win.IDYES {
@@ -103,14 +104,14 @@ func (s *AppState) tryInstallDocker() bool {
 		s.model.UpdateProperties(model.UIProps{"RebootAfterWSLEnable": model.StepFinished})
 
 		log.Println("Checking vmcompute (Hyper-V Host Compute Service)")
-		ok, err = s.wmi.IsVMcomputeRunning()
+		ok, err = s.mgr.(*platform.Manager).IsVMcomputeRunning()
 		if err != nil {
 			log.Println(err)
 			return false
 		}
 		// force service to start
 		if !ok {
-			ok, err = s.wmi.StartVmcomputeIfNotRunning()
+			ok, err = s.mgr.(*platform.Manager).StartVmcomputeIfNotRunning()
 		}
 		if !ok {
 			log.Println("Vmcompute (Hyper-V Host Compute Service) is not running")

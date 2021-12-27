@@ -39,3 +39,8 @@ type Model interface {
 	Publish(topic string, args ...interface{})
 	GetConfig() *Config
 }
+
+type PlatformManager interface {
+	Features() (bool, error)
+	SystemUnderVm() (bool, error)
+}

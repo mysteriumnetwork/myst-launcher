@@ -28,18 +28,11 @@ func IsProcessRunning(name string) bool {
 	return false
 }
 
-func Win32Initialize() {}
-
 func LauncherUpgradeAvailable() bool {
 	return false
 }
 
 func UpdateExe() {}
-
-func SystemUnderVm() (bool, error) {
-	log.Println("SystemUnderVm: not implemented")
-	return false, nil
-}
 
 func HasDocker() (bool, error) {
 	// Don't try running docker binary directly
