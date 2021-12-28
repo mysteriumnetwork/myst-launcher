@@ -26,6 +26,7 @@ func NewManager() (*Manager, error) {
 func (m *Manager) Features() (bool, error) {
 
 	hasHV := func() bool {
+		// cpu support
 		var out bytes.Buffer
 		_, err := utils.CmdRun(&out, "sysctl", "machdep.cpu.features")
 		if err != nil {
@@ -33,10 +34,21 @@ func (m *Manager) Features() (bool, error) {
 			return false
 		}
 		if !strings.Contains(out.String(), "VMX") {
-			return false
+
+			// check for `Apple M1`
+			out.Reset()
+			_, err := utils.CmdRun(&out, "sysctl", "machdep.cpu.brand_string")
+			if err != nil {
+				log.Println("QueryFeatures >", err)
+				return false
+			}
+			if !strings.Contains(out.String(), "Apple M1") {
+				return false
+			}
 		}
 		out.Reset()
 
+		// OS has virtualization support
 		_, err = utils.CmdRun(&out, "sysctl", "kern.hv_support")
 		if err != nil {
 			log.Println("QueryFeatures >", err)
