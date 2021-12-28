@@ -8,12 +8,7 @@ import (
 	"time"
 )
 
-const (
-	gitHubOrg  = "mysteriumnetwork"
-	gitHubRepo = "myst-launcher"
-)
-
-func (s *AppState) CheckLauncherUpdates() {
+func (s *AppState) CheckLauncherUpdates(gitHubOrg, gitHubRepo string) {
 	ctx := context.TODO()
 
 	for {
