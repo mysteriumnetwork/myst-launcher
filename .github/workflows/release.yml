@@ -2,7 +2,8 @@ name: release
 
 on:
   push:
-    tags: ["*"]
+    # Publish semver tags as releases.
+    tags: [ '*.*.*' ]
 
 jobs:
   release-windows-amd64:
