@@ -4,9 +4,8 @@ on:
   push:
     # Publish semver tags as releases.
     tags:
-      - '!dbg-*'
-      - '!dbg'
-      - '!*-dbg'
+      - '!dbg*'
+      - '!*-dbg*'
       - '*.*.*'
 
 jobs:

@@ -133,6 +133,16 @@ func (s *AppState) tryInstallDocker() bool {
 	}
 	buf.Reset()
 
+	// initialize docker desktop
+	_, err = utils.CmdRun(&buf, "/usr/bin/open", "/Applications/Docker.app")
+	if err != nil {
+		log.Println("Failed to run command:", err)
+		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
+		return true
+	}
+	buf.Reset()
+
 	s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFinished})
 	log.Println("Installation succeeded")
 
