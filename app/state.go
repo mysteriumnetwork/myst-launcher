@@ -13,7 +13,7 @@ import (
 	"sync"
 
 	model2 "github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/wmi"
+	"github.com/mysteriumnetwork/myst-launcher/platform"
 )
 
 type AppState struct {
@@ -22,7 +22,7 @@ type AppState struct {
 	action chan string
 	model  *model2.UIModel //gui.Model
 	ui     model2.Gui_
-	wmi    *wmi.Manager
+	mgr    model2.PlatformManager
 }
 
 func NewApp() *AppState {
@@ -36,10 +36,7 @@ func (s *AppState) initialize() error {
 	runtime.LockOSThread()
 
 	var err error
-	s.wmi, err = wmi.NewSysManager()
-	if err != nil {
-		fmt.Println(">>>", err)
-	}
+	s.mgr, err = platform.NewManager()
 	return err
 }
 

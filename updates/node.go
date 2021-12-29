@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -133,9 +134,10 @@ func CheckVersionAndUpgrades(mod *model.UIModel, refreshVersionCache bool) {
 			matchVersionRegex := versionRegex.MatchString(res.Name)
 			for _, im := range res.Images {
 
-				if res.Name == imageTag && im.Architecture == "amd64" {
+				if res.Name == imageTag && im.Architecture == runtime.GOARCH {
 					latestDigest = im.Digest
 				}
+
 				// a work-around for custom tags like testnet3, which have only 1 version of image
 				if imageTag != "latest" {
 					matchVersionRegex = true

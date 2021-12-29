@@ -9,6 +9,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"runtime"
 )
 
@@ -19,7 +20,7 @@ func GetDockerDesktopLink() (string, error) {
 		return "https://desktop.docker.com/mac/stable/amd64/Docker Desktop Installer.exe", nil
 
 	case "darwin":
-		return "https://desktop.docker.com/mac/stable/amd64/Docker.dmg", nil
+		return fmt.Sprintf("https://desktop.docker.com/mac/stable/%s/Docker.dmg", runtime.GOARCH), nil
 
 	default:
 		return "", errors.New("unknown system")

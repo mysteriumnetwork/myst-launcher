@@ -28,14 +28,14 @@ func (s *AppState) tryInstallDocker() bool {
 	s.model.SwitchState(model.UIStateInstallInProgress)
 
 	s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepInProgress})
-	features, err := utils.QueryFeatures()
+	featuresOK, err := s.mgr.Features()
 	if err != nil {
 		log.Println("Failed to query feature:", err)
 		s.model.SwitchState(model.UIStateInstallError)
 		s.model.UpdateProperties(model.UIProps{"CheckVTx": model.StepFailed})
 		return true
 	}
-	if len(features) > 0 {
+	if !featuresOK {
 		log.Println("Virtualization is not supported !")
 		s.model.SwitchState(model.UIStateInstallError)
 		return true
@@ -125,6 +125,16 @@ func (s *AppState) tryInstallDocker() bool {
 	buf.Reset()
 
 	_, err = utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
+	if err != nil {
+		log.Println("Failed to run command:", err)
+		s.model.SwitchState(model.UIStateInstallError)
+		s.model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
+		return true
+	}
+	buf.Reset()
+
+	// initialize docker desktop
+	_, err = utils.CmdRun(&buf, "/usr/bin/open", "/Applications/Docker.app")
 	if err != nil {
 		log.Println("Failed to run command:", err)
 		s.model.SwitchState(model.UIStateInstallError)

@@ -2,7 +2,12 @@ name: release
 
 on:
   push:
-    tags: ["*"]
+    # Publish semver tags as releases.
+    tags:
+      - '!dbg*'
+      - '!*-dbg*'
+      - '!*-fix*'
+      - '*.*.*'
 
 jobs:
   release-windows-amd64:

@@ -102,12 +102,12 @@ func (s *AppState) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
 	isUnderVM, needSetup, err := false, false, error(nil)
 	err = utils.Retry(3, time.Second, func() error {
-		isUnderVM, err = s.wmi.SystemUnderVm()
+		isUnderVM, err = s.mgr.SystemUnderVm()
 		if err != nil {
 			return err
 		}
 
-		featuresOk, err := s.wmi.Features()
+		featuresOk, err := s.mgr.Features()
 		if err != nil {
 			return err
 		}

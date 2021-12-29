@@ -1,18 +1,23 @@
-package wmi
+//go:build windows
+// +build windows
+
+package platform
 
 import (
 	"fmt"
-	"github.com/gabriel-samfira/go-wmi/wmi"
-	"github.com/google/glazier/go/dism"
-	"github.com/mysteriumnetwork/myst-launcher/native"
-	"github.com/pkg/errors"
-	"golang.org/x/sys/windows"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/mysteriumnetwork/myst-launcher/native"
+
+	"github.com/gabriel-samfira/go-wmi/wmi"
+	"github.com/google/glazier/go/dism"
+	"github.com/pkg/errors"
+	"golang.org/x/sys/windows"
 )
 
 const (
@@ -28,13 +33,12 @@ var features = []string{
 }
 
 type Manager struct {
-	con *wmi.WMI
-
 	hasDism bool
+	con     *wmi.WMI
 	ses     dism.Session
 }
 
-func NewSysManager() (*Manager, error) {
+func NewManager() (*Manager, error) {
 	w, err := wmi.NewConnection(".", `root\cimv2`)
 	if err != nil {
 		return nil, err
@@ -44,16 +48,6 @@ func NewSysManager() (*Manager, error) {
 		con: w,
 	}
 	return m, nil
-}
-
-func (m *Manager) initializeDism() error {
-	ses, err := dism.OpenSession(dism.DISM_ONLINE_IMAGE, "", "", dism.DismLogErrorsWarningsInfo, "", "")
-	if err != nil {
-		return err
-	}
-	m.ses = ses
-	m.hasDism = true
-	return nil
 }
 
 func (m *Manager) queryOptionalFeature(feature string) (error, bool) {
@@ -94,6 +88,36 @@ func (m *Manager) Features() (bool, error) {
 	}
 	return true, nil
 }
+
+func (m *Manager) SystemUnderVm() (bool, error) {
+	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
+	if err != nil {
+		return false, errors.Wrap(err, "ExecQuery")
+	}
+	item, err := res.ItemAtIndex(0)
+	if err != nil {
+		return false, errors.Wrap(err, "ItemAtIndex")
+	}
+	prop_, err := item.GetProperty("Model")
+	if err != nil {
+		return false, errors.Wrap(err, "GetProperty")
+	}
+	model := prop_.Raw().ToString()
+
+	vmTest := []string{"virtual", "vmware", "kvm", "xen"}
+	isVM := false
+	for _, v := range vmTest {
+		if strings.Contains(strings.ToLower(model), v) {
+			isVM = true
+			break
+		}
+	}
+	return isVM, nil
+}
+
+/*
+ *  Win32-specific methods
+ */
 
 func (m *Manager) IsVMcomputeRunning() (bool, error) {
 	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
@@ -141,32 +165,6 @@ func (m *Manager) StartVmcomputeIfNotRunning() (bool, error) {
 
 	}
 	return false, nil
-}
-
-func (m *Manager) SystemUnderVm() (bool, error) {
-	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
-	if err != nil {
-		return false, errors.Wrap(err, "ExecQuery")
-	}
-	item, err := res.ItemAtIndex(0)
-	if err != nil {
-		return false, errors.Wrap(err, "ItemAtIndex")
-	}
-	prop_, err := item.GetProperty("Model")
-	if err != nil {
-		return false, errors.Wrap(err, "GetProperty")
-	}
-	model := prop_.Raw().ToString()
-
-	vmTest := []string{"virtual", "vmware", "kvm", "xen"}
-	isVM := false
-	for _, v := range vmTest {
-		if strings.Contains(strings.ToLower(model), v) {
-			isVM = true
-			break
-		}
-	}
-	return isVM, nil
 }
 
 // We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
@@ -225,5 +223,15 @@ func (m *Manager) EnableHyperVPlatform() error {
 		}
 	}
 
+	return nil
+}
+
+func (m *Manager) initializeDism() error {
+	ses, err := dism.OpenSession(dism.DISM_ONLINE_IMAGE, "", "", dism.DismLogErrorsWarningsInfo, "", "")
+	if err != nil {
+		return err
+	}
+	m.ses = ses
+	m.hasDism = true
 	return nil
 }
