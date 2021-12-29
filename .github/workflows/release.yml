@@ -6,6 +6,7 @@ on:
     tags:
       - '!dbg*'
       - '!*-dbg*'
+      - '!*-fix*'
       - '*.*.*'
 
 jobs:
