@@ -26,12 +26,12 @@ import (
 	"github.com/go-ole/go-ole/oleutil"
 	"github.com/gonutz/w32"
 	"github.com/lxn/walk"
+	"github.com/mysteriumnetwork/go-fileversion"
 	"github.com/pkg/errors"
 	"github.com/winlabs/gowin32"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 
-	"github.com/mysteriumnetwork/go-fileversion"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 )
