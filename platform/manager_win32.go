@@ -57,21 +57,18 @@ func (m *Manager) queryOptionalFeature(feature string) (error, bool) {
 		return errors.Wrap(err, "ExecQuery"), false
 	}
 
-	el, err := res.Elements()
+	el, _ := res.ItemAtIndex(0)
+	// ignore error as it means empty set
 	if err != nil {
-		return errors.Wrap(err, "Elements"), false
+		return nil, false
 	}
-	for _, e := range el {
-		state_, err := e.GetProperty("InstallState")
-		if err != nil {
-			return errors.Wrap(err, "GetProperty"), false
-		}
-		state := state_.Value().(int32)
-		if state != 1 {
-			return nil, false
-		}
+
+	state_, err := el.GetProperty("InstallState")
+	if err != nil {
+		return errors.Wrap(err, "GetProperty"), false
 	}
-	return nil, true
+	state := state_.Value().(int32)
+	return nil, state == 1
 }
 
 func (m *Manager) Features() (bool, error) {
