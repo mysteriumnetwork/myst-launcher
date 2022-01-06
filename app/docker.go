@@ -8,7 +8,6 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -36,8 +35,8 @@ func (s *AppState) SuperviseDockerNode() {
 
 	for {
 		if wantExit := s.tryStartOrInstallDocker(docker); wantExit {
-			fmt.Println("wantExit", wantExit)
 			s.model.SetWantExit()
+			s.ui.CloseUI()
 			return
 		}
 		s.model.SwitchState(model.UIStateInitial)
@@ -131,7 +130,8 @@ func (s *AppState) tryStartOrInstallDocker(docker *DockerRunner) bool {
 		ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
 		if ret == model.IDNO {
 			s.ui.TerminateWaitDialogueComplete()
-			s.ui.CloseUI()
+
+			// s.ui.CloseUI()
 			return true
 		}
 		s.model.Config.CheckVMSettingsConfirm = true
@@ -190,6 +190,7 @@ func (s *AppState) startContainer(mystManager *myst.Manager) {
 		if err != nil {
 			s.model.SetStateContainer(model.RunnableStateUnknown)
 			log.Println("startContainer", err)
+
 			return
 		}
 		s.model.SetStateContainer(model.RunnableStateRunning)
