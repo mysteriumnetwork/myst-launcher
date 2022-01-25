@@ -22,6 +22,7 @@ require (
 	github.com/mysteriumnetwork/go-fileversion v1.0.0-fix1
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/stretchr/testify v1.7.0
 	github.com/tc-hib/winres v0.1.5
 	github.com/tryor/gdiplus v0.0.0-20200830101413-c570de9579b3
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
