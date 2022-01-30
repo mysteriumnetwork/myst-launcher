@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/gonutz/w32"
+
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
@@ -71,7 +72,6 @@ func main() {
 	if !w32.SHIsUserAnAdmin() && updates.UpdateLauncherFromNewBinary(ui, ipc) {
 		return
 	}
-
 	ap.SetModel(mod)
 
 	ui.CreateNotifyIcon(mod)

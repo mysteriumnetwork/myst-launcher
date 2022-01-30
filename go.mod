@@ -28,7 +28,7 @@ require (
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
 	github.com/winlabs/gowin32 v0.0.0-20210302152218-c9e40aa88058
 	golang.org/x/net v0.0.0-20211118161319-6a13c67c3ce4
-	golang.org/x/sys v0.0.0-20211213223007-03aa0b5f6827
+	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/genproto v0.0.0-20211118181313-81c1377c94b1 // indirect
@@ -43,8 +43,8 @@ replace (
 	//tag:shlwapi-r4
 	github.com/gonutz/w32 => github.com/mysteriumnetwork/w32 v1.0.1-0.20211216070125-4741b8b8111b
 
+	github.com/lxn/walk => ../walk
+
 	//tag:stream-r1
 	github.com/tryor/gdiplus => github.com/mysteriumnetwork/gdiplus v0.0.0-20211020173905-2bd21ea15fae
-
-	github.com/lxn/walk => ../walk
 )

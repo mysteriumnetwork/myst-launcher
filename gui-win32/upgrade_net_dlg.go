@@ -10,6 +10,7 @@ package gui_win32
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func (g *Gui) OpenUpgradeNetworkDlg() {
@@ -59,7 +60,7 @@ func (g *Gui) OpenUpgradeNetworkDlg() {
 			LinkLabel{
 				Text: "<a>Information about MainNet</a>",
 				OnLinkActivated: func(link *walk.LinkLabelLink) {
-					openUrlInBrowser("https://mysterium.network/")
+					utils.OpenUrlInBrowser("https://mysterium.network/")
 				},
 				Alignment: AlignHNearVNear,
 			},

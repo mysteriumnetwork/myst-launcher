@@ -154,7 +154,7 @@ func (m *UIModel) UpdateProperties(p UIProps) {
 		case "CheckGroupMembership":
 			m.CheckGroupMembership = v
 		default:
-			log.Println("Unknown proprerty:", k)
+			log.Println("Unknown property:", k)
 		}
 	}
 	m.UIBus.Publish("model-change")
