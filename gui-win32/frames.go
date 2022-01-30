@@ -310,13 +310,14 @@ func (g *Gui) stateDlg() Widget {
 								Alignment: AlignHNearVNear,
 							},
 							LinkLabel{
-								Visible:  false,
-								Text:     "<a>Update for launcher</a>",
+								//Visible:  true,
+								Text:     "! <a>Launcher update available</a>",
 								AssignTo: &g.lbUpdateLauncher,
 								OnLinkActivated: func(link *walk.LinkLabelLink) {
 									g.OpenDialogue(1)
 								},
-								Alignment: AlignHNearVNear,
+								Alignment:     AlignHNearVNear,
+								DefaultColors: true,
 							},
 						},
 						MaxSize: Size{Height: 20},

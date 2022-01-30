@@ -42,7 +42,7 @@ type Gui struct {
 	mw         *walk.MainWindow
 	dlg        *walk.MainWindow
 
-	//
+	// menu
 	actionFileMenu *walk.Action
 	actionMainMenu *walk.Action
 	actionOpenUI   *walk.Action
@@ -164,6 +164,7 @@ func (g *Gui) CreateMainWindow() {
 	g.lbNodeUI.SetBounds(walk.Rectangle{120, 4, 150, 20})
 	g.lbMMN.SetBounds(walk.Rectangle{120, 24, 150, 20})
 	g.lbUpdateLauncher.SetBounds(walk.Rectangle{120, 44, 150, 20})
+	//g.lbMMN.Handle()
 
 	g.dlg.SetVisible(!g.model.App.GetInTray())
 	g.setImage()
@@ -282,7 +283,7 @@ func (g *Gui) refresh() {
 		g.lbImageName.SetText(g.model.Config.GetFullImageName())
 		g.btnOpenNodeUI.SetFocus()
 
-		g.lbUpdateLauncher.SetVisible(g.model.LauncherHasUpdate)
+		//g.lbUpdateLauncher.SetVisible(g.model.LauncherHasUpdate)
 
 		g.lbNetwork.SetText(g.model.Config.GetNetworkCaption())
 		g.btnMainNet.SetVisible(!g.model.CurrentNetIsMainNet())

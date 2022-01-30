@@ -45,4 +45,6 @@ replace (
 
 	//tag:stream-r1
 	github.com/tryor/gdiplus => github.com/mysteriumnetwork/gdiplus v0.0.0-20211020173905-2bd21ea15fae
+
+	github.com/lxn/walk => ../walk
 )
