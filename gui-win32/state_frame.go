@@ -8,7 +8,6 @@
 package gui_win32
 
 import (
-	"fmt"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 	"log"
 
@@ -106,10 +105,10 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 								Alignment: AlignHNearVNear,
 							},
 							LinkLabel{
-								Text:     "! <a>Launcher update available</a>",
+								Text:     "<a>Launcher update available</a>",
 								AssignTo: &f.lbUpdateLauncher,
 								OnLinkActivated: func(link *walk.LinkLabelLink) {
-									mdl.UIBus.Publish("click-open-dialogue")
+									mdl.UIBus.Publish("launcher-upgrade")
 								},
 								Alignment:     AlignHNearVNear,
 								DefaultColors: true,
@@ -312,6 +311,7 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 	}
 
 	c.Create(NewBuilder(parent))
+	f.btnOpenNodeUI.SetFocus()
 
 	logo, err := walk.NewIconFromResourceWithSize("APPICON", walk.Size{64, 64})
 	if err != nil {
@@ -338,7 +338,7 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 }
 
 func (f *StateFrame) handlerState() {
-	fmt.Println("handlerState >>>>>>>>>>>>>>>>>>>>>>>>", f.mdl.State, f.mdl.StateContainer)
+	//fmt.Println("handlerState >>>>>>>>>>>>>>>>>>>>>>>>", f.mdl.State, f.mdl.StateContainer)
 
 	f.Synchronize(func() {
 
@@ -371,7 +371,6 @@ func (f *StateFrame) handlerState() {
 			f.lbNetwork.SetText(f.mdl.Config.GetNetworkCaption())
 			f.btnMainNet.SetVisible(!f.mdl.CurrentNetIsMainNet())
 			f.lbUpdateLauncher.SetVisible(f.mdl.LauncherHasUpdate)
-			f.lbUpdateLauncher.SetVisible(true)
 		}
 	})
 }

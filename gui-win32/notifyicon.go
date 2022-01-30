@@ -87,8 +87,20 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 	})
 	nodeEnabled.SetCheckedCondition(g.isNodeEnabled)
 
+	launcherUpgrade := walk.NewAction()
+	launcherUpgrade.SetText("Launcher update available")
+	launcherUpgrade.SetVisible(false)
+	launcherUpgrade.Triggered().Attach(func() {
+		g.OpenUpgradeLauncherDlg()
+	})
+	g.model.UIBus.Subscribe("model-change", func() {
+		launcherUpgrade.SetVisible(g.model.LauncherHasUpdate)
+	})
+
 	g.ni.ContextMenu().Actions().Add(openUIAction)
 	g.ni.ContextMenu().Actions().Add(nodeEnabled)
+	g.ni.ContextMenu().Actions().Add(launcherUpgrade)
+
 	g.ni.ContextMenu().Actions().Add(walk.NewSeparatorAction())
 	g.ni.ContextMenu().Actions().Add(exitAction)
 

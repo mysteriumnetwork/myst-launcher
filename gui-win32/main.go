@@ -8,7 +8,6 @@
 package gui_win32
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/asaskevich/EventBus"
@@ -41,11 +40,12 @@ type Gui struct {
 	dlg        *walk.MainWindow
 
 	// menu
-	actionFileMenu *walk.Action
-	actionMainMenu *walk.Action
-	actionOpenUI   *walk.Action
-	actionUpgrade  *walk.Action
-	actionEnable   *walk.Action
+	actionFileMenu        *walk.Action
+	actionMainMenu        *walk.Action
+	actionOpenUI          *walk.Action
+	actionUpgrade         *walk.Action
+	actionLauncherUpgrade *walk.Action
+	actionEnable          *walk.Action
 
 	isAutostartEnabled *walk.MutableCondition
 	isNodeEnabled      *walk.MutableCondition
@@ -136,8 +136,10 @@ func (g *Gui) CreateMainWindow() {
 			g.refresh()
 		})
 	})
-	g.model.UIBus.Subscribe("launcher-update", func() {
-		g.OpenDialogue(1)
+	g.model.UIBus.Subscribe("launcher-upgrade", func() {
+		g.dlg.Synchronize(func() {
+			g.OpenUpgradeLauncherDlg()
+		})
 	})
 
 	// prevent closing the app
@@ -157,21 +159,26 @@ func (g *Gui) CreateMainWindow() {
 
 	// events
 	g.model.UIBus.Subscribe("btn-config-click", func() {
-		g.NetworkingDlg()
+		g.dlg.Synchronize(func() {
+			g.NetworkingDlg()
+		})
 	})
 	g.model.UIBus.Subscribe("btn-upgrade-network", func() {
-		g.OpenUpgradeNetworkDlg()
+		g.dlg.Synchronize(func() {
+			g.OpenUpgradeNetworkDlg()
+		})
 	})
-	g.model.UIBus.Subscribe("click-open-dialogue", func() {
-		g.OpenDialogue(1)
-	})
+	//g.model.UIBus.Subscribe("click-open-dialogue", func() {
+	//	g.dlg.Synchronize(func() {
+	//		g.OpenUpgradeLauncherDlg()
+	//	})
+	//})
 	g.model.UIBus.Subscribe("click-finish", func() {
 		if g.model.WantExit {
 			g.CloseUI()
 		}
 		g.DialogueComplete()
 	})
-
 }
 
 func (g *Gui) enableMenu(enable bool) {
@@ -187,7 +194,6 @@ func (g *Gui) changeView(state model2.UIState) {
 		return
 	}
 
-	fmt.Println("changeView >>>>>>>>>>>>>>>>>>>", state)
 	if g.frame != nil {
 		g.frame.Close()
 		g.frame = nil
@@ -204,11 +210,6 @@ func (g *Gui) changeView(state model2.UIState) {
 }
 
 func (g *Gui) refresh() {
-	//if !g.dlg.Visible() {
-	//	return
-	//}
-	fmt.Println("refresh >", g.model.State)
-
 	switch g.model.State {
 
 	case model2.UIStateInitial:
@@ -217,6 +218,7 @@ func (g *Gui) refresh() {
 
 		g.isNodeEnabled.SetSatisfied(g.model.Config.Enabled)
 		g.isAutostartEnabled.SetSatisfied(g.model.Config.AutoStart)
+		g.actionLauncherUpgrade.SetVisible(g.model.LauncherHasUpdate)
 
 	case model2.UIStateInstallNeeded:
 		g.enableMenu(false)
@@ -295,14 +297,6 @@ func (g *Gui) SetModalReturnCode(rc int) {}
 
 func (g *Gui) Run() {
 	g.mw.Run()
-}
-
-func (g *Gui) OpenDialogue(id int) {
-	if id == 1 {
-		g.dlg.Synchronize(func() {
-			g.OpenUpgradeLauncherDlg()
-		})
-	}
 }
 
 // returns false, if dialogue was terminated

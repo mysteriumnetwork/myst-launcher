@@ -80,6 +80,7 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 			},
 		},
 	}.Create(g.dlg)
+
 	if err != nil {
 		return
 	}

@@ -185,6 +185,7 @@ func (s *AppState) startContainer(mystManager *myst.Manager) {
 
 	mystManager.CheckCurrentVersionAndUpgrades(false)
 
+	s.model.SetStateContainer(model.RunnableStateInstalling)
 	if s.model.Config.Enabled {
 		containerAlreadyRunning, err := mystManager.Start()
 		if err != nil {

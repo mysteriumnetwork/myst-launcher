@@ -110,7 +110,6 @@ func (m *Manager) Start() (bool, error) {
 	}
 
 	if mystContainer.isRunning() {
-		log.Println("is running >")
 		return true, nil
 	}
 	return false, m.startMystContainer()

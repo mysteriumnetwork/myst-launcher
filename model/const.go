@@ -30,7 +30,7 @@ const (
 func (r RunnableState) String() string {
 	switch r {
 	case RunnableStateRunning:
-		return "ONLINE"
+		return "RUNNING"
 	case RunnableStateInstalling:
 		return "INSTALLING.."
 	case RunnableStateStarting:
