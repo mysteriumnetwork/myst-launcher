@@ -86,6 +86,7 @@ func (s *AppState) SuperviseDockerNode() {
 	}
 }
 
+// returns: will exit, if tryInstallDocker requests it
 func (s *AppState) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	log.Println("tryStartOrInstallDocker")
 
@@ -130,8 +131,6 @@ func (s *AppState) tryStartOrInstallDocker(docker *DockerRunner) bool {
 		ret := s.ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
 		if ret == model.IDNO {
 			s.ui.TerminateWaitDialogueComplete()
-
-			// s.ui.CloseUI()
 			return true
 		}
 		s.model.Config.CheckVMSettingsConfirm = true

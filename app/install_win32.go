@@ -49,8 +49,6 @@ func (s *AppState) tryInstallDocker() bool {
 			s.model.Config.Save()
 		}
 		utils.RunasWithArgsNoWait("")
-
-		// s.ui.CloseUI()
 		return true
 	}
 
@@ -98,8 +96,6 @@ func (s *AppState) tryInstallDocker() bool {
 			if ret == win.IDYES {
 				native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
 			}
-
-			// s.ui.CloseUI()
 			return false
 		}
 
@@ -229,14 +225,13 @@ func (s *AppState) tryInstallDocker() bool {
 		s.model.Config.AutoStart = true
 		s.model.Config.Save()
 
-		log.Println("Checking current dockerUsersGroup membership")
+		log.Println("Checking current docker-users group membership")
 		if !utils.CurrentGroupMembership(dockerUsersGroup) {
 
 			log.Println("Sign out from the current session to finish the installation.")
 			ret := s.ui.ConfirmModal("Installation", "Click yes to sign out from the current session to finish the installation.")
 			if ret == win.IDOK {
 				windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
-				// s.ui.CloseUI()
 				return true
 			}
 			log.Println("Remember to sign out from the current session")

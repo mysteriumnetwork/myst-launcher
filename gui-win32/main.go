@@ -294,6 +294,14 @@ func (g *Gui) Run() {
 	g.mw.Run()
 }
 
+func (g *Gui) OpenDialogue(id int) {
+	if id == 1 {
+		g.dlg.Synchronize(func() {
+			g.OpenUpgradeLauncherDlg()
+		})
+	}
+}
+
 // returns false, if dialogue was terminated
 func (g *Gui) WaitDialogueComplete() bool {
 	_, ok := <-g.waitClick
