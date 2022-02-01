@@ -136,7 +136,7 @@ func (g *Gui) CreateMainWindow() {
 			g.refresh()
 		})
 	})
-	g.model.UIBus.Subscribe("launcher-upgrade", func() {
+	g.model.UIBus.Subscribe("launcher-upgrade-dlg", func() {
 		g.dlg.Synchronize(func() {
 			g.OpenUpgradeLauncherDlg()
 		})
@@ -168,11 +168,6 @@ func (g *Gui) CreateMainWindow() {
 			g.OpenUpgradeNetworkDlg()
 		})
 	})
-	//g.model.UIBus.Subscribe("click-open-dialogue", func() {
-	//	g.dlg.Synchronize(func() {
-	//		g.OpenUpgradeLauncherDlg()
-	//	})
-	//})
 	g.model.UIBus.Subscribe("click-finish", func() {
 		if g.model.WantExit {
 			g.CloseUI()

@@ -27,7 +27,7 @@ func (s *AppState) CheckLauncherUpdates(gitHubOrg, gitHubRepo string) {
 
 			pvCurrent := s.model.ProductVersion
 
-			launcherHasUpdate := false
+			launcherHasUpdate := true
 			if strings.Compare(release.Version.String(), pvCurrent) > 0 {
 				launcherHasUpdate = true
 			}
@@ -40,7 +40,7 @@ func (s *AppState) CheckLauncherUpdates(gitHubOrg, gitHubRepo string) {
 				s.model.Update()
 
 				if isNew {
-					s.model.Publish("launcher-update")
+					s.model.Publish("launcher-upgrade-dlg")
 				}
 			}
 		}()

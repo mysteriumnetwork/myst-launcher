@@ -108,10 +108,10 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 								Text:     "<a>Launcher update available</a>",
 								AssignTo: &f.lbUpdateLauncher,
 								OnLinkActivated: func(link *walk.LinkLabelLink) {
-									mdl.UIBus.Publish("launcher-upgrade")
+									mdl.UIBus.Publish("launcher-upgrade-dlg")
 								},
-								Alignment:     AlignHNearVNear,
-								DefaultColors: true,
+								Alignment: AlignHNearVNear,
+								TextColor: walk.RGB(255, 55, 95),
 							},
 						},
 						MaxSize: Size{Height: 20},

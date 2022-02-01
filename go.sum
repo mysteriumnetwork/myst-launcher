@@ -489,6 +489,8 @@ github.com/mysteriumnetwork/go-wmi v0.0.0-20211216181752-dbce75057213 h1:Ywxv9qz
 github.com/mysteriumnetwork/go-wmi v0.0.0-20211216181752-dbce75057213/go.mod h1:4i91vCsWTxVaXLNe8XYtK1D1kRUSkZtJqQbY3FvBIgU=
 github.com/mysteriumnetwork/w32 v1.0.1-0.20211216070125-4741b8b8111b h1:7jQ0RQA4Jq7Hm0/U23rj8kwJLWRvrwH7MQwXIIJqotg=
 github.com/mysteriumnetwork/w32 v1.0.1-0.20211216070125-4741b8b8111b/go.mod h1:4lsdGqaSKAwKr+BJzdLFv1Ujmeq6kiuwllZmEP1mKLg=
+github.com/mysteriumnetwork/walk v0.0.0-20220201093859-484feb886dfe h1:G0Di9O9cpZO5pfdybu3vmSm+zc7h7NTzt3PZLp7lv08=
+github.com/mysteriumnetwork/walk v0.0.0-20220201093859-484feb886dfe/go.mod h1:NhZGU3dnSnyoEdFqC0neVOJqijd6cAW+d63zrWYU3BU=
 github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/ZM=
 github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 h1:zYyBkD/k9seD2A7fsi6Oo2LfFZAehjjQMERAvZLEDnQ=
 github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646/go.mod h1:jpp1/29i3P1S/RLdc7JQKbRpFeM1dOBd8T9ki5s+AY8=
