@@ -10,6 +10,7 @@ package gui_win32
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func (g *Gui) OpenUpgradeLauncherDlg() {
@@ -72,13 +73,14 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 						ToolTipText: "Open link in browser",
 						OnClicked: func() {
 							dialog.Accept()
-							openUrlInBrowser(g.model.ProductVersionLatestUrl)
+							utils.OpenUrlInBrowser(g.model.ProductVersionLatestUrl)
 						},
 					},
 				},
 			},
 		},
 	}.Create(g.dlg)
+
 	if err != nil {
 		return
 	}

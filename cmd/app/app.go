@@ -8,22 +8,28 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+
 	"github.com/gonutz/w32"
+
 	"github.com/mysteriumnetwork/myst-launcher/app"
-	"github.com/mysteriumnetwork/myst-launcher/const"
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-	"log"
-	"os"
 )
 
 const (
 	gitHubOrg  = "mysteriumnetwork"
 	gitHubRepo = "myst-launcher"
 )
+
+var debugMode = ""
 
 func main() {
 	defer utils.PanicHandler("main")
@@ -66,7 +72,6 @@ func main() {
 	if !w32.SHIsUserAnAdmin() && updates.UpdateLauncherFromNewBinary(ui, ipc) {
 		return
 	}
-
 	ap.SetModel(mod)
 
 	ui.CreateNotifyIcon(mod)
@@ -79,7 +84,6 @@ func main() {
 	go ap.CheckLauncherUpdates(gitHubOrg, gitHubRepo)
 
 	ipc.Listen(ui)
-
 	log.SetOutput(ap)
 
 	// Run the message loop
@@ -90,4 +94,8 @@ func main() {
 	ap.TriggerAction("stop")
 	ap.Shutdown()
 
+	if debugMode != "" {
+		fmt.Print("Press 'Enter' to continue...")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+	}
 }

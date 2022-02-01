@@ -26,19 +26,16 @@ func (s *AppState) CheckLauncherUpdates(gitHubOrg, gitHubRepo string) {
 			s.model.ProductVersionLatest = release.Version.String()
 
 			pvCurrent := s.model.ProductVersion
-			launcherHasUpdate := false
-			if strings.Compare(release.Version.String(), pvCurrent) > 0 {
-				launcherHasUpdate = true
-			}
+			launcherHasUpdate := strings.Compare(release.Version.String(), pvCurrent) > 0
 
 			if launcherHasUpdate != s.model.LauncherHasUpdate {
-				new := s.model.ProductVersionLatestUrl != release.Assets[0].URL
+				isNew := s.model.ProductVersionLatestUrl != release.Assets[0].URL
 
 				s.model.LauncherHasUpdate = launcherHasUpdate
 				s.model.ProductVersionLatestUrl = release.Assets[0].URL
 				s.model.Update()
 
-				if new {
+				if isNew {
 					s.model.Publish("launcher-update")
 				}
 			}

@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 	"log"
 	"os"
 	"os/exec"
@@ -71,6 +72,7 @@ func Retry(attempts int, sleep time.Duration, fn func() error) error {
 func PanicHandler(threadName string) {
 	if err := recover(); err != nil {
 
+		fmt.Printf("Panic: %s\n", err)
 		fmt.Printf("Stacktrace %s: %s\n", threadName, debug.Stack())
 		fname := fmt.Sprintf("%s/launcher_trace_%d.txt", GetUserProfileDir(), time.Now().Unix())
 		f, err := os.Create(fname)
@@ -91,4 +93,14 @@ func PanicHandler(threadName string) {
 		//OpenExceptionDlg(threadName, bu.String())
 		//os.Exit(1)
 	}
+}
+
+func OpenUrlInBrowser(url string) {
+	native.ShellExecuteAndWait(
+		0,
+		"",
+		"rundll32",
+		"url.dll,FileProtocolHandler "+url,
+		"",
+		syscall.SW_NORMAL)
 }

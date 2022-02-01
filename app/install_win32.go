@@ -31,6 +31,8 @@ const dockerUsersGroup = "docker-users"
 
 // returns: will exit
 func (s *AppState) tryInstallDocker() bool {
+	mgr := s.mgr.(*platform.Manager)
+
 	s.model.ResetProperties()
 	s.model.SwitchState(model.UIStateInstallNeeded)
 
@@ -47,12 +49,11 @@ func (s *AppState) tryInstallDocker() bool {
 			s.model.Config.Save()
 		}
 		utils.RunasWithArgsNoWait("")
-
-		s.ui.CloseUI()
-		return false
+		return true
 	}
 
 	s.model.SwitchState(model.UIStateInstallInProgress)
+
 	executor := StepExec{s, nil}
 	executor.AddStep("CheckWindowsVersion", func() bool {
 		log.Println("Checking Windows version")
@@ -89,14 +90,12 @@ func (s *AppState) tryInstallDocker() bool {
 			return false
 		}
 		if !ok {
-			s.mgr.(*platform.Manager).EnableHyperVPlatform()
+			mgr.EnableHyperVPlatform()
 
 			ret := s.ui.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+"Click Yes to reboot now")
 			if ret == win.IDYES {
 				native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
 			}
-
-			s.ui.CloseUI()
 			return false
 		}
 
@@ -104,19 +103,20 @@ func (s *AppState) tryInstallDocker() bool {
 		s.model.UpdateProperties(model.UIProps{"RebootAfterWSLEnable": model.StepFinished})
 
 		log.Println("Checking vmcompute (Hyper-V Host Compute Service)")
-		ok, err = s.mgr.(*platform.Manager).IsVMcomputeRunning()
+		ok, err = mgr.IsVMcomputeRunning()
 		if err != nil {
 			log.Println(err)
 			return false
 		}
 		// force service to start
 		if !ok {
-			ok, err = s.mgr.(*platform.Manager).StartVmcomputeIfNotRunning()
+			ok, _ = mgr.StartVmcomputeIfNotRunning()
 		}
 		if !ok {
 			log.Println("Vmcompute (Hyper-V Host Compute Service) is not running")
 			s.ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service) is not running.\r\n\r\n"+
 				"Please enable virtualization in a system BIOS: VT-x and EPT options for Intel, SVM for AMD")
+
 			return false
 		}
 
@@ -225,14 +225,13 @@ func (s *AppState) tryInstallDocker() bool {
 		s.model.Config.AutoStart = true
 		s.model.Config.Save()
 
-		log.Println("Checking current dockerUsersGroup membership")
+		log.Println("Checking current docker-users group membership")
 		if !utils.CurrentGroupMembership(dockerUsersGroup) {
 
 			log.Println("Sign out from the current session to finish the installation.")
 			ret := s.ui.ConfirmModal("Installation", "Click yes to sign out from the current session to finish the installation.")
 			if ret == win.IDOK {
 				windows.ExitWindowsEx(windows.EWX_LOGOFF, 0)
-				s.ui.CloseUI()
 				return true
 			}
 			log.Println("Remember to sign out from the current session")

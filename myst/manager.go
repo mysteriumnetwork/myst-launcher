@@ -81,7 +81,6 @@ func (m *Manager) GetDockerClient() *client.Client {
 
 // Returns: alreadyRunning, error
 func (m *Manager) Start() (bool, error) {
-	fmt.Println("Start >")
 
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
@@ -111,7 +110,6 @@ func (m *Manager) Start() (bool, error) {
 	}
 
 	if mystContainer.isRunning() {
-		log.Println("is running >")
 		return true, nil
 	}
 	return false, m.startMystContainer()

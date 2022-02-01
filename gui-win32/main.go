@@ -9,17 +9,14 @@ package gui_win32
 
 import (
 	"log"
-	"syscall"
 
 	"github.com/asaskevich/EventBus"
-	"github.com/gonutz/w32"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
 
 	model2 "github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/native"
-	"github.com/mysteriumnetwork/myst-launcher/widget/impl"
 )
 
 const (
@@ -42,47 +39,20 @@ type Gui struct {
 	mw         *walk.MainWindow
 	dlg        *walk.MainWindow
 
-	//
-	actionFileMenu *walk.Action
-	actionMainMenu *walk.Action
-	actionOpenUI   *walk.Action
-	actionUpgrade  *walk.Action
-	actionEnable   *walk.Action
+	// menu
+	actionFileMenu        *walk.Action
+	actionMainMenu        *walk.Action
+	actionOpenUI          *walk.Action
+	actionUpgrade         *walk.Action
+	actionLauncherUpgrade *walk.Action
+	actionEnable          *walk.Action
 
 	isAutostartEnabled *walk.MutableCondition
 	isNodeEnabled      *walk.MutableCondition
 
-	// common
-	stDocker         *impl.StatusViewImpl
-	stContainer      *impl.StatusViewImpl
-	lbDocker         *walk.Label
-	lbContainer      *walk.Label
-	lbVersionCurrent *walk.Label
-	lbVersionLatest  *walk.Label
-	lbImageName      *walk.Label
-
-	autoUpgrade   *walk.CheckBox
-	lbNetworkMode *walk.Label
-	btnOpenNodeUI *walk.PushButton
-
-	lbNetwork  *walk.Label
-	btnMainNet *walk.PushButton
-
-	// install
-	lbInstallationStatus *walk.TextEdit
-	btnBegin             *walk.PushButton
-
-	checkWindowsVersion  *impl.StatusViewImpl
-	checkVirt            *impl.StatusViewImpl
-	installExecutable    *impl.StatusViewImpl
-	rebootAfterWSLEnable *impl.StatusViewImpl
-	downloadFiles        *impl.StatusViewImpl
-	installWSLUpdate     *impl.StatusViewImpl
-	installDocker        *impl.StatusViewImpl
-	checkGroupMembership *impl.StatusViewImpl
-
-	btnFinish *walk.PushButton
-	img       *walk.ImageView
+	//
+	frameWidget *walk.Composite
+	frame       Frame
 
 	currentView model2.UIState
 	logo        *walk.Icon
@@ -93,22 +63,12 @@ type Gui struct {
 
 	waitClick chan int
 	bus       EventBus.Bus
-
-	cmp              *walk.Composite
-	headerContainer  *walk.Composite
-	lbNodeUI         *walk.LinkLabel
-	lbMMN            *walk.LinkLabel
-	lbUpdateLauncher *walk.LinkLabel
 }
 
 func NewGui(m *model2.UIModel) *Gui {
 	g := &Gui{}
 
 	var err error
-	g.logo, err = walk.NewIconFromResourceWithSize("APPICON", walk.Size{64, 64})
-	if err != nil {
-		log.Fatal(err)
-	}
 	g.icoActive, err = walk.NewIconFromResourceWithSize("ICON_ACTIVE", walk.Size{64, 64})
 	if err != nil {
 		log.Fatal(err)
@@ -147,59 +107,28 @@ func (g *Gui) CreateMainWindow() {
 		Layout:    VBox{},
 
 		Children: []Widget{
-			g.installationWelcome(),
-			g.installationDlg(),
-			g.stateDlg(),
+			Composite{
+				AssignTo: &g.frameWidget,
+				Name:     "frameWidget",
+				Layout:   HBox{MarginsZero: true, SpacingZero: true},
+			},
 		},
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
 
-	// manual layout for head panel
-	g.cmp.SetBounds(walk.Rectangle{0, 0, 400, 100})
-	g.img.SetBounds(walk.Rectangle{5, 5, 70, 70})
-	g.headerContainer.SetBounds(walk.Rectangle{80, 5, 270, 70})
-	g.stContainer.SetBounds(walk.Rectangle{0, 0, 20, 20})
-	g.lbContainer.SetBounds(walk.Rectangle{25, 0, 70, 20})
-	g.lbNodeUI.SetBounds(walk.Rectangle{120, 4, 150, 20})
-	g.lbMMN.SetBounds(walk.Rectangle{120, 24, 150, 20})
-	g.lbUpdateLauncher.SetBounds(walk.Rectangle{120, 44, 150, 20})
-
 	g.dlg.SetVisible(!g.model.App.GetInTray())
-	g.setImage()
-	if !w32.SHIsUserAnAdmin() {
-		g.btnBegin.SetImage(walk.IconShield())
-	}
-
-	// Events
-	g.model.UIBus.Subscribe("want-exit", func() {
-		g.dlg.Synchronize(func() {
-			g.btnFinish.SetEnabled(true)
-		})
-	})
-
-	g.model.UIBus.Subscribe("log", func(p []byte) {
-		switch g.model.State {
-		case model2.UIStateInstallInProgress, model2.UIStateInstallError, model2.UIStateInstallFinished:
-			g.dlg.Synchronize(func() {
-				g.lbInstallationStatus.AppendText(string(p) + "\r\n")
-			})
-		}
-	})
-	g.currentView = frameState
 	g.changeView(frameState)
 
 	// refresh on window restore
 	g.dlg.Activating().Attach(func() {
 		g.dlg.Synchronize(func() {
 			g.refresh()
-			g.setImage()
 		})
 	})
 	g.model.UIBus.Subscribe("model-change", func() {
 		g.dlg.Synchronize(func() {
 			g.refresh()
-			//g.setImage()
 		})
 	})
 	g.model.UIBus.Subscribe("state-change", func() {
@@ -208,7 +137,9 @@ func (g *Gui) CreateMainWindow() {
 		})
 	})
 	g.model.UIBus.Subscribe("launcher-update", func() {
-		g.OpenDialogue(1)
+		g.dlg.Synchronize(func() {
+			g.OpenUpgradeLauncherDlg()
+		})
 	})
 
 	// prevent closing the app
@@ -225,6 +156,24 @@ func (g *Gui) CreateMainWindow() {
 			g.dlg.Close()
 		})
 	})
+
+	// events
+	g.model.UIBus.Subscribe("btn-config-click", func() {
+		g.dlg.Synchronize(func() {
+			g.NetworkingDlg()
+		})
+	})
+	g.model.UIBus.Subscribe("btn-upgrade-network", func() {
+		g.dlg.Synchronize(func() {
+			g.OpenUpgradeNetworkDlg()
+		})
+	})
+	g.model.UIBus.Subscribe("click-finish", func() {
+		if g.model.WantExit {
+			g.CloseUI()
+		}
+		g.DialogueComplete()
+	})
 }
 
 func (g *Gui) enableMenu(enable bool) {
@@ -236,19 +185,26 @@ func (g *Gui) enableMenu(enable bool) {
 func (g *Gui) changeView(state model2.UIState) {
 	prev := g.currentView
 	g.currentView = state
-
-	if prev != state {
-		g.dlg.Children().At(int(prev)).SetVisible(false)
+	if prev == state {
+		return
 	}
-	g.dlg.Children().At(int(state)).SetVisible(true)
-	g.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(true)
-	g.dlg.Children().At(int(state)).SetAlwaysConsumeSpace(false)
+
+	if g.frame != nil {
+		g.frame.Close()
+		g.frame = nil
+	}
+
+	switch state {
+	case frameInsNeed:
+		g.frame = NewInstallationWelcomeFrame(g.frameWidget, g.model)
+	case frameIns:
+		g.frame = NewInstallationFrame(g.frameWidget, g.model)
+	case frameState:
+		g.frame = NewStateFrame(g.frameWidget, g.model)
+	}
 }
 
 func (g *Gui) refresh() {
-	if !g.dlg.Visible() {
-		return
-	}
 	switch g.model.State {
 
 	case model2.UIStateInitial:
@@ -257,108 +213,25 @@ func (g *Gui) refresh() {
 
 		g.isNodeEnabled.SetSatisfied(g.model.Config.Enabled)
 		g.isAutostartEnabled.SetSatisfied(g.model.Config.AutoStart)
-
-		g.autoUpgrade.SetChecked(g.model.GetConfig().AutoUpgrade)
-		if !g.model.GetConfig().EnablePortForwarding {
-			g.lbNetworkMode.SetText(`Port restricted cone NAT`)
-		} else {
-			g.lbNetworkMode.SetText(`Manual port forwarding`)
-		}
-
-		g.lbDocker.SetText(g.model.StateDocker.String())
-		g.lbContainer.SetText(g.model.StateContainer.String())
-		setState2(g.stDocker, g.model.StateDocker)
-		setState2(g.stContainer, g.model.StateContainer)
-
-		g.lbContainer.SetText(g.model.StateContainer.String())
-		if !g.model.GetConfig().Enabled {
-			g.lbContainer.SetText("Disabled")
-		}
-		g.btnOpenNodeUI.SetEnabled(g.model.IsRunning())
-
-		g.lbVersionCurrent.SetText(g.model.ImageInfo.VersionCurrent)
-		g.lbVersionLatest.SetText(g.model.ImageInfo.VersionLatest)
-
-		g.lbImageName.SetText(g.model.Config.GetFullImageName())
-		g.btnOpenNodeUI.SetFocus()
-
-		g.lbUpdateLauncher.SetVisible(g.model.LauncherHasUpdate)
-
-		g.lbNetwork.SetText(g.model.Config.GetNetworkCaption())
-		g.btnMainNet.SetVisible(!g.model.CurrentNetIsMainNet())
+		g.actionLauncherUpgrade.SetVisible(g.model.LauncherHasUpdate)
 
 	case model2.UIStateInstallNeeded:
 		g.enableMenu(false)
 		g.changeView(frameInsNeed)
-		g.btnBegin.SetEnabled(true)
+		g.dlg.SetVisible(true)
 
 	case model2.UIStateInstallInProgress:
 		g.enableMenu(false)
 		g.changeView(frameIns)
-		g.btnFinish.SetEnabled(false)
+		g.dlg.SetVisible(true)
 
 	case model2.UIStateInstallFinished:
 		g.enableMenu(false)
 		g.changeView(frameIns)
-		g.btnFinish.SetEnabled(true)
-		g.btnFinish.SetText("Finish")
 
 	case model2.UIStateInstallError:
 		g.changeView(frameIns)
-		g.btnFinish.SetEnabled(true)
-		g.btnFinish.SetText("Exit installer")
 	}
-
-	switch g.model.State {
-	case model2.UIStateInstallInProgress, model2.UIStateInstallFinished, model2.UIStateInstallError:
-		setState(g.checkWindowsVersion, g.model.CheckWindowsVersion)
-		setState(g.checkVirt, g.model.CheckVirt)
-		setState(g.installExecutable, g.model.InstallExecutable)
-		setState(g.rebootAfterWSLEnable, g.model.RebootAfterWSLEnable)
-		setState(g.downloadFiles, g.model.DownloadFiles)
-		setState(g.installWSLUpdate, g.model.InstallWSLUpdate)
-		setState(g.installDocker, g.model.InstallDocker)
-		setState(g.checkGroupMembership, g.model.CheckGroupMembership)
-	}
-}
-
-func setState(b *impl.StatusViewImpl, st model2.InstallStep) {
-	switch st {
-	case model2.StepInProgress:
-		b.SetState(3)
-	case model2.StepFinished:
-		b.SetState(2)
-	case model2.StepFailed:
-		b.SetState(1)
-	case model2.StepNone:
-		b.SetState(0)
-	default:
-		b.SetState(0)
-	}
-}
-func setState2(b *impl.StatusViewImpl, st model2.RunnableState) {
-	switch st {
-	case model2.RunnableStateRunning:
-		b.SetState(2)
-	case model2.RunnableStateInstalling:
-		b.SetState(3)
-	case model2.RunnableStateStarting:
-		b.SetState(3)
-	case model2.RunnableStateUnknown:
-		b.SetState(1)
-	}
-}
-
-func (g *Gui) setImage() {
-	if !g.dlg.Visible() {
-		return
-	}
-
-	img, err := walk.ImageFrom(g.logo)
-	if err != nil {
-		return
-	}
-	g.img.SetImage(img)
 }
 
 func (g *Gui) bringMainToTop() {
@@ -394,24 +267,6 @@ func (g *Gui) ShowMain() {
 		}
 	}
 	g.bringMainToTop()
-}
-
-func openUrlInBrowser(url string) {
-	native.ShellExecuteAndWait(
-		0,
-		"",
-		"rundll32",
-		"url.dll,FileProtocolHandler "+url,
-		"",
-		syscall.SW_NORMAL)
-}
-
-func OpenNodeUI() {
-	openUrlInBrowser("http://localhost:4449/")
-}
-
-func OpenMMN() {
-	openUrlInBrowser("https://mystnodes.com/")
 }
 
 func (g *Gui) getModalOwner() walk.Form {

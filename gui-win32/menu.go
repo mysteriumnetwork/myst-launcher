@@ -23,6 +23,14 @@ func (g *Gui) menu() []MenuItem {
 						g.OpenAboutDlg()
 					},
 				},
+				Action{
+					Text:     "Launcher update available",
+					AssignTo: &g.actionLauncherUpgrade,
+					OnTriggered: func() {
+						g.OpenUpgradeLauncherDlg()
+					},
+				},
+
 				Separator{},
 				Action{
 					Checked: Bind("isAutostartEnabled"),

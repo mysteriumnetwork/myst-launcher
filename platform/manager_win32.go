@@ -29,7 +29,7 @@ const (
 var features = []string{
 	FeatureWSL,
 	FeatureHyperV,
-	FeatureVMPlatform,
+	// FeatureVMPlatform,
 }
 
 type Manager struct {
@@ -57,8 +57,8 @@ func (m *Manager) queryOptionalFeature(feature string) (error, bool) {
 		return errors.Wrap(err, "ExecQuery"), false
 	}
 
-	el, _ := res.ItemAtIndex(0)
-	// ignore error as it means empty set
+	el, err := res.ItemAtIndex(0)
+	// err -> empty set
 	if err != nil {
 		return nil, false
 	}
@@ -184,6 +184,8 @@ func (m *Manager) HasVTx() (bool, error) {
 
 func (m *Manager) EnableHyperVPlatform() error {
 	log.Println("EnableHyperVPlatform > May take ~5 min.")
+
+	// necessary for Home Edition
 	packagesPath := os.Getenv("SYSTEMROOT") + `\servicing\Packages\`
 	err := filepath.Walk(packagesPath, func(path string, info fs.FileInfo, _ error) error {
 		//log.Println("info>", info)
@@ -203,6 +205,9 @@ func (m *Manager) EnableHyperVPlatform() error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
 	if !m.hasDism {
 		m.initializeDism()

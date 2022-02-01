@@ -154,7 +154,7 @@ func (m *UIModel) UpdateProperties(p UIProps) {
 		case "CheckGroupMembership":
 			m.CheckGroupMembership = v
 		default:
-			log.Println("Unknown proprerty:", k)
+			log.Println("Unknown property:", k)
 		}
 	}
 	m.UIBus.Publish("model-change")
@@ -192,6 +192,7 @@ func (m *UIModel) SetStateDocker(r RunnableState) {
 func (m *UIModel) SetStateContainer(r RunnableState) {
 	if m.StateContainer != r {
 		m.StateContainer = r
+
 		m.UIBus.Publish("model-change")
 		m.UIBus.Publish("container-state")
 	}
