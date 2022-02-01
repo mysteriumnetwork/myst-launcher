@@ -136,7 +136,7 @@ func (g *Gui) CreateMainWindow() {
 			g.refresh()
 		})
 	})
-	g.model.UIBus.Subscribe("launcher-upgrade-dlg", func() {
+	g.model.UIBus.Subscribe("launcher-update", func() {
 		g.dlg.Synchronize(func() {
 			g.OpenUpgradeLauncherDlg()
 		})
