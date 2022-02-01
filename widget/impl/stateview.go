@@ -183,7 +183,9 @@ func (cw *StatusViewImpl) paint(hdc win.HDC, updateBounds walk.Rectangle, state 
 		}
 		gp.SetTextRenderingHint(gdiplus.TextRenderingHintAntiAlias)
 		gp.SetSmoothingMode(gdiplus.SmoothingModeAntiAlias)
-		gp.FillEllipseI(br, 4, 4, 12, 12)
+
+		gp.FillEllipseI(br, winapi.INT(updateBounds.X), winapi.INT(updateBounds.Y), winapi.INT(updateBounds.Width), winapi.INT(updateBounds.Height))
+		//gp.FillEllipseI(br, 4, 4, 12, 12)
 	}
 	gp.Release()
 	return nil
@@ -220,6 +222,10 @@ func (cw *StatusViewImpl) paintProc(wParam, lParam uintptr) error {
 	}()
 
 	bounds := rectangleFromRECT(ps.RcPaint)
+	bounds.X += 4
+	bounds.Y += 4
+	bounds.Height -= 8
+	bounds.Width -= 8
 	return cw.paint(hdc, walk.RectangleTo96DPI(bounds, cw.DPI()), cw.state)
 }
 
@@ -267,8 +273,7 @@ func (cw *StatusViewImpl) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uint
 }
 
 func (*StatusViewImpl) CreateLayoutItem(ctx *walk.LayoutContext) walk.LayoutItem {
-	// return &myWidgetLayoutItem{idealSize: walk.SizeFrom96DPI(walk.Size{20, 20}, ctx.DPI())}
-	return &myWidgetLayoutItem{idealSize: walk.Size{20, 20}}
+	return &myWidgetLayoutItem{idealSize: walk.SizeFrom96DPI(walk.Size{20, 20}, ctx.DPI())}
 }
 
 type myWidgetLayoutItem struct {
