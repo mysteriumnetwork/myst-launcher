@@ -63,7 +63,7 @@ var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+).*$`)
 var minVersion = []int{0, 66, 3}
 
 func checkVersionRequirement(v string, minVersion []int) bool {
-	log.Println("checkVersionRequirement>", v, minVersion)
+	log.Println("checkVersionRequirement>", v)
 	match := versionRegex.MatchString(v)
 	if !match {
 		return false
