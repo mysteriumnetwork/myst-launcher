@@ -8,13 +8,13 @@
 package gui_win32
 
 import (
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 	"log"
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 	. "github.com/mysteriumnetwork/myst-launcher/widget/declarative"
 	"github.com/mysteriumnetwork/myst-launcher/widget/impl"
 )
@@ -366,7 +366,6 @@ func (f *StateFrame) handlerState() {
 			f.lbVersionLatest.SetText(f.mdl.ImageInfo.VersionLatest)
 
 			f.lbImageName.SetText(f.mdl.Config.GetFullImageName())
-			f.btnOpenNodeUI.SetFocus()
 
 			f.lbNetwork.SetText(f.mdl.Config.GetNetworkCaption())
 			f.btnMainNet.SetVisible(!f.mdl.CurrentNetIsMainNet())

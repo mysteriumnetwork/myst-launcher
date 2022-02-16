@@ -178,7 +178,7 @@ func (m *Manager) launcherVersionChanged(mystContainer *Container) bool {
 }
 
 func getVersionFromCommand(cmd string) string {
-	fmt.Println(cmd)
+	// log.Println("getVersionFromCommand:", cmd)
 
 	set := &flag.FlagSet{}
 	env := set.String("launcher.ver", "", "")
@@ -210,7 +210,7 @@ func (m *Manager) Stop() error {
 
 //////////////////////////////////////////////////////////////////////
 func (m *Manager) startMystContainer() error {
-	fmt.Println("startMystContainer >")
+	log.Println("startMystContainer >")
 	mystContainer, err := m.findMystContainer()
 	if err != nil {
 		return err
@@ -245,7 +245,7 @@ func (m *Manager) findMystContainer() (*Container, error) {
 }
 
 func (m *Manager) pullMystImage(image string) error {
-	fmt.Println("pullMystImage >", image)
+	log.Println("pullMystImage >", image)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
@@ -262,7 +262,7 @@ func (m *Manager) pullMystImage(image string) error {
 
 func (m *Manager) pullMystLatestByDigestLatest() error {
 	if m.model.ImageInfo.DigestLatest == "" {
-		fmt.Println("pullMystByDigest > no DigestLatest !")
+		log.Println("pullMystByDigest > no DigestLatest !")
 		return nil
 	}
 
@@ -373,7 +373,7 @@ func (m *Manager) getCurrentImageDigest() {
 
 	for _, i := range images {
 		if i.ID == mystContainer.ImageID {
-			fmt.Println("getCurrentImageDigest >", i.RepoDigests)
+			log.Println("getCurrentImageDigest >", i.RepoDigests)
 			m.model.ImageInfo.CurrentImgDigests = extractRepoDigests(i.RepoDigests)
 		}
 	}
