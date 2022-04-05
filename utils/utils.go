@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/mysteriumnetwork/myst-launcher/native"
 	"log"
 	"os"
 	"os/exec"
@@ -19,6 +18,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/mysteriumnetwork/myst-launcher/native"
 )
 
 var a = getSysProcAttrs()
