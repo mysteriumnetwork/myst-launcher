@@ -18,8 +18,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/mysteriumnetwork/myst-launcher/native"
 )
 
 var a = getSysProcAttrs()
@@ -94,14 +92,4 @@ func PanicHandler(threadName string) {
 		//OpenExceptionDlg(threadName, bu.String())
 		//os.Exit(1)
 	}
-}
-
-func OpenUrlInBrowser(url string) {
-	native.ShellExecuteAndWait(
-		0,
-		"",
-		"rundll32",
-		"url.dll,FileProtocolHandler "+url,
-		"",
-		syscall.SW_NORMAL)
 }

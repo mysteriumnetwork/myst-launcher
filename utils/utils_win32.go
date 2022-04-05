@@ -373,3 +373,13 @@ func IsWSLUpdated() (bool, error) {
 	// semverInstalledVer >= semverFileVer
 	return semverInstalledVer.Compare(semverFileVer) >= 0, nil
 }
+
+func OpenUrlInBrowser(url string) {
+	native.ShellExecuteAndWait(
+		0,
+		"",
+		"rundll32",
+		"url.dll,FileProtocolHandler "+url,
+		"",
+		syscall.SW_NORMAL)
+}
