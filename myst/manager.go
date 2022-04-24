@@ -302,16 +302,16 @@ func (m *Manager) createMystContainer() error {
 		cmdArgs = append([]string{portsArg}, cmdArgs...)
 	}
 
-	// exposedPorts, _, err := nat.ParsePortSpecs(portSpecs)
-	// if err != nil {
-	// 	return err
-	// }
+	exposedPorts, _, err := nat.ParsePortSpecs(portSpecs)
+	if err != nil {
+		return err
+	}
 
 	image := c.GetFullImageName()
 	containerConfig := &container.Config{
-		Image: image,
-		// ExposedPorts: nat.PortSet(exposedPorts),
-		Cmd: strslice.StrSlice(cmdArgs),
+		Image:        image,
+		ExposedPorts: nat.PortSet(exposedPorts),
+		Cmd:          strslice.StrSlice(cmdArgs),
 	}
 	log.Println("createMystContainer >", containerConfig)
 
@@ -349,7 +349,7 @@ func (m *Manager) createMystContainer() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
 	defer cancel()
-	_, err := m.dockerAPI.ContainerCreate(ctx,
+	_, err = m.dockerAPI.ContainerCreate(ctx,
 		containerConfig,
 		hostConfig,
 		nil,
