@@ -38,6 +38,10 @@ import (
 
 const launcherLnk = "Mysterium Node Launcher.lnk"
 
+var (
+	errProductNotFound = errors.New("Package not found")
+)
+
 func getSysProcAttrs() syscall.SysProcAttr {
 	return syscall.SysProcAttr{
 		HideWindow: true,
@@ -351,7 +355,7 @@ func getMSIProductCodeByName(productName string) (string, error) {
 			return v, nil
 		}
 	}
-	return "", errors.New("Package not found")
+	return "", errProductNotFound
 }
 
 // trunk excessive number (build), so that semver could parse it
@@ -374,6 +378,9 @@ func normalizeVersion(v string) string {
 
 func IsWSLUpdated() (bool, error) {
 	wslUpdateProductCode, err := getMSIProductCodeByName("Windows Subsystem for Linux Update")
+	if errors.Is(err, errProductNotFound) {
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
