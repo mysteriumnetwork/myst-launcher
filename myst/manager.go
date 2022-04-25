@@ -17,6 +17,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -81,6 +82,7 @@ func (m *Manager) GetDockerClient() *client.Client {
 
 // Returns: alreadyRunning, error
 func (m *Manager) Start() (bool, error) {
+	log.Println("Start >")
 
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
@@ -218,6 +220,7 @@ func (m *Manager) startMystContainer() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
 	defer cancel()
+
 	err = m.dockerAPI.ContainerStart(ctx, mystContainer.ID, types.ContainerStartOptions{})
 	if err != nil {
 		return errors2.Wrap(err, ErrContainerStart.Error())
@@ -312,18 +315,29 @@ func (m *Manager) createMystContainer() error {
 	}
 	log.Println("createMystContainer >", containerConfig)
 
+	portMap := make(nat.PortMap)
+	portMap["4449/tcp"] = []nat.PortBinding{
+		{
+			HostIP:   "0.0.0.0",
+			HostPort: "4449",
+		},
+	}
+	if c.EnablePortForwarding {
+		for pn := c.PortRangeBegin; pn <= c.PortRangeEnd; pn++ {
+			portMap[nat.Port(strconv.Itoa(pn)+"/udp")] = []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: strconv.Itoa(pn),
+				},
+			}
+		}
+	}
+
 	hostConfig := &container.HostConfig{
 		CapAdd: strslice.StrSlice{
 			"NET_ADMIN",
 		},
-		PortBindings: nat.PortMap{
-			"4449/tcp": []nat.PortBinding{
-				{
-					HostIP:   "0.0.0.0",
-					HostPort: "4449",
-				},
-			},
-		},
+		PortBindings: portMap,
 		Mounts: []mount.Mount{
 			{
 				Type:   mount.TypeBind,

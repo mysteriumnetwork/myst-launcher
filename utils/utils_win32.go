@@ -335,14 +335,56 @@ func DiscoverDockerPathAndPatchEnv(wait bool) {
 	}
 }
 
+func getMSIProductCodeByName(productName string) (string, error) {
+	l, err := gowin32.GetInstalledProducts()
+	if err != nil {
+		return "", err
+	}
+
+	for _, v := range l {
+		n, err := gowin32.GetInstalledProductProperty(v, gowin32.InstallPropertyProductName)
+		if err != nil {
+			return "", err
+		}
+
+		if strings.HasPrefix(n, productName) {
+			return v, nil
+		}
+	}
+	return "", errors.New("Package not found")
+}
+
+// trunk excessive number (build), so that semver could parse it
+// example: "11.22.33.44" -> "11.22.33"
+func normalizeVersion(v string) string {
+	p := strings.Split(v, ".")
+	if len(p) > 3 {
+		r := ""
+		p := p[:3]
+		for i, e := range p {
+			r += e
+			if i < 2 {
+				r += "."
+			}
+		}
+		return r
+	}
+	return v
+}
+
 func IsWSLUpdated() (bool, error) {
-	const WSLUpdateProductCode = "{36EF257E-21D5-44F7-8451-07923A8C465E}"
-	state := gowin32.GetInstalledProductState(WSLUpdateProductCode)
+	wslUpdateProductCode, err := getMSIProductCodeByName("Windows Subsystem for Linux Update")
+	if err != nil {
+		return false, err
+	}
+	log.Println("wslUpdateProductCode", wslUpdateProductCode)
+
+	state := gowin32.GetInstalledProductState(wslUpdateProductCode)
 	if state != gowin32.InstallStateDefault {
 		return false, nil
 	}
 
-	installedVer, err := gowin32.GetInstalledProductProperty(WSLUpdateProductCode, gowin32.InstallPropertyVersionString)
+	installedVer, err := gowin32.GetInstalledProductProperty(wslUpdateProductCode, gowin32.InstallPropertyVersionString)
 	if err != nil {
 		return false, errors.Wrap(err, "gowin32.GetInstalledProductProperty")
 	}
@@ -360,16 +402,26 @@ func IsWSLUpdated() (bool, error) {
 	}
 	log.Println("IsWSLUpdated > fileVer", fileVer)
 
-	semverFileVer, err := semver.Parse(fileVer)
+	semverFileVer, err := semver.Parse(normalizeVersion(fileVer))
 	if err != nil {
 		return false, errors.Wrap(err, "semver.Parse")
 	}
-	semverInstalledVer, err := semver.Parse(installedVer)
+	semverInstalledVer, err := semver.Parse(normalizeVersion(installedVer))
 	if err != nil {
 		return false, errors.Wrap(err, "semver.Parse")
 	}
-	log.Println("IsWSLUpdated > semverFileVer, semverInstalledVer >", semverFileVer, semverInstalledVer)
+	log.Println("IsWSLUpdated > fileVer, installedVer >", semverFileVer, semverInstalledVer)
 
 	// semverInstalledVer >= semverFileVer
 	return semverInstalledVer.Compare(semverFileVer) >= 0, nil
+}
+
+func OpenUrlInBrowser(url string) {
+	native.ShellExecuteAndWait(
+		0,
+		"",
+		"rundll32",
+		"url.dll,FileProtocolHandler "+url,
+		"",
+		syscall.SW_NORMAL)
 }
