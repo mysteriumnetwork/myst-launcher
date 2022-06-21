@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -39,6 +40,10 @@ type Manager struct {
 }
 
 func NewManager() (*Manager, error) {
+
+	// once
+	runtime.LockOSThread()
+
 	w, err := wmi.NewConnection(".", `root\cimv2`)
 	if err != nil {
 		return nil, err

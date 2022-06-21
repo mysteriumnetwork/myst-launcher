@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package app
+package docker
 
 import (
 	"context"
@@ -26,7 +26,7 @@ type DockerRunner struct {
 	dockerAPI     *client.Client
 }
 
-func NewDockerMonitor(docker *client.Client) *DockerRunner {
+func NewDockerRunner(docker *client.Client) *DockerRunner {
 	return &DockerRunner{
 		tryStartCount: 0,
 		dockerAPI:     docker,

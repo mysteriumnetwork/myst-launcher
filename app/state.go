@@ -9,47 +9,39 @@ package app
 
 import (
 	"fmt"
-	"runtime"
-	"sync"
 
-	model2 "github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/platform"
+	"github.com/mysteriumnetwork/myst-launcher/model"
 )
 
 type AppState struct {
-	WaitGroup sync.WaitGroup // for graceful shutdown
-
 	action chan string
-	model  *model2.UIModel //gui.Model
-	ui     model2.Gui_
-	mgr    model2.PlatformManager
+	model  *model.UIModel //gui.Model
+	ui     model.Gui_
 }
 
 func NewApp() *AppState {
 	s := &AppState{}
 	s.action = make(chan string, 1)
-
 	return s
 }
 
-func (s *AppState) initialize() error {
-	runtime.LockOSThread()
-
-	var err error
-	s.mgr, err = platform.NewManager()
-	return err
-}
-
-func (s *AppState) Shutdown() {
-	// wait for SuperviseDockerNode to finish its work
-	s.WaitGroup.Wait()
-}
-
-func (s *AppState) SetModel(ui *model2.UIModel) {
+func (s *AppState) SetModel(ui *model.UIModel) {
 	s.model = ui
 }
 
-func (s *AppState) SetUI(ui model2.Gui_) {
+func (s *AppState) GetModel() *model.UIModel {
+	return s.model
+}
+
+func (s *AppState) GetUI() model.Gui_ {
+	return s.ui
+}
+
+func (s *AppState) GetAction() chan string {
+	return s.action
+}
+
+func (s *AppState) SetUI(ui model.Gui_) {
 	s.ui = ui
 }
 
@@ -72,5 +64,5 @@ func (s *AppState) TriggerAction(action string) {
 }
 
 func (s *AppState) GetInTray() bool {
-	return s.model.Config.InitialState == model2.InitialStateNormalRun
+	return s.model.Config.InitialState == model.InitialStateNormalRun
 }

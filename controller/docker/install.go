@@ -1,4 +1,4 @@
-package app
+package docker
 
 import (
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -10,7 +10,7 @@ type step struct {
 }
 
 type StepExec struct {
-	s     *AppState
+	model *model.UIModel
 	steps []step
 }
 
@@ -23,14 +23,14 @@ func (e *StepExec) AddStep(stepName string, f func() bool) {
 
 func (e *StepExec) Run() bool {
 	for _, step := range e.steps {
-		e.s.model.UpdateProperties(model.UIProps{step.name: model.StepInProgress})
+		e.model.UpdateProperties(model.UIProps{step.name: model.StepInProgress})
 		if !step.action() {
-			e.s.model.UpdateProperties(model.UIProps{step.name: model.StepFailed})
-			e.s.model.SwitchState(model.UIStateInstallError)
+			e.model.UpdateProperties(model.UIProps{step.name: model.StepFailed})
+			e.model.SwitchState(model.UIStateInstallError)
 
 			return false
 		}
-		e.s.model.UpdateProperties(model.UIProps{step.name: model.StepFinished})
+		e.model.UpdateProperties(model.UIProps{step.name: model.StepFinished})
 	}
 	return true
 }

@@ -17,6 +17,8 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/controller"
+	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -78,10 +80,10 @@ func main() {
 	ui.CreateMainWindow()
 
 	ap.SetUI(ui)
-	ap.WaitGroup.Add(1)
 
-	go ap.SuperviseDockerNode()
-	go ap.CheckLauncherUpdates(gitHubOrg, gitHubRepo)
+	dc := docker.NewController(ap)
+	go dc.SuperviseDockerNode()
+	go controller.CheckLauncherUpdates(gitHubOrg, gitHubRepo, ap.GetModel())
 
 	ipc.Listen(ui)
 	log.SetOutput(ap)
@@ -92,7 +94,7 @@ func main() {
 
 	// send stop action to SuperviseDockerNode
 	ap.TriggerAction("stop")
-	ap.Shutdown()
+	dc.Shutdown()
 
 	if debugMode != "" {
 		fmt.Print("Press 'Enter' to continue...")
