@@ -16,6 +16,7 @@ import (
 type Controller interface {
 	SetApp(a *AppState)
 	Start()
+	GetCaps() int
 }
 
 type AppState struct {
@@ -40,6 +41,7 @@ func (s *AppState) SetAppController(c Controller) {
 	}
 	s.ctrApp = c
 	c.SetApp(s)
+	s.model.Caps = c.GetCaps()
 }
 
 func (s *AppState) SetModel(ui *model.UIModel) {

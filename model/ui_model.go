@@ -25,6 +25,7 @@ type UIModel struct {
 	// common
 	StateDocker    RunnableState
 	StateContainer RunnableState
+	Caps           int // UI controller capabilities
 
 	// inst
 	CheckWindowsVersion  InstallStep

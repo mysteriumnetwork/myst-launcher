@@ -29,12 +29,15 @@ func NewController() *Controller {
 	return &Controller{}
 }
 
+func (c *Controller) GetCaps() int {
+	return 1
+}
+
 func (c *Controller) SetApp(a *app.AppState) {
 	c.a = a
 }
 
-func (c *Controller) Shutdown() {
-}
+// func (c *Controller) Shutdown() {}
 
 func (c *Controller) Start() {
 	defer utils.PanicHandler("app")
@@ -50,6 +53,8 @@ func (c *Controller) Start() {
 	ui := c.a.GetUI()
 	action := c.a.GetAction()
 
+	model.Update()
+
 	mystManager, err := myst.NewManager(model)
 	if err != nil {
 		panic(err) // TODO handle gracefully
@@ -58,8 +63,6 @@ func (c *Controller) Start() {
 	docker := NewDockerRunner(mystManager.GetDockerClient())
 
 	t1 := time.NewTicker(15 * time.Second)
-	model.Update()
-
 	for {
 		if wantExit := c.tryStartOrInstallDocker(docker); wantExit {
 			model.SetWantExit()
