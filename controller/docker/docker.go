@@ -82,28 +82,33 @@ func (c *Controller) Start() {
 			log.Println("action:", act)
 
 			switch act {
-			case "check":
+			case app.ActionCheck:
 				mystManager.CheckCurrentVersionAndUpgrades(true)
 
-			case "upgrade":
+			case app.ActionUpgrade:
 				c.upgradeContainer(false)
 
-			case "restart":
+			case app.ActionRestart:
 				// restart to apply new settings
 				c.restartContainer()
 				model.Config.Save()
 
-			case "enable":
+			case app.ActionEnable:
 				model.SetStateContainer(model_.RunnableStateStarting)
 				mystManager.Start()
 				model.SetStateContainer(model_.RunnableStateRunning)
 
-			case "disable":
+			case app.ActionDisable:
 				model.SetStateContainer(model_.RunnableStateUnknown)
 				mystManager.Stop()
 
-			case "stop":
-				// terminate controller
+			case app.ActionStopRunner:
+				// terminate node
+				model.SetStateContainer(model_.RunnableStateUnknown)
+				mystManager.Stop()
+				return
+			
+			case app.ActionStop:
 				log.Println("[docker] stop")
 				return
 			}

@@ -19,6 +19,16 @@ type Controller interface {
 	GetCaps() int
 }
 
+const (
+	ActionCheck      = "check"
+	ActionUpgrade    = "upgrade"
+	ActionRestart    = "restart"
+	ActionEnable     = "enable"
+	ActionDisable    = "disable"
+	ActionStopRunner = "stop-runner"
+	ActionStop       = "stop"
+)
+
 type AppState struct {
 	action chan string
 
@@ -37,11 +47,11 @@ func NewApp() *AppState {
 
 func (s *AppState) SetAppController(c Controller) {
 	if s.ctrApp != nil {
-		s.action <- "stop" // wait prev. controller to finish
+		s.action <- ActionStopRunner // wait prev. controller to finish
 	}
 	s.ctrApp = c
-	c.SetApp(s)
 	s.model.Caps = c.GetCaps()
+	c.SetApp(s)
 }
 
 func (s *AppState) SetModel(ui *model.UIModel) {
@@ -83,7 +93,7 @@ func (s *AppState) TriggerAction(action string) {
 }
 
 func (s *AppState) Stop() {
-	s.action <- "stop"
+	s.action <- ActionStop
 }
 
 func (s *AppState) GetInTray() bool {

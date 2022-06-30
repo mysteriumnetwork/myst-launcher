@@ -17,10 +17,8 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
-
-	ctrd "github.com/mysteriumnetwork/myst-launcher/controller/docker"
-	ctr "github.com/mysteriumnetwork/myst-launcher/controller/native"
-
+	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
+	"github.com/mysteriumnetwork/myst-launcher/controller/native"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -82,9 +80,9 @@ func main() {
 
 		switch mod.Config.Backend {
 		case "native":
-			nc = ctr.NewController()
+			nc = native.NewController()
 		case "docker":
-			nc = ctrd.NewController()
+			nc = docker.NewController()
 		}
 		ap.SetAppController(nc)
 		go nc.Start()

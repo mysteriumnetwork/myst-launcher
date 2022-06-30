@@ -64,27 +64,33 @@ func (c *Controller) Start() {
 			log.Println("action:", act)
 
 			switch act {
-			case "check":
+			case app.ActionCheck:
 				c.upgradeContainer(true)
 
-			case "upgrade":
+			case app.ActionUpgrade:
 				c.upgradeContainer(false)
 
-			case "restart":
+			case app.ActionRestart:
 				// restart to apply new settings
 				c.restartContainer()
 				model.Config.Save()
 
-			case "enable":
+			case app.ActionEnable:
 				model.SetStateContainer(model_.RunnableStateStarting)
 				c.startContainer()
 				model.SetStateContainer(model_.RunnableStateRunning)
 
-			case "disable":
+			case app.ActionDisable:
 				model.SetStateContainer(model_.RunnableStateUnknown)
 				c.stop()
 
-			case "stop":
+			case app.ActionStopRunner:
+				// terminate controller
+				model.SetStateContainer(model_.RunnableStateUnknown)
+				c.stop()
+				return
+
+			case app.ActionStop:
 				log.Println("[native] stop")
 				return
 			}

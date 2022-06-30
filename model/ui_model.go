@@ -228,7 +228,6 @@ func (m *UIModel) TriggerNodeEnableAction() {
 }
 
 func (m *UIModel) TriggerChangeBackend(i string) {
-	log.Println("TriggerChangeBackend", i)
 	if m.Config.Backend != i {
 
 		m.Config.Backend = i
@@ -236,6 +235,4 @@ func (m *UIModel) TriggerChangeBackend(i string) {
 		m.UIBus.Publish("model-change")
 		m.UIBus.Publish("backend")
 	}
-	log.Println("TriggerChangeBackend >")
-
 }
