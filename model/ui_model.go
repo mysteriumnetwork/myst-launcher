@@ -9,6 +9,7 @@ package model
 
 import (
 	"log"
+	"runtime"
 	"strings"
 
 	"github.com/asaskevich/EventBus"
@@ -107,6 +108,10 @@ func (m *UIModel) SetProductVersion(v string) {
 	if v[0] == 'v' {
 		m.ProductVersion = v[1:]
 	}
+}
+
+func (m *UIModel) GetProductVersionString() string {
+	return m.ProductVersion + "/" + runtime.GOOS
 }
 
 func (m *UIModel) GetConfig() *Config {

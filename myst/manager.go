@@ -57,6 +57,7 @@ type Manager struct {
 	//launcherCfg *model.Config
 	model   *model.UIModel
 	dataDir string
+	lg *log.Logger
 }
 
 func NewManager(model *model.UIModel) (*Manager, error) {
@@ -69,10 +70,13 @@ func NewManager(model *model.UIModel) (*Manager, error) {
 	if err := utils.MakeDirectoryIfNotExists(dataDir); err != nil {
 		return nil, err
 	}
+	lg := log.New(os.Stdout, "[myst] ", log.Ldate|log.Ltime)
+
 	return &Manager{
 		dockerAPI: dc,
 		model:     model,
 		dataDir:   dataDir,
+		lg: lg,
 	}, nil
 }
 
@@ -82,7 +86,7 @@ func (m *Manager) GetDockerClient() *client.Client {
 
 // Returns: alreadyRunning, error
 func (m *Manager) Start() (bool, error) {
-	log.Println("Start >")
+	m.lg.Println("start >")
 
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
@@ -99,7 +103,7 @@ func (m *Manager) Start() (bool, error) {
 		mystContainer, err = m.findMystContainer()
 	}
 	if err != nil {
-		log.Println("err >", err)
+		m.lg.Println("err >", err)
 		return false, err
 	}
 
@@ -119,7 +123,7 @@ func (m *Manager) Start() (bool, error) {
 
 // stop, apply settings and start
 func (m *Manager) Restart() error {
-	log.Println("Restart >")
+	m.lg.Println("Restart >")
 	mystContainer, err := m.findMystContainer()
 	if err != nil && err != ErrContainerNotFound {
 		return err
@@ -149,7 +153,7 @@ func (m *Manager) Restart() error {
 }
 
 func (m *Manager) Update() error {
-	log.Println("Update >")
+	m.lg.Println("Update >")
 
 	// pull image by tag and by digest
 	// b/c docker client api returns additional digest (manifest) for mult-iarch images
@@ -180,7 +184,7 @@ func (m *Manager) launcherVersionChanged(mystContainer *Container) bool {
 }
 
 func getVersionFromCommand(cmd string) string {
-	// log.Println("getVersionFromCommand:", cmd)
+	// m.lg.Println("getVersionFromCommand:", cmd)
 
 	set := &flag.FlagSet{}
 	env := set.String("launcher.ver", "", "")
@@ -212,7 +216,7 @@ func (m *Manager) Stop() error {
 
 //////////////////////////////////////////////////////////////////////
 func (m *Manager) startMystContainer() error {
-	log.Println("startMystContainer >")
+	m.lg.Println("!startMystContainer")
 	mystContainer, err := m.findMystContainer()
 	if err != nil {
 		return err
@@ -248,7 +252,7 @@ func (m *Manager) findMystContainer() (*Container, error) {
 }
 
 func (m *Manager) pullMystImage(image string) error {
-	log.Println("pullMystImage >", image)
+	m.lg.Println("!pullMystImage", image)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
@@ -265,7 +269,7 @@ func (m *Manager) pullMystImage(image string) error {
 
 func (m *Manager) pullMystLatestByDigestLatest() error {
 	if m.model.ImageInfo.DigestLatest == "" {
-		log.Println("pullMystByDigest > no DigestLatest !")
+		m.lg.Println("pullMystByDigest > no DigestLatest !")
 		return nil
 	}
 
@@ -279,7 +283,7 @@ func (m *Manager) pullMystLatest() error {
 }
 
 func (m *Manager) createMystContainer() error {
-	log.Println("createMystContainer >")
+	m.lg.Println("!createMystContainer")
 
 	portSpecs := []string{
 		"4449/tcp",
@@ -288,7 +292,7 @@ func (m *Manager) createMystContainer() error {
 		"service", "--agreed-terms-and-conditions",
 	}
 	if m.model.CurrentImgHasReportVersionOption {
-		versionArg := fmt.Sprintf("%s=%s/%s", reportLauncherVersionFlag, m.model.ProductVersion, runtime.GOOS)
+		versionArg := fmt.Sprintf("%s=%s", reportLauncherVersionFlag, m.model.GetProductVersionString())
 		cmdArgs = append([]string{versionArg}, cmdArgs...)
 	}
 
@@ -313,7 +317,7 @@ func (m *Manager) createMystContainer() error {
 		ExposedPorts: nat.PortSet(exposedPorts),
 		Cmd:          strslice.StrSlice(cmdArgs),
 	}
-	log.Println("createMystContainer >", containerConfig)
+	m.lg.Println("createMystContainer >", containerConfig)
 
 	portMap := make(nat.PortMap)
 	portMap["4449/tcp"] = []nat.PortBinding{
@@ -387,7 +391,7 @@ func (m *Manager) getCurrentImageDigest() {
 
 	for _, i := range images {
 		if i.ID == mystContainer.ImageID {
-			log.Println("getCurrentImageDigest >", i.RepoDigests)
+			m.lg.Println("getCurrentImageDigest >", i.RepoDigests)
 			m.model.ImageInfo.CurrentImgDigests = extractRepoDigests(i.RepoDigests)
 		}
 	}

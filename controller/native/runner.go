@@ -9,6 +9,7 @@ package native
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os/exec"
 	"path"
@@ -19,19 +20,19 @@ import (
 )
 
 type NodeRunner struct {
-	cfg     *model.Config // from main App
+	mod     *model.UIModel // from main App
 	binpath string
 	cmd     *exec.Cmd
 }
 
-func NewRunner(cfg *model.Config) *NodeRunner {
+func NewRunner(mod *model.UIModel) *NodeRunner {
 
 	binpath := path.Join(utils.GetUserProfileDir(), `.mysterium-node\bin\`)
 	binpath = utils.MakeCanonicalPath(binpath)
 	utils.MakeDirectoryIfNotExists(binpath)
 
 	return &NodeRunner{
-		cfg:     cfg,
+		mod:     mod,
 		binpath: binpath,
 	}
 }
@@ -73,7 +74,6 @@ func (r *NodeRunner) Stop() {
 }
 
 func (r *NodeRunner) startNode() error {
-	log.Println("Start node native >")
 	exename := getNodeProcessName()
 
 	switch runtime.GOOS {
@@ -81,7 +81,10 @@ func (r *NodeRunner) startNode() error {
 		fullpath := path.Join(r.binpath, exename)
 		fullpath = utils.MakeCanonicalPath(fullpath)
 
-		r.cmd = exec.Command(fullpath, "--ui.enable=false", "--usermode", "--consumer", "--tequilapi.port=44050", "--discovery.type=api", "daemon")
+		const reportLauncherVersionFlag = "--launcher.ver"
+		versionArg := fmt.Sprintf("%s=%s", reportLauncherVersionFlag, r.mod.GetProductVersionString())
+
+		r.cmd = exec.Command(fullpath, versionArg, "--ui.enable=false", "--usermode", "--consumer", "--tequilapi.port=44050", "--discovery.type=api", "daemon")
 
 	case "darwin":
 		// cmd = exec.Command("open", "/Applications/Docker.app/")

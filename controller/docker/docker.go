@@ -9,6 +9,7 @@ package docker
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
@@ -23,10 +24,12 @@ type Controller struct {
 
 	mgr         model_.PlatformManager
 	mystManager *myst.Manager
+	lg          *log.Logger
 }
 
 func NewController() *Controller {
-	return &Controller{}
+	lg := log.New(os.Stdout, "[docker] ", log.Ldate|log.Ltime)
+	return &Controller{lg: lg}
 }
 
 func (c *Controller) GetCaps() int {
@@ -41,7 +44,7 @@ func (c *Controller) SetApp(a *app.AppState) {
 
 func (c *Controller) Start() {
 	defer utils.PanicHandler("app")
-	log.Println("[docker] start")
+	c.lg.Println("start")
 
 	var err error
 	c.mgr, err = platform.NewManager()
@@ -79,7 +82,7 @@ func (c *Controller) Start() {
 
 		select {
 		case act := <-action:
-			log.Println("action:", act)
+			c.lg.Println("action:", act)
 
 			switch act {
 			case app.ActionCheck:
@@ -107,9 +110,9 @@ func (c *Controller) Start() {
 				model.SetStateContainer(model_.RunnableStateUnknown)
 				mystManager.Stop()
 				return
-			
+
 			case app.ActionStop:
-				log.Println("[docker] stop")
+				c.lg.Println("[docker] stop")
 				return
 			}
 
@@ -121,7 +124,7 @@ func (c *Controller) Start() {
 
 // returns: will exit, if tryInstallDocker requests it
 func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
-	log.Println("tryStartOrInstallDocker")
+	c.lg.Println("tryStartOrInstallDocker")
 	model := c.a.GetModel()
 	ui := c.a.GetUI()
 
@@ -157,7 +160,7 @@ func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 		return nil
 	})
 	if err != nil {
-		log.Println("error", err)
+		c.lg.Println("error", err)
 		ui.ErrorModal("Application error", err.Error())
 		return true
 	}
@@ -195,7 +198,7 @@ func (c *Controller) restartContainer() {
 	model.SetStateContainer(model_.RunnableStateInstalling)
 	err := c.mystManager.Restart()
 	if err != nil {
-		log.Println("restart", err)
+		c.lg.Println("restart", err)
 	}
 }
 
@@ -212,7 +215,7 @@ func (c *Controller) upgradeContainer(refreshVersionCache bool) {
 	model.SetStateContainer(model_.RunnableStateInstalling)
 	err := c.mystManager.Update()
 	if err != nil {
-		log.Println("upgrade", err)
+		c.lg.Println("upgrade", err)
 	}
 
 	c.mystManager.CheckCurrentVersionAndUpgrades(false)
@@ -230,7 +233,7 @@ func (c *Controller) startContainer() {
 		containerAlreadyRunning, err := c.mystManager.Start()
 		if err != nil {
 			model.SetStateContainer(model_.RunnableStateUnknown)
-			log.Println("startContainer", err)
+			c.lg.Println("startContainer", err)
 
 			return
 		}

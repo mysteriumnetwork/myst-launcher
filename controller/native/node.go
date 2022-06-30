@@ -9,6 +9,7 @@ package native
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
@@ -19,10 +20,12 @@ import (
 type Controller struct {
 	a      *app.AppState
 	runner *NodeRunner
+	lg     *log.Logger
 }
 
 func NewController() *Controller {
-	return &Controller{}
+	lg := log.New(os.Stdout, "[native] ", log.Ldate|log.Ltime)
+	return &Controller{lg: lg}
 }
 
 func (c *Controller) GetCaps() int {
@@ -31,7 +34,7 @@ func (c *Controller) GetCaps() int {
 
 func (c *Controller) SetApp(a *app.AppState) {
 	c.a = a
-	c.runner = NewRunner(&a.GetModel().Config)
+	c.runner = NewRunner(a.GetModel())
 }
 
 func (c *Controller) Shutdown() {}
@@ -39,7 +42,7 @@ func (c *Controller) Shutdown() {}
 // Supervise the node
 func (c *Controller) Start() {
 	defer utils.PanicHandler("app")
-	log.Println("[native] start")
+	c.lg.Println("start")
 
 	model := c.a.GetModel()
 	action := c.a.GetAction()
@@ -61,7 +64,7 @@ func (c *Controller) Start() {
 
 		select {
 		case act := <-action:
-			log.Println("action:", act)
+			c.lg.Println("action:", act)
 
 			switch act {
 			case app.ActionCheck:
@@ -91,7 +94,7 @@ func (c *Controller) Start() {
 				return
 
 			case app.ActionStop:
-				log.Println("[native] stop")
+				c.lg.Println("[native] stop")
 				return
 			}
 
@@ -128,18 +131,15 @@ func (c *Controller) upgradeContainer(refreshVersionCache bool) {
 
 // check for image updates before starting container, offer upgrade interactively
 func (c *Controller) startContainer() {
-	log.Println("startContainer >")
+	c.lg.Println("!run")
 	model := c.a.GetModel()
-	//ui := c.a.GetUI()
 
 	model.SetStateContainer(model_.RunnableStateInstalling)
 	if model.Config.Enabled {
-		// c.CheckAndUpgradeNodeExe(false)
 
 		running := c.runner.IsRunningOrTryStart()
-		if !running {
-			// model.SetStateContainer(model_.RunnableStateUnknown)
+		if running {
+			model.SetStateContainer(model_.RunnableStateRunning)
 		}
-		model.SetStateContainer(model_.RunnableStateRunning)
 	}
 }

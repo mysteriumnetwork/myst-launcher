@@ -20,9 +20,9 @@ import (
 )
 
 // returns exit mode: true means exit
-func (s *Controller) tryInstallDocker() bool {
-	mdl := s.a.GetModel()
-	ui := s.a.GetUI()
+func (c *Controller) tryInstallDocker() bool {
+	mdl := c.a.GetModel()
+	ui := c.a.GetUI()
 
 	model.SwitchState(model.UIStateInstallNeeded)
 	if !ui.WaitDialogueComplete() {
@@ -31,15 +31,15 @@ func (s *Controller) tryInstallDocker() bool {
 	model.SwitchState(model.UIStateInstallInProgress)
 
 	model.UpdateProperties(model.UIProps{"CheckVTx": model.StepInProgress})
-	featuresOK, err := s.mgr.Features()
+	featuresOK, err := c.mgr.Features()
 	if err != nil {
-		log.Println("Failed to query feature:", err)
+		c.lg.Println("Failed to query feature:", err)
 		model.SwitchState(model.UIStateInstallError)
 		model.UpdateProperties(model.UIProps{"CheckVTx": model.StepFailed})
 		return true
 	}
 	if !featuresOK {
-		log.Println("Virtualization is not supported !")
+		c.lg.Println("Virtualization is not supported !")
 		model.SwitchState(model.UIStateInstallError)
 		return true
 	}
@@ -48,7 +48,7 @@ func (s *Controller) tryInstallDocker() bool {
 	model.UpdateProperties(model.UIProps{"CheckDocker": model.StepInProgress})
 	hasDocker, err := utils.HasDocker()
 	if err != nil {
-		log.Println("Failed to check Docker:", err)
+		c.lg.Println("Failed to check Docker:", err)
 		model.SwitchState(model.UIStateInstallError)
 		model.UpdateProperties(model.UIProps{"CheckDocker": model.StepFailed})
 		return true
@@ -69,18 +69,18 @@ func (s *Controller) tryInstallDocker() bool {
 	name := "Docker.dmg"
 	url, err := utils.GetDockerDesktopLink()
 	if err != nil {
-		log.Println("Couldn't get Docker Desktop link")
+		c.lg.Println("Couldn't get Docker Desktop link")
 		model.SwitchState(model.UIStateInstallError)
 		return true
 	}
-	log.Println("Downloading Docker desktop: ", url)
+	c.lg.Println("Downloading Docker desktop: ", url)
 	err = utils.DownloadFile(utils.GetTmpDir()+name, url, func(progress int) {
 		if progress%10 == 0 {
-			log.Println(fmt.Sprintf("%s - %d%%", name, progress))
+			c.lg.Println(fmt.Sprintf("%s - %d%%", name, progress))
 		}
 	})
 	if err != nil {
-		log.Println("Couldn't get Docker Desktop")
+		c.lg.Println("Couldn't get Docker Desktop")
 		model.SwitchState(model.UIStateInstallError)
 		model.UpdateProperties(model.UIProps{"DownloadFiles": model.StepFailed})
 		return true
@@ -88,10 +88,10 @@ func (s *Controller) tryInstallDocker() bool {
 	model.UpdateProperties(model.UIProps{"DownloadFiles": model.StepFinished})
 
 	model.UpdateProperties(model.UIProps{"InstallDocker": model.StepInProgress})
-	var buf bytes.Buffer
+	var buf bytec.Buffer
 	_, err = utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
 	if err != nil {
-		log.Println("Failed to run command:", err)
+		c.lg.Println("Failed to run command:", err)
 		model.SwitchState(model.UIStateInstallError)
 		model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
@@ -100,7 +100,7 @@ func (s *Controller) tryInstallDocker() bool {
 
 	_, err = utils.CmdRun(&buf, "/usr/bin/hdiutil", "attach", utils.GetTmpDir()+name)
 	if err != nil {
-		log.Println("Failed to run command:", err)
+		c.lg.Println("Failed to run command:", err)
 		model.SwitchState(model.UIStateInstallError)
 		model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
@@ -110,7 +110,7 @@ func (s *Controller) tryInstallDocker() bool {
 	// cp -R /Volumes/Docker/Docker.app /Applications
 	_, err = utils.CmdRun(&buf, "/bin/cp", "-pR", "/Volumes/Docker/Docker.app", "/Applications")
 	if err != nil {
-		log.Println("Failed to run command:", err)
+		c.lg.Println("Failed to run command:", err)
 		model.SwitchState(model.UIStateInstallError)
 		model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
@@ -120,7 +120,7 @@ func (s *Controller) tryInstallDocker() bool {
 	//  xattr -d -r com.apple.quarantine /Applications/Docker.app
 	_, err = utils.CmdRun(&buf, "/usr/bin/xattr", "-d", "-r", "com.apple.quarantine", "/Applications/Docker.app")
 	if err != nil {
-		log.Println("Failed to run command:", err)
+		c.lg.Println("Failed to run command:", err)
 		model.SwitchState(model.UIStateInstallError)
 		model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
@@ -129,7 +129,7 @@ func (s *Controller) tryInstallDocker() bool {
 
 	_, err = utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
 	if err != nil {
-		log.Println("Failed to run command:", err)
+		c.lg.Println("Failed to run command:", err)
 		model.SwitchState(model.UIStateInstallError)
 		model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
@@ -139,7 +139,7 @@ func (s *Controller) tryInstallDocker() bool {
 	// initialize docker desktop
 	_, err = utils.CmdRun(&buf, "/usr/bin/open", "/Applications/Docker.app")
 	if err != nil {
-		log.Println("Failed to run command:", err)
+		c.lg.Println("Failed to run command:", err)
 		model.SwitchState(model.UIStateInstallError)
 		model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
 		return true
@@ -147,7 +147,7 @@ func (s *Controller) tryInstallDocker() bool {
 	buf.Reset()
 
 	model.UpdateProperties(model.UIProps{"InstallDocker": model.StepFinished})
-	log.Println("Installation succeeded")
+	c.lg.Println("Installation succeeded")
 
 	model.SwitchState(model.UIStateInstallFinished)
 	if !ui.WaitDialogueComplete() {
