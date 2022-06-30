@@ -39,6 +39,12 @@ func (c *Controller) Start() {
 
 	model := c.a.GetModel()
 	action := c.a.GetAction()
+	cfg := model.Config
+	
+	// copy version info to ui model
+	model.ImageInfo.VersionCurrent = cfg.NodeExeVersion
+	model.ImageInfo.VersionLatest = cfg.NodeLatestTag
+	model.Update()
 
 	t1 := time.NewTicker(15 * time.Second)
 	model.Update()
@@ -106,6 +112,7 @@ func (c *Controller) upgradeContainer(refreshVersionCache bool) {
 	// if !model.ImageInfo.HasUpdate {
 	// 	return
 	// }
+
 	model.SetStateContainer(model_.RunnableStateInstalling)
 	c.CheckAndUpgradeNodeExe(refreshVersionCache)
 	model.SetStateContainer(model_.RunnableStateRunning)

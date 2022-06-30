@@ -20,13 +20,13 @@ const (
 
 func (s *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 	cfg := &s.a.GetModel().Config
+	mdl := s.a.GetModel()
 
 	exename := getNodeProcessName()
 	fullpath := path.Join(s.runner.binpath, exename)
 	fullpath = utils.MakeCanonicalPath(fullpath)
 
 	sha256, _ := checksum.SHA256sum(fullpath)
-	// log.Println("sha256", sha256)
 	if cfg.NodeExeDigest != sha256 || sha256 == "" {
 		cfg.NodeExeDigest = sha256
 		cfg.NodeExeVersion = ""
@@ -38,11 +38,15 @@ func (s *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 		release, _ := updates.FetchLatestRelease(ctx, org, repo)
 		tagLatest := release.TagName
 
-		s.a.GetModel().ImageInfo.VersionLatest = tagLatest
-		s.a.GetModel().ImageInfo.VersionCurrent = cfg.NodeExeVersion
-		s.a.GetModel().ImageInfo.HasUpdate = tagLatest != cfg.NodeExeVersion
+		mdl.ImageInfo.VersionLatest = tagLatest
+		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
+		mdl.ImageInfo.HasUpdate = tagLatest != cfg.NodeExeVersion
+		defer func() {
+			cfg.NodeLatestTag = tagLatest
+			cfg.RefreshLastUpgradeCheck()
+			cfg.Save()	
+		}()
 
-		// log.Println("sha256", cfg.NodeExeVersion, tagLatest)
 		if cfg.NodeExeVersion != tagLatest {
 
 			fullpath := path.Join(s.runner.binpath, exename)
@@ -57,14 +61,10 @@ func (s *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 
 			if s.a.GetModel().Config.AutoUpgrade {
 				s.tryInstall()
-			}
 
-			sha256, _ := checksum.SHA256sum(fullpath)
-			log.Println("sha256:", sha256)
-			cfg.NodeExeDigest = sha256
-			cfg.NodeExeVersion = tagLatest
-			cfg.RefreshLastUpgradeCheck()
-			cfg.Save()
+				sha256, _ := checksum.SHA256sum(fullpath)
+				cfg.NodeExeDigest = sha256
+			}
 
 			return false
 		}

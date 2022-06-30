@@ -44,6 +44,7 @@ type Config struct {
 	AutoUpgrade    bool   `json:"auto_upgrade"`
 	NodeExeDigest  string `json:"node_exe_digest"`
 	NodeExeVersion string `json:"node_exe_version"`
+	NodeLatestTag  string `json:"node_latest_tag"` // cache latest tag
 	// the last time we checked for upgrade of Myst / Exe, Unix timestamp, [second]
 	LastUpgradeCheck int64  `json:"last_upgrade_check"` // once a day
 	Backend          string `json:"backend"`            // runner: docker | native

@@ -34,8 +34,6 @@ func (c *Controller) SetApp(a *app.AppState) {
 }
 
 func (c *Controller) Shutdown() {
-	// wait for SuperviseDockerNode to finish its work
-	// c.wg.Wait()
 }
 
 func (c *Controller) Start() {
