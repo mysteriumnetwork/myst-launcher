@@ -40,11 +40,13 @@ type Config struct {
 
 	InitialState InitialState `json:"state"`
 
-	// allow auto-upgrades
-	AutoUpgrade bool `json:"auto_upgrade"`
-
-	// the last time we checked for upgrade, Unix timestamp, [second]
-	LastUpgradeCheck int64 `json:"last_upgrade_check"` // once a day
+	// autoupgrade node
+	AutoUpgrade    bool   `json:"auto_upgrade"`
+	NodeExeDigest  string `json:"node_exe_digest"`
+	NodeExeVersion string `json:"node_exe_version"`
+	// the last time we checked for upgrade of Myst / Exe, Unix timestamp, [second]
+	LastUpgradeCheck int64  `json:"last_upgrade_check"` // once a day
+	Backend          string `json:"backend"`            // runner: docker | native
 
 	// Networking mode
 	EnablePortForwarding bool `json:"enable_port_forwarding"`
@@ -97,6 +99,7 @@ func (c *Config) getDefaultValues() {
 	c.EnablePortForwarding = false
 	c.PortRangeBegin = 42000
 	c.PortRangeEnd = 42100
+	c.Backend = "native"
 }
 
 func (c *Config) Read() {

@@ -7,11 +7,20 @@
 
 package utils
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 func MakeDirectoryIfNotExists(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return os.Mkdir(path, os.ModeDir|0755)
 	}
 	return nil
+}
+
+func MakeCanonicalPath(p string) string {
+	p = filepath.Clean(p)
+	// p, _ = filepath.Abs(p)
+	return p
 }

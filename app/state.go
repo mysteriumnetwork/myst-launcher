@@ -13,16 +13,33 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/model"
 )
 
+type Controller interface {
+	SetApp(a *AppState)
+	Start()
+}
+
 type AppState struct {
 	action chan string
+
 	model  *model.UIModel //gui.Model
 	ui     model.Gui_
+	ctrApp Controller
 }
 
 func NewApp() *AppState {
 	s := &AppState{}
-	s.action = make(chan string, 1)
+
+	// s.action = make(chan string, 1)
+	s.action = make(chan string) // unbuffered, synchronous
 	return s
+}
+
+func (s *AppState) SetAppController(c Controller) {
+	if s.ctrApp != nil {
+		s.action <- "stop" // wait prev. controller to finish
+	}
+	s.ctrApp = c
+	c.SetApp(s)
 }
 
 func (s *AppState) SetModel(ui *model.UIModel) {
@@ -61,6 +78,10 @@ func (s *AppState) Write(b []byte) (int, error) {
 
 func (s *AppState) TriggerAction(action string) {
 	s.action <- action
+}
+
+func (s *AppState) Stop() {
+	s.action <- "stop"
 }
 
 func (s *AppState) GetInTray() bool {

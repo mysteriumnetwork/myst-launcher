@@ -65,11 +65,16 @@ func (r *DockerRunner) IsRunningOrTryStart() (bool, bool) {
 	return true, false
 }
 
-func (r *DockerRunner) tryStartDockerDesktop() bool {
+func getProcessName() string {
 	exe := "Docker Desktop.exe"
 	if runtime.GOOS == "darwin" {
 		exe = "Docker"
 	}
+	return exe
+}
+
+func (r *DockerRunner) tryStartDockerDesktop() bool {
+	exe := getProcessName()
 
 	if utils.IsProcessRunning(exe) {
 		return true
@@ -82,8 +87,9 @@ func (r *DockerRunner) tryStartDockerDesktop() bool {
 }
 
 func StartDockerDesktop() error {
+	log.Println("Start Docker Desktop >")
+
 	var cmd *exec.Cmd
-	log.Println("StartDockerDesktop >")
 	switch runtime.GOOS {
 	case "windows":
 		dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
@@ -93,7 +99,6 @@ func StartDockerDesktop() error {
 	default:
 		return errors.New("unsupported OS: " + runtime.GOOS)
 	}
-
 	if err := cmd.Start(); err != nil {
 		log.Println("err>", err)
 		return err

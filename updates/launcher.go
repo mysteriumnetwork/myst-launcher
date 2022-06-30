@@ -38,8 +38,8 @@ type Release struct {
 	Version     semver.Version `json:"-"`
 }
 
-// FetchLatestLauncherRelease fetches meta-data about the latest release from GitHub
-func FetchLatestLauncherRelease(ctx context.Context, githubOrg, githubRepo string) (Release, error) {
+// FetchLatestRelease fetches meta-data about the latest release from GitHub
+func FetchLatestRelease(ctx context.Context, githubOrg, githubRepo string) (Release, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, APITimeout)
 	defer cancel()

@@ -10,12 +10,17 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 )
 
-func CheckLauncherUpdates(gitHubOrg, gitHubRepo string, model *model.UIModel) {
+const (
+	gitHubOrg  = "mysteriumnetwork"
+	gitHubRepo = "myst-launcher"
+)
+
+func CheckLauncherUpdates(model *model.UIModel) {
 	ctx := context.TODO()
 
 	for {
 		func() {
-			release, err := updates.FetchLatestLauncherRelease(ctx, gitHubOrg, gitHubRepo)
+			release, err := updates.FetchLatestRelease(ctx, gitHubOrg, gitHubRepo)
 			if err != nil {
 				fmt.Println(err)
 				return

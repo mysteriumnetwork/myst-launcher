@@ -4,8 +4,10 @@ go 1.16
 
 require (
 	github.com/Microsoft/go-winio v0.5.1
+	github.com/artdarek/go-unzip v1.0.0
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/blang/semver/v4 v4.0.0
+	github.com/codingsince1985/checksum v1.2.4
 	github.com/containerd/containerd v1.5.8 // indirect
 	github.com/docker/docker v20.10.10+incompatible
 	github.com/docker/go-connections v0.4.0
@@ -34,6 +36,7 @@ require (
 	google.golang.org/genproto v0.0.0-20211118181313-81c1377c94b1 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
+	honnef.co/go/tools v0.3.2
 )
 
 replace (

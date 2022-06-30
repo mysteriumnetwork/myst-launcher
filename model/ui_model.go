@@ -217,9 +217,24 @@ func (m *UIModel) TriggerAutostartAction() {
 }
 
 func (m *UIModel) TriggerNodeEnableAction() {
+	m.Config.Enabled = !m.Config.Enabled
+	m.Config.Save()
 	if m.Config.Enabled {
-		m.TriggerAction("disable")
-	} else {
 		m.TriggerAction("enable")
+	} else {
+		m.TriggerAction("disable")
 	}
+}
+
+func (m *UIModel) TriggerChangeBackend(i string) {
+	log.Println("TriggerChangeBackend", i)
+	if m.Config.Backend != i {
+
+		m.Config.Backend = i
+		m.Config.Save()
+		m.UIBus.Publish("model-change")
+		m.UIBus.Publish("backend")
+	}
+	log.Println("TriggerChangeBackend >")
+
 }

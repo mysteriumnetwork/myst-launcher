@@ -46,6 +46,8 @@ type Gui struct {
 	actionUpgrade         *walk.Action
 	actionLauncherUpgrade *walk.Action
 	actionEnable          *walk.Action
+	actionBackendNative   *walk.Action
+	actionBackendDocker   *walk.Action
 
 	isAutostartEnabled *walk.MutableCondition
 	isNodeEnabled      *walk.MutableCondition
@@ -95,7 +97,6 @@ func NewGui(m *model2.UIModel) *Gui {
 }
 
 func (g *Gui) CreateMainWindow() {
-
 	if err := (MainWindow{
 		Visible:   false,
 		AssignTo:  &g.dlg,
@@ -116,6 +117,7 @@ func (g *Gui) CreateMainWindow() {
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
+	g.actionBackendNative.SetChecked(true)
 
 	g.dlg.SetVisible(!g.model.App.GetInTray())
 	g.changeView(frameState)
@@ -174,6 +176,7 @@ func (g *Gui) CreateMainWindow() {
 		}
 		g.DialogueComplete()
 	})
+
 }
 
 func (g *Gui) enableMenu(enable bool) {
@@ -214,6 +217,9 @@ func (g *Gui) refresh() {
 		g.isNodeEnabled.SetSatisfied(g.model.Config.Enabled)
 		g.isAutostartEnabled.SetSatisfied(g.model.Config.AutoStart)
 		g.actionLauncherUpgrade.SetVisible(g.model.LauncherHasUpdate)
+
+		g.actionBackendNative.SetChecked(g.model.Config.Backend=="native")
+		g.actionBackendDocker.SetChecked(g.model.Config.Backend=="docker")
 
 	case model2.UIStateInstallNeeded:
 		g.enableMenu(false)

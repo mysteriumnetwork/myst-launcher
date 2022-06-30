@@ -17,18 +17,15 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
-	"github.com/mysteriumnetwork/myst-launcher/controller"
-	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
+
+	ctrd "github.com/mysteriumnetwork/myst-launcher/controller/docker"
+	ctr "github.com/mysteriumnetwork/myst-launcher/controller/native"
+
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-)
-
-const (
-	gitHubOrg  = "mysteriumnetwork"
-	gitHubRepo = "myst-launcher"
 )
 
 var debugMode = ""
@@ -78,12 +75,22 @@ func main() {
 
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
-
 	ap.SetUI(ui)
 
-	dc := docker.NewController(ap)
-	go dc.SuperviseDockerNode()
-	go controller.CheckLauncherUpdates(gitHubOrg, gitHubRepo, ap.GetModel())
+	setUIController := func() {
+		var nc app.Controller
+
+		switch mod.Config.Backend {
+		case "native":
+			nc = ctr.NewController()
+		case "docker":
+			nc = ctrd.NewController()
+		}
+		ap.SetAppController(nc)
+		go nc.Start()
+	}
+	mod.UIBus.Subscribe("backend", setUIController)
+	setUIController()
 
 	ipc.Listen(ui)
 	log.SetOutput(ap)
@@ -91,10 +98,7 @@ func main() {
 	// Run the message loop
 	ui.Run()
 	gui_win32.ShutdownGDIPlus()
-
-	// send stop action to SuperviseDockerNode
-	ap.TriggerAction("stop")
-	dc.Shutdown()
+	ap.Stop()
 
 	if debugMode != "" {
 		fmt.Print("Press 'Enter' to continue...")

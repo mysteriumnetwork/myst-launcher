@@ -9,7 +9,6 @@ package docker
 
 import (
 	"log"
-	"sync"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
@@ -22,47 +21,49 @@ import (
 type Controller struct {
 	a *app.AppState
 
-	mgr model_.PlatformManager
-	wg  sync.WaitGroup // for graceful shutdown
+	mgr         model_.PlatformManager
+	mystManager *myst.Manager
 }
 
-func NewController(a *app.AppState) *Controller {
-	return &Controller{
-		a: a,
-	}
+func NewController() *Controller {
+	return &Controller{}
 }
 
-func (s *Controller) Shutdown() {
+func (c *Controller) SetApp(a *app.AppState) {
+	c.a = a
+}
+
+func (c *Controller) Shutdown() {
 	// wait for SuperviseDockerNode to finish its work
-	s.wg.Wait()
+	// c.wg.Wait()
 }
 
-func (s *Controller) SuperviseDockerNode() {
+func (c *Controller) Start() {
 	defer utils.PanicHandler("app")
+	log.Println("[docker] start")
 
 	var err error
-	s.mgr, err = platform.NewManager()
+	c.mgr, err = platform.NewManager()
 	if err != nil {
 		panic(err) // TODO handle gracefully
 	}
-	s.wg.Add(1)
-	defer s.wg.Done()
 
-	model := s.a.GetModel()
-	ui := s.a.GetUI()
-	action := s.a.GetAction()
+	model := c.a.GetModel()
+	ui := c.a.GetUI()
+	action := c.a.GetAction()
 
 	mystManager, err := myst.NewManager(model)
 	if err != nil {
 		panic(err) // TODO handle gracefully
 	}
+	c.mystManager = mystManager
 	docker := NewDockerRunner(mystManager.GetDockerClient())
 
 	t1 := time.NewTicker(15 * time.Second)
 	model.Update()
 
 	for {
-		if wantExit := s.tryStartOrInstallDocker(docker); wantExit {
+		if wantExit := c.tryStartOrInstallDocker(docker); wantExit {
 			model.SetWantExit()
 			ui.CloseUI()
 			return
@@ -70,9 +71,9 @@ func (s *Controller) SuperviseDockerNode() {
 		model.SwitchState(model_.UIStateInitial)
 
 		// docker is running now
-		s.startContainer(mystManager)
+		c.startContainer()
 		if model.Config.AutoUpgrade {
-			s.upgradeContainer(mystManager, false)
+			c.upgradeContainer(false)
 		}
 
 		select {
@@ -84,27 +85,25 @@ func (s *Controller) SuperviseDockerNode() {
 				mystManager.CheckCurrentVersionAndUpgrades(true)
 
 			case "upgrade":
-				s.upgradeContainer(mystManager, false)
+				c.upgradeContainer(false)
 
 			case "restart":
 				// restart to apply new settings
-				s.restart(mystManager)
+				c.restartContainer()
 				model.Config.Save()
 
 			case "enable":
-				model.Config.Enabled = true
-				model.Config.Save()
 				model.SetStateContainer(model_.RunnableStateStarting)
 				mystManager.Start()
 				model.SetStateContainer(model_.RunnableStateRunning)
 
 			case "disable":
-				model.Config.Enabled = false
-				model.Config.Save()
 				model.SetStateContainer(model_.RunnableStateUnknown)
 				mystManager.Stop()
 
 			case "stop":
+				// terminate controller
+				log.Println("[docker] stop")
 				return
 			}
 
@@ -115,13 +114,13 @@ func (s *Controller) SuperviseDockerNode() {
 }
 
 // returns: will exit, if tryInstallDocker requests it
-func (s *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
+func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	log.Println("tryStartOrInstallDocker")
-	model := s.a.GetModel()
-	ui := s.a.GetUI()
+	model := c.a.GetModel()
+	ui := c.a.GetUI()
 
 	if model.Config.InitialState == model_.InitialStateStage1 {
-		return s.tryInstallDocker()
+		return c.tryInstallDocker()
 	}
 
 	if docker.IsRunning() {
@@ -132,12 +131,12 @@ func (s *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
 	isUnderVM, needSetup, err := false, false, error(nil)
 	err = utils.Retry(3, time.Second, func() error {
-		isUnderVM, err = s.mgr.SystemUnderVm()
+		isUnderVM, err = c.mgr.SystemUnderVm()
 		if err != nil {
 			return err
 		}
 
-		featuresOk, err := s.mgr.Features()
+		featuresOk, err := c.mgr.Features()
 		if err != nil {
 			return err
 		}
@@ -167,7 +166,7 @@ func (s *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 		model.Config.Save()
 	}
 	if needSetup {
-		return s.tryInstallDocker()
+		return c.tryInstallDocker()
 	}
 
 	isRunning, couldNotStart := docker.IsRunningOrTryStart()
@@ -178,51 +177,51 @@ func (s *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	model.SetStateDocker(model_.RunnableStateStarting)
 	if couldNotStart {
 		model.SetStateDocker(model_.RunnableStateUnknown)
-		return s.tryInstallDocker()
+		return c.tryInstallDocker()
 	}
 
 	return false
 }
 
-func (s *Controller) restart(mystManager *myst.Manager) {
-	model := s.a.GetModel()
+func (c *Controller) restartContainer() {
+	model := c.a.GetModel()
 
 	model.SetStateContainer(model_.RunnableStateInstalling)
-	err := mystManager.Restart()
+	err := c.mystManager.Restart()
 	if err != nil {
 		log.Println("restart", err)
 	}
 }
 
-func (s *Controller) upgradeContainer(mystManager *myst.Manager, refreshVersionCache bool) {
-	model := s.a.GetModel()
+func (c *Controller) upgradeContainer(refreshVersionCache bool) {
+	model := c.a.GetModel()
 
 	if !model.ImageInfo.HasUpdate {
 		return
 	}
 
 	if refreshVersionCache {
-		mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
+		c.mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
 	}
 	model.SetStateContainer(model_.RunnableStateInstalling)
-	err := mystManager.Update()
+	err := c.mystManager.Update()
 	if err != nil {
 		log.Println("upgrade", err)
 	}
 
-	mystManager.CheckCurrentVersionAndUpgrades(false)
+	c.mystManager.CheckCurrentVersionAndUpgrades(false)
 }
 
 // check for image updates before starting container, offer upgrade interactively
-func (c *Controller) startContainer(mystManager *myst.Manager) {
+func (c *Controller) startContainer() {
 	model := c.a.GetModel()
 	ui := c.a.GetUI()
 
-	mystManager.CheckCurrentVersionAndUpgrades(false)
+	c.mystManager.CheckCurrentVersionAndUpgrades(false)
 
 	model.SetStateContainer(model_.RunnableStateInstalling)
 	if model.Config.Enabled {
-		containerAlreadyRunning, err := mystManager.Start()
+		containerAlreadyRunning, err := c.mystManager.Start()
 		if err != nil {
 			model.SetStateContainer(model_.RunnableStateUnknown)
 			log.Println("startContainer", err)
