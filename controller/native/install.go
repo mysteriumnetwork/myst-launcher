@@ -3,6 +3,7 @@ package native
 import (
 	"context"
 	"fmt"
+	"log"
 	"path"
 
 	"github.com/artdarek/go-unzip"
@@ -26,6 +27,10 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 	fullpath = utils.MakeCanonicalPath(fullpath)
 
 	sha256, _ := checksum.SHA256sum(fullpath)
+	if cfg.NodeExeDigest == sha256 {
+		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
+		mdl.Update()
+	}
 	if cfg.NodeExeDigest != sha256 || sha256 == "" {
 		cfg.NodeExeDigest = sha256
 		cfg.NodeExeVersion = ""
@@ -42,17 +47,18 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 		mdl.ImageInfo.HasUpdate = tagLatest != cfg.NodeExeVersion
 		defer func() {
 			cfg.NodeLatestTag = tagLatest
+			cfg.NodeExeVersion = tagLatest
+
 			cfg.RefreshLastUpgradeCheck()
 			cfg.Save()
 		}()
 
 		if cfg.NodeExeVersion != tagLatest {
-
 			fullpath := path.Join(c.runner.binpath, exename)
 			fullpath = utils.MakeCanonicalPath(fullpath)
 			p, err := utils.IsProcessRunningExt(exename, fullpath)
 			if err != nil {
-				c.lg.Println("IsRunningOrTryStart >", err)
+				// c.lg.Println("IsRunningOrTryStart >", err)
 			}
 			if p != 0 {
 				utils.TerminateProcess(p, 0)
@@ -75,7 +81,7 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 
 // returns: will exit
 func (c *Controller) tryInstall() bool {
-
+	log.Println("tryInstall >")
 	ctx := context.Background()
 	release, _ := updates.FetchLatestRelease(ctx, org, repo)
 

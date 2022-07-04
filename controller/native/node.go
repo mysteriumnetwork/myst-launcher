@@ -58,9 +58,10 @@ func (c *Controller) Start() {
 		model.SwitchState(model_.UIStateInitial)
 
 		c.startContainer()
-		if model.Config.AutoUpgrade {
-			c.upgradeContainer(false)
-		}
+		c.upgradeContainer(false)
+		// if model.Config.AutoUpgrade {
+		// c.upgradeContainer(false)
+		// }
 
 		select {
 		case act := <-action:

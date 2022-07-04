@@ -53,3 +53,7 @@ func GetProductVersion() (string, error) {
 func CheckAndInstallExe() error {
 	return nil
 }
+
+func IsProcessRunningExt(exeName, fullpath string) (uint32, error) {
+	return 0, nil
+}

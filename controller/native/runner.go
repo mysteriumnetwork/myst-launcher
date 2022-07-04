@@ -84,7 +84,7 @@ func (r *NodeRunner) startNode() error {
 		const reportLauncherVersionFlag = "--launcher.ver"
 		versionArg := fmt.Sprintf("%s=%s", reportLauncherVersionFlag, r.mod.GetProductVersionString())
 
-		r.cmd = exec.Command(fullpath, versionArg, "--ui.enable=false", "--usermode", "--consumer", "--tequilapi.port=44050", "--discovery.type=api", "daemon")
+		r.cmd = exec.Command(fullpath, versionArg /*"--userspace",*/, "service", "--agreed-terms-and-conditions")
 
 	case "darwin":
 		// cmd = exec.Command("open", "/Applications/Docker.app/")
