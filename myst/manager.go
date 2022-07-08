@@ -57,7 +57,7 @@ type Manager struct {
 	//launcherCfg *model.Config
 	model   *model.UIModel
 	dataDir string
-	lg *log.Logger
+	lg      *log.Logger
 }
 
 func NewManager(model *model.UIModel) (*Manager, error) {
@@ -70,13 +70,13 @@ func NewManager(model *model.UIModel) (*Manager, error) {
 	if err := utils.MakeDirectoryIfNotExists(dataDir); err != nil {
 		return nil, err
 	}
-	lg := log.New(os.Stdout, "[myst] ", log.Ldate|log.Ltime)
+	lg := log.New(log.Writer(), "[myst] ", log.Ldate|log.Ltime)
 
 	return &Manager{
 		dockerAPI: dc,
 		model:     model,
 		dataDir:   dataDir,
-		lg: lg,
+		lg:        lg,
 	}, nil
 }
 
@@ -87,6 +87,7 @@ func (m *Manager) GetDockerClient() *client.Client {
 // Returns: alreadyRunning, error
 func (m *Manager) Start() (bool, error) {
 	m.lg.Println("start >")
+	// defer m.lg.Println("start >>>")
 
 	mystContainer, err := m.findMystContainer()
 	if errors.Is(err, ErrContainerNotFound) {
@@ -217,11 +218,11 @@ func (m *Manager) Stop() error {
 //////////////////////////////////////////////////////////////////////
 func (m *Manager) startMystContainer() error {
 	m.lg.Println("!startMystContainer")
+
 	mystContainer, err := m.findMystContainer()
 	if err != nil {
 		return err
 	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
 	defer cancel()
 
@@ -391,7 +392,7 @@ func (m *Manager) getCurrentImageDigest() {
 
 	for _, i := range images {
 		if i.ID == mystContainer.ImageID {
-			m.lg.Println("getCurrentImageDigest >", i.RepoDigests)
+			// m.lg.Println("getCurrentImageDigest >", i.RepoDigests)
 			m.model.ImageInfo.CurrentImgDigests = extractRepoDigests(i.RepoDigests)
 		}
 	}

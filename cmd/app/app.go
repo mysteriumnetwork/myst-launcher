@@ -11,6 +11,8 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/gonutz/w32"
@@ -30,8 +32,10 @@ var debugMode = ""
 
 func main() {
 	defer utils.PanicHandler("main")
+	go http.ListenAndServe("localhost:8080", nil)
 
 	ap := app.NewApp()
+
 	ipc := ipc_.NewHandler()
 
 	if len(os.Args) > 1 {
@@ -70,12 +74,14 @@ func main() {
 		return
 	}
 	ap.SetModel(mod)
+	log.SetOutput(ap)
 
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
 	ap.SetUI(ui)
 
 	setUIController := func() {
+		// fmt.Println("set controller", mod.Config.Backend)
 		var nc app.Controller
 
 		switch mod.Config.Backend {
@@ -87,11 +93,10 @@ func main() {
 		ap.SetAppController(nc)
 		go nc.Start()
 	}
-	mod.UIBus.Subscribe("backend", setUIController)
+	mod.Bus2.Subscribe("backend", setUIController)
 	setUIController()
 
 	ipc.Listen(ui)
-	log.SetOutput(ap)
 
 	// Run the message loop
 	ui.Run()

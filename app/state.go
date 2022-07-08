@@ -40,7 +40,6 @@ type AppState struct {
 func NewApp() *AppState {
 	s := &AppState{}
 
-	// s.action = make(chan string, 1)
 	s.action = make(chan string) // unbuffered, synchronous
 	return s
 }
@@ -49,6 +48,7 @@ func (s *AppState) SetAppController(c Controller) {
 	if s.ctrApp != nil {
 		s.action <- ActionStopRunner // wait prev. controller to finish
 	}
+
 	s.ctrApp = c
 	s.model.Caps = c.GetCaps()
 	c.SetApp(s)

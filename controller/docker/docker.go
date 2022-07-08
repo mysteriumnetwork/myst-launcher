@@ -9,7 +9,6 @@ package docker
 
 import (
 	"log"
-	"os"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
@@ -28,7 +27,7 @@ type Controller struct {
 }
 
 func NewController() *Controller {
-	lg := log.New(os.Stdout, "[docker] ", log.Ldate|log.Ltime)
+	lg := log.New(log.Writer(), "[docker] ", log.Ldate|log.Ltime)
 	return &Controller{lg: lg}
 }
 
@@ -43,7 +42,7 @@ func (c *Controller) SetApp(a *app.AppState) {
 // func (c *Controller) Shutdown() {}
 
 func (c *Controller) Start() {
-	defer utils.PanicHandler("app")
+	defer utils.PanicHandler("app-1")
 	c.lg.Println("start")
 
 	var err error
@@ -80,6 +79,7 @@ func (c *Controller) Start() {
 			c.upgradeContainer(false)
 		}
 
+		// c.lg.Println("wait action >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 		select {
 		case act := <-action:
 			c.lg.Println("action:", act)
@@ -225,25 +225,32 @@ func (c *Controller) upgradeContainer(refreshVersionCache bool) {
 func (c *Controller) startContainer() {
 	model := c.a.GetModel()
 	ui := c.a.GetUI()
+	// c.lg.Println("startContainer")
+	// defer c.lg.Println("startContainer >")
 
 	c.mystManager.CheckCurrentVersionAndUpgrades(false)
 
 	model.SetStateContainer(model_.RunnableStateInstalling)
-	if model.Config.Enabled {
-		containerAlreadyRunning, err := c.mystManager.Start()
-		if err != nil {
-			model.SetStateContainer(model_.RunnableStateUnknown)
-			c.lg.Println("startContainer", err)
-
-			return
-		}
-		model.SetStateContainer(model_.RunnableStateRunning)
-
-		if !containerAlreadyRunning && model.Config.InitialState == model_.InitialStateFirstRunAfterInstall {
-			model.Config.InitialState = model_.InitialStateNormalRun
-			model.Config.Save()
-
-			ui.ShowNotificationInstalled()
-		}
+	if !model.Config.Enabled {
+		return
 	}
+
+	// c.lg.Println("startContainer 1>")
+	containerAlreadyRunning, err := c.mystManager.Start()
+	// c.lg.Println("startContainer 2>", err)
+	if err != nil {
+		model.SetStateContainer(model_.RunnableStateUnknown)
+		c.lg.Println("startContainer", err)
+		return
+	}
+
+	model.SetStateContainer(model_.RunnableStateRunning)
+
+	if !containerAlreadyRunning && model.Config.InitialState == model_.InitialStateFirstRunAfterInstall {
+		model.Config.InitialState = model_.InitialStateNormalRun
+		model.Config.Save()
+
+		ui.ShowNotificationInstalled()
+	}
+
 }

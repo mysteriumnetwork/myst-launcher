@@ -193,7 +193,7 @@ func (c *Controller) tryInstallDocker() bool {
 			c.lg.Println("DockerDesktopInstaller failed:", err)
 			return false
 		}
-		if err := StartDockerDesktop(); err != nil {
+		if err := startDockerDesktop(); err != nil {
 			c.lg.Println("Failed starting docker:", err)
 			return false
 		}

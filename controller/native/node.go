@@ -9,7 +9,6 @@ package native
 
 import (
 	"log"
-	"os"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
@@ -24,7 +23,7 @@ type Controller struct {
 }
 
 func NewController() *Controller {
-	lg := log.New(os.Stdout, "[native] ", log.Ldate|log.Ltime)
+	lg := log.New(log.Writer(), "[native] ", log.Ldate|log.Ltime)
 	return &Controller{lg: lg}
 }
 
@@ -41,7 +40,7 @@ func (c *Controller) Shutdown() {}
 
 // Supervise the node
 func (c *Controller) Start() {
-	defer utils.PanicHandler("app")
+	defer utils.PanicHandler("app-2")
 	c.lg.Println("start")
 
 	model := c.a.GetModel()
@@ -63,6 +62,7 @@ func (c *Controller) Start() {
 		// c.upgradeContainer(false)
 		// }
 
+		// c.lg.Println("wait action >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 		select {
 		case act := <-action:
 			c.lg.Println("action:", act)

@@ -20,6 +20,10 @@ import (
 type UIModel struct {
 	UIBus EventBus.Bus
 
+	// EventBus event handler blocks other handlers, so we can not use blocking channel operation (on stop),
+	// so for backend switch event we need a separate bus
+	Bus2 EventBus.Bus
+
 	State    UIState
 	WantExit bool
 
@@ -82,6 +86,7 @@ func (i *ImageInfo) HasDigest(digest string) bool {
 func NewUIModel() *UIModel {
 	m := &UIModel{}
 	m.UIBus = EventBus.New()
+	m.Bus2 = EventBus.New()
 	m.Config.Read()
 
 	if m.Config.Network == "mainnet" {
@@ -238,6 +243,6 @@ func (m *UIModel) TriggerChangeBackend(i string) {
 		m.Config.Backend = i
 		m.Config.Save()
 		m.UIBus.Publish("model-change")
-		m.UIBus.Publish("backend")
+		m.Bus2.Publish("backend")
 	}
 }
