@@ -146,9 +146,13 @@ func (g *Gui) CreateMainWindow() {
 
 	// prevent closing the app
 	g.dlg.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
+		log.Println("dlg.Closing >", g.model.WantExit)
 		if g.model.WantExit {
 			walk.App().Exit(0)
+			return
 		}
+		// log.Println("dlg.Closing >>")
+
 		*canceled = true
 		g.dlg.Hide()
 	})
@@ -156,6 +160,7 @@ func (g *Gui) CreateMainWindow() {
 	g.bus.Subscribe("exit", func() {
 		g.dlg.Synchronize(func() {
 			g.dlg.Close()
+			// g.mw.Close()
 		})
 	})
 
@@ -218,8 +223,8 @@ func (g *Gui) refresh() {
 		g.isAutostartEnabled.SetSatisfied(g.model.Config.AutoStart)
 		g.actionLauncherUpgrade.SetVisible(g.model.LauncherHasUpdate)
 
-		g.actionBackendNative.SetChecked(g.model.Config.Backend=="native")
-		g.actionBackendDocker.SetChecked(g.model.Config.Backend=="docker")
+		g.actionBackendNative.SetChecked(g.model.Config.Backend == "native")
+		g.actionBackendDocker.SetChecked(g.model.Config.Backend == "docker")
 
 	case model2.UIStateInstallNeeded:
 		g.enableMenu(false)

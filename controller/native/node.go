@@ -17,9 +17,19 @@ import (
 )
 
 type Controller struct {
-	a      *app.AppState
-	runner *NodeRunner
-	lg     *log.Logger
+	a *app.AppState
+
+	finished bool
+	runner   *NodeRunner
+	lg       *log.Logger
+}
+
+func (c *Controller) GetFinished() bool {
+	return c.finished
+}
+
+func (c *Controller) SetFinished() {
+	c.finished = true
 }
 
 func NewController() *Controller {
@@ -51,6 +61,8 @@ func (c *Controller) Start() {
 	model.ImageInfo.VersionCurrent = cfg.NodeExeVersion
 	model.ImageInfo.VersionLatest = cfg.NodeLatestTag
 	model.Update()
+
+	defer c.SetFinished()
 
 	t1 := time.NewTicker(15 * time.Second)
 	for {

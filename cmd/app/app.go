@@ -99,9 +99,14 @@ func main() {
 	ipc.Listen(ui)
 
 	// Run the message loop
+	fmt.Println("Run >")
 	ui.Run()
 	gui_win32.ShutdownGDIPlus()
-	ap.Stop()
+
+	fmt.Println("Run >", ap.CtrApp.GetFinished())
+	if !ap.CtrApp.GetFinished() {
+		ap.Stop()
+	}
 
 	if debugMode != "" {
 		fmt.Print("Press 'Enter' to continue...")

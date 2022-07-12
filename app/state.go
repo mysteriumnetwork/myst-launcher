@@ -17,6 +17,7 @@ type Controller interface {
 	SetApp(a *AppState)
 	Start()
 	GetCaps() int
+	GetFinished() bool
 }
 
 const (
@@ -34,7 +35,7 @@ type AppState struct {
 
 	model  *model.UIModel //gui.Model
 	ui     model.Gui_
-	ctrApp Controller
+	CtrApp Controller
 }
 
 func NewApp() *AppState {
@@ -45,11 +46,11 @@ func NewApp() *AppState {
 }
 
 func (s *AppState) SetAppController(c Controller) {
-	if s.ctrApp != nil {
+	if s.CtrApp != nil {
 		s.action <- ActionStopRunner // wait prev. controller to finish
 	}
 
-	s.ctrApp = c
+	s.CtrApp = c
 	s.model.Caps = c.GetCaps()
 	c.SetApp(s)
 }

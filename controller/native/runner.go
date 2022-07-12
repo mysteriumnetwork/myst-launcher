@@ -67,7 +67,7 @@ func (r *NodeRunner) IsRunningOrTryStart() bool {
 }
 
 func (r *NodeRunner) Stop() {
-	if r.cmd != nil {
+	if r.cmd.Process != nil {
 		r.cmd.Process.Kill()
 		r.cmd.Wait()
 	}

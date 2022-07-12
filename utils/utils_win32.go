@@ -462,7 +462,7 @@ func IsWSLUpdated() (bool, error) {
 		return false, nil
 	}
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 	log.Println("wslUpdateProductCode", wslUpdateProductCode)
 

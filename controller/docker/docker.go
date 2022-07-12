@@ -21,6 +21,7 @@ import (
 type Controller struct {
 	a *app.AppState
 
+	finished    bool
 	mgr         model_.PlatformManager
 	mystManager *myst.Manager
 	lg          *log.Logger
@@ -39,7 +40,13 @@ func (c *Controller) SetApp(a *app.AppState) {
 	c.a = a
 }
 
-// func (c *Controller) Shutdown() {}
+func (c *Controller) GetFinished() bool {
+	return c.finished
+}
+
+func (c *Controller) SetFinished() {
+	c.finished = true
+}
 
 func (c *Controller) Start() {
 	defer utils.PanicHandler("app-1")
@@ -64,10 +71,12 @@ func (c *Controller) Start() {
 	c.mystManager = mystManager
 	docker := NewDockerRunner(mystManager.GetDockerClient())
 
+	defer c.SetFinished()
+
 	t1 := time.NewTicker(15 * time.Second)
 	for {
 		if wantExit := c.tryStartOrInstallDocker(docker); wantExit {
-			model.SetWantExit()
+			c.SetFinished()
 			ui.CloseUI()
 			return
 		}
@@ -128,14 +137,14 @@ func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	model := c.a.GetModel()
 	ui := c.a.GetUI()
 
-	if model.Config.InitialState == model_.InitialStateStage1 {
-		return c.tryInstallDocker()
-	}
+	// if model.Config.InitialState == model_.InitialStateStage1 {
+	// 	return c.tryInstallDocker()
+	// }
 
-	if docker.IsRunning() {
-		model.SetStateDocker(model_.RunnableStateRunning)
-		return false
-	}
+	// if docker.IsRunning() {
+	// 	model.SetStateDocker(model_.RunnableStateRunning)
+	// 	return false
+	// }
 
 	// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
 	isUnderVM, needSetup, err := false, false, error(nil)
@@ -174,6 +183,8 @@ func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 		model.Config.CheckVMSettingsConfirm = true
 		model.Config.Save()
 	}
+
+	needSetup = true
 	if needSetup {
 		return c.tryInstallDocker()
 	}
