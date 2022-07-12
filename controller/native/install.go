@@ -2,21 +2,29 @@ package native
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"path"
+	"runtime"
 
-	"github.com/artdarek/go-unzip"
 	"github.com/codingsince1985/checksum"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 const (
-	asset = "myst_windows_amd64.zip"
-	org   = "mysteriumnetwork"
-	repo  = "node"
+	org  = "mysteriumnetwork"
+	repo = "node"
 )
+
+func getAssetName() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "myst_windows_amd64.zip"
+	case "darwin":
+		return "myst_darwin_amd64.tar.gz"
+	}
+	return ""
+}
 
 func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 	cfg := &c.a.GetModel().Config
@@ -45,7 +53,6 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 		release, _ := updates.FetchLatestRelease(ctx, org, repo)
 		tagLatest := release.TagName
 		log.Println("CheckAndUpgradeNodeExe>", release)
-
 
 		mdl.ImageInfo.VersionLatest = tagLatest
 		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
@@ -90,26 +97,26 @@ func (c *Controller) tryInstall() bool {
 	ctx := context.Background()
 	release, _ := updates.FetchLatestRelease(ctx, org, repo)
 
+	asset := getAssetName()
 	for _, v := range release.Assets {
-		if v.Name == asset {
-			c.lg.Println("Downloading node: ", v.URL)
-
-			fullPath := path.Join(utils.GetTmpDir(), asset)
-			err := utils.DownloadFile(fullPath, v.URL, func(progress int) {
-				if progress%10 == 0 {
-					c.lg.Println(fmt.Sprintf("%s - %d%%", v.Name, progress))
-				}
-			})
-			if err != nil {
-				c.lg.Println("err>", err)
-			}
-
-			err = unzip.New(fullPath, c.runner.binpath).Extract()
-			if err != nil {
-				c.lg.Println(err)
-			}
-			break
+		if v.Name != asset {
+			continue
 		}
+
+		c.lg.Println("Downloading node: ", v.URL)
+		fullPath := path.Join(utils.GetTmpDir(), asset)
+		err := utils.DownloadFile(fullPath, v.URL, func(progress int) {
+			if progress%10 == 0 {
+				c.lg.Printf("%s - %d%%", v.Name, progress)
+			}
+		})
+		if err != nil {
+			c.lg.Println("err>", err)
+		}
+		if err = extractNodeBinary(fullPath, c.runner.binpath); err != nil {
+			c.lg.Println(err)
+		}
+		break
 	}
 
 	return false

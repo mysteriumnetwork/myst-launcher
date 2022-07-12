@@ -3,6 +3,7 @@ module github.com/mysteriumnetwork/myst-launcher
 go 1.16
 
 require (
+	code.cloudfoundry.org/archiver v0.0.0-20220328120804-99329f9bbb8b
 	github.com/Microsoft/go-winio v0.5.1
 	github.com/artdarek/go-unzip v1.0.0
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
@@ -29,7 +30,7 @@ require (
 	github.com/tryor/gdiplus v0.0.0-20200830101413-c570de9579b3
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
 	github.com/winlabs/gowin32 v0.0.0-20210302152218-c9e40aa88058
-	golang.org/x/net v0.0.0-20211118161319-6a13c67c3ce4
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
