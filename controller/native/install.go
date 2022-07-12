@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	asset = "myst_darwin_amd64.tar.gz"
+	asset = "myst_windows_amd64.zip"
 	org   = "mysteriumnetwork"
 	repo  = "node"
 )

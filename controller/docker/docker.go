@@ -137,14 +137,14 @@ func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	model := c.a.GetModel()
 	ui := c.a.GetUI()
 
-	// if model.Config.InitialState == model_.InitialStateStage1 {
-	// 	return c.tryInstallDocker()
-	// }
+	if model.Config.InitialState == model_.InitialStateStage1 {
+		return c.tryInstallDocker()
+	}
 
-	// if docker.IsRunning() {
-	// 	model.SetStateDocker(model_.RunnableStateRunning)
-	// 	return false
-	// }
+	if docker.IsRunning() {
+		model.SetStateDocker(model_.RunnableStateRunning)
+		return false
+	}
 
 	// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
 	isUnderVM, needSetup, err := false, false, error(nil)
@@ -184,7 +184,6 @@ func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 		model.Config.Save()
 	}
 
-	needSetup = true
 	if needSetup {
 		return c.tryInstallDocker()
 	}
@@ -236,8 +235,6 @@ func (c *Controller) upgradeContainer(refreshVersionCache bool) {
 func (c *Controller) startContainer() {
 	model := c.a.GetModel()
 	ui := c.a.GetUI()
-	// c.lg.Println("startContainer")
-	// defer c.lg.Println("startContainer >")
 
 	c.mystManager.CheckCurrentVersionAndUpgrades(false)
 
@@ -246,9 +243,7 @@ func (c *Controller) startContainer() {
 		return
 	}
 
-	// c.lg.Println("startContainer 1>")
 	containerAlreadyRunning, err := c.mystManager.Start()
-	// c.lg.Println("startContainer 2>", err)
 	if err != nil {
 		model.SetStateContainer(model_.RunnableStateUnknown)
 		c.lg.Println("startContainer", err)
@@ -263,5 +258,4 @@ func (c *Controller) startContainer() {
 
 		ui.ShowNotificationInstalled()
 	}
-
 }
