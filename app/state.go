@@ -10,32 +10,18 @@ package app
 import (
 	"fmt"
 
+	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
+	"github.com/mysteriumnetwork/myst-launcher/controller/native"
 	"github.com/mysteriumnetwork/myst-launcher/model"
-)
-
-type Controller interface {
-	SetApp(a *AppState)
-	Start()
-	GetCaps() int
-	GetFinished() bool
-}
-
-const (
-	ActionCheck      = "check"
-	ActionUpgrade    = "upgrade"
-	ActionRestart    = "restart"
-	ActionEnable     = "enable"
-	ActionDisable    = "disable"
-	ActionStopRunner = "stop-runner"
-	ActionStop       = "stop"
 )
 
 type AppState struct {
 	action chan string
 
-	model  *model.UIModel //gui.Model
-	ui     model.Gui_
-	CtrApp Controller
+	model *model.UIModel //gui.Model
+	ui    model.Gui_
+
+	ctrApp model.Controller
 }
 
 func NewApp() *AppState {
@@ -45,12 +31,40 @@ func NewApp() *AppState {
 	return s
 }
 
-func (s *AppState) SetAppController(c Controller) {
-	if s.CtrApp != nil {
-		s.action <- ActionStopRunner // wait prev. controller to finish
+func (s *AppState) StopAppController() {
+
+	fmt.Println("Run >", s.ctrApp.GetFinished())
+	if !s.ctrApp.GetFinished() {
+		s.TriggerAction(model.ActionStop)
+	}
+}
+
+func (s *AppState) StartAppController() {
+	setUIController := func() {
+		// fmt.Println("set controller", mod.Config.Backend)
+		var nc model.Controller
+
+		switch s.model.Config.Backend {
+		case "native":
+			nc = native.NewController()
+		case "docker":
+			nc = docker.NewController()
+		}
+
+		s.setAppController(nc)
+		go nc.Start()
+	}
+	setUIController()
+
+	s.model.Bus2.Subscribe("backend", setUIController)
+}
+
+func (s *AppState) setAppController(c model.Controller) {
+	if s.ctrApp != nil {
+		s.action <- model.ActionStopRunner // wait prev. controller to finish
 	}
 
-	s.CtrApp = c
+	s.ctrApp = c
 	s.model.Caps = c.GetCaps()
 	c.SetApp(s)
 }
@@ -91,10 +105,6 @@ func (s *AppState) Write(b []byte) (int, error) {
 
 func (s *AppState) TriggerAction(action string) {
 	s.action <- action
-}
-
-func (s *AppState) Stop() {
-	s.action <- ActionStop
 }
 
 func (s *AppState) GetInTray() bool {

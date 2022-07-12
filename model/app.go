@@ -7,7 +7,39 @@
 
 package model
 
-type AppInterface interface {
+type App interface {
 	TriggerAction(action string)
 	GetInTray() bool
+}
+
+type Controller interface {
+	SetApp(a AppState)
+	Start()
+	GetCaps() int
+	GetFinished() bool
+}
+
+const (
+	ActionCheck      = "check"
+	ActionUpgrade    = "upgrade"
+	ActionRestart    = "restart"
+	ActionEnable     = "enable"
+	ActionDisable    = "disable"
+	ActionStopRunner = "stop-runner"
+	ActionStop       = "stop"
+)
+
+type AppState interface {
+	StartAppController()
+	StopAppController()
+
+	GetModel() *UIModel
+	// SetModel(ui *UIModel)
+	GetAction() chan string
+	GetUI() Gui_
+	// SetUI(ui Gui_)
+
+	// Write(b []byte) (int, error)
+	// TriggerAction(action string)
+	// GetInTray() bool
 }

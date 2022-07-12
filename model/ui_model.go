@@ -43,7 +43,7 @@ type UIModel struct {
 	InstallDocker        InstallStep
 	CheckGroupMembership InstallStep
 
-	App       AppInterface
+	App       App
 	ImageInfo ImageInfo
 	Config    Config
 
@@ -123,7 +123,7 @@ func (m *UIModel) GetConfig() *Config {
 	return &m.Config
 }
 
-func (m *UIModel) SetApp(app AppInterface) {
+func (m *UIModel) SetApp(app App) {
 	m.App = app
 }
 

@@ -11,13 +11,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/app"
 	model_ "github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 type Controller struct {
-	a *app.AppState
+	a model_.AppState
 
 	finished bool
 	runner   *NodeRunner
@@ -41,7 +40,7 @@ func (c *Controller) GetCaps() int {
 	return 0
 }
 
-func (c *Controller) SetApp(a *app.AppState) {
+func (c *Controller) SetApp(a model_.AppState) {
 	c.a = a
 	c.runner = NewRunner(a.GetModel())
 }
@@ -80,33 +79,33 @@ func (c *Controller) Start() {
 			c.lg.Println("action:", act)
 
 			switch act {
-			case app.ActionCheck:
+			case model_.ActionCheck:
 				c.upgradeContainer(true)
 
-			case app.ActionUpgrade:
+			case model_.ActionUpgrade:
 				c.upgradeContainer(false)
 
-			case app.ActionRestart:
+			case model_.ActionRestart:
 				// restart to apply new settings
 				c.restartContainer()
 				model.Config.Save()
 
-			case app.ActionEnable:
+			case model_.ActionEnable:
 				model.SetStateContainer(model_.RunnableStateStarting)
 				c.startContainer()
 				model.SetStateContainer(model_.RunnableStateRunning)
 
-			case app.ActionDisable:
+			case model_.ActionDisable:
 				model.SetStateContainer(model_.RunnableStateUnknown)
 				c.stop()
 
-			case app.ActionStopRunner:
+			case model_.ActionStopRunner:
 				// terminate controller
 				model.SetStateContainer(model_.RunnableStateUnknown)
 				c.stop()
 				return
 
-			case app.ActionStop:
+			case model_.ActionStop:
 				c.lg.Println("[native] stop")
 				return
 			}

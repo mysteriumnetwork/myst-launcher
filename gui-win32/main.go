@@ -146,12 +146,10 @@ func (g *Gui) CreateMainWindow() {
 
 	// prevent closing the app
 	g.dlg.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		log.Println("dlg.Closing >", g.model.WantExit)
 		if g.model.WantExit {
 			walk.App().Exit(0)
 			return
 		}
-		// log.Println("dlg.Closing >>")
 
 		*canceled = true
 		g.dlg.Hide()

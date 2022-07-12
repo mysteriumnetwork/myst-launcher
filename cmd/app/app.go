@@ -11,16 +11,12 @@ import (
 	"bufio"
 	"fmt"
 	"log"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
 
 	"github.com/gonutz/w32"
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
-	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
-	"github.com/mysteriumnetwork/myst-launcher/controller/native"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -31,9 +27,6 @@ import (
 var debugMode = ""
 
 func main() {
-	defer utils.PanicHandler("main")
-	go http.ListenAndServe("localhost:8080", nil)
-
 	ap := app.NewApp()
 
 	ipc := ipc_.NewHandler()
@@ -79,34 +72,14 @@ func main() {
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
 	ap.SetUI(ui)
-
-	setUIController := func() {
-		// fmt.Println("set controller", mod.Config.Backend)
-		var nc app.Controller
-
-		switch mod.Config.Backend {
-		case "native":
-			nc = native.NewController()
-		case "docker":
-			nc = docker.NewController()
-		}
-		ap.SetAppController(nc)
-		go nc.Start()
-	}
-	mod.Bus2.Subscribe("backend", setUIController)
-	setUIController()
-
+	
+	ap.StartAppController()
 	ipc.Listen(ui)
 
 	// Run the message loop
-	fmt.Println("Run >")
 	ui.Run()
 	gui_win32.ShutdownGDIPlus()
-
-	fmt.Println("Run >", ap.CtrApp.GetFinished())
-	if !ap.CtrApp.GetFinished() {
-		ap.Stop()
-	}
+	ap.StopAppController()
 
 	if debugMode != "" {
 		fmt.Print("Press 'Enter' to continue...")

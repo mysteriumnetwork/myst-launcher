@@ -11,7 +11,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/app"
 	model_ "github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/myst"
 	"github.com/mysteriumnetwork/myst-launcher/platform"
@@ -19,7 +18,7 @@ import (
 )
 
 type Controller struct {
-	a *app.AppState
+	a model_.AppState
 
 	finished    bool
 	mgr         model_.PlatformManager
@@ -36,7 +35,7 @@ func (c *Controller) GetCaps() int {
 	return 1
 }
 
-func (c *Controller) SetApp(a *app.AppState) {
+func (c *Controller) SetApp(a model_.AppState) {
 	c.a = a
 }
 
@@ -58,13 +57,13 @@ func (c *Controller) Start() {
 		panic(err) // TODO handle gracefully
 	}
 
-	model := c.a.GetModel()
+	mdl := c.a.GetModel()
 	ui := c.a.GetUI()
 	action := c.a.GetAction()
 
-	model.Update()
+	mdl.Update()
 
-	mystManager, err := myst.NewManager(model)
+	mystManager, err := myst.NewManager(mdl)
 	if err != nil {
 		panic(err) // TODO handle gracefully
 	}
@@ -80,11 +79,11 @@ func (c *Controller) Start() {
 			ui.CloseUI()
 			return
 		}
-		model.SwitchState(model_.UIStateInitial)
+		mdl.SwitchState(model_.UIStateInitial)
 
 		// docker is running now
 		c.startContainer()
-		if model.Config.AutoUpgrade {
+		if mdl.Config.AutoUpgrade {
 			c.upgradeContainer(false)
 		}
 
@@ -94,33 +93,33 @@ func (c *Controller) Start() {
 			c.lg.Println("action:", act)
 
 			switch act {
-			case app.ActionCheck:
+			case model_.ActionCheck:
 				mystManager.CheckCurrentVersionAndUpgrades(true)
 
-			case app.ActionUpgrade:
+			case model_.ActionUpgrade:
 				c.upgradeContainer(false)
 
-			case app.ActionRestart:
+			case model_.ActionRestart:
 				// restart to apply new settings
 				c.restartContainer()
-				model.Config.Save()
+				mdl.Config.Save()
 
-			case app.ActionEnable:
-				model.SetStateContainer(model_.RunnableStateStarting)
+			case model_.ActionEnable:
+				mdl.SetStateContainer(model_.RunnableStateStarting)
 				mystManager.Start()
-				model.SetStateContainer(model_.RunnableStateRunning)
+				mdl.SetStateContainer(model_.RunnableStateRunning)
 
-			case app.ActionDisable:
-				model.SetStateContainer(model_.RunnableStateUnknown)
+			case model_.ActionDisable:
+				mdl.SetStateContainer(model_.RunnableStateUnknown)
 				mystManager.Stop()
 
-			case app.ActionStopRunner:
+			case model_.ActionStopRunner:
 				// terminate node
-				model.SetStateContainer(model_.RunnableStateUnknown)
+				mdl.SetStateContainer(model_.RunnableStateUnknown)
 				mystManager.Stop()
 				return
 
-			case app.ActionStop:
+			case model_.ActionStop:
 				c.lg.Println("[docker] stop")
 				return
 			}
@@ -134,15 +133,15 @@ func (c *Controller) Start() {
 // returns: will exit, if tryInstallDocker requests it
 func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	c.lg.Println("tryStartOrInstallDocker")
-	model := c.a.GetModel()
+	mdl := c.a.GetModel()
 	ui := c.a.GetUI()
 
-	if model.Config.InitialState == model_.InitialStateStage1 {
+	if mdl.Config.InitialState == model_.InitialStateStage1 {
 		return c.tryInstallDocker()
 	}
 
 	if docker.IsRunning() {
-		model.SetStateDocker(model_.RunnableStateRunning)
+		mdl.SetStateDocker(model_.RunnableStateRunning)
 		return false
 	}
 
@@ -174,14 +173,14 @@ func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 		return true
 	}
 
-	if isUnderVM && !model.Config.CheckVMSettingsConfirm {
+	if isUnderVM && !mdl.Config.CheckVMSettingsConfirm {
 		ret := ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
 		if ret == model_.IDNO {
 			ui.TerminateWaitDialogueComplete()
 			return true
 		}
-		model.Config.CheckVMSettingsConfirm = true
-		model.Config.Save()
+		mdl.Config.CheckVMSettingsConfirm = true
+		mdl.Config.Save()
 	}
 
 	if needSetup {
@@ -190,12 +189,12 @@ func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 
 	isRunning, couldNotStart := docker.IsRunningOrTryStart()
 	if isRunning {
-		model.SetStateDocker(model_.RunnableStateRunning)
+		mdl.SetStateDocker(model_.RunnableStateRunning)
 		return false
 	}
-	model.SetStateDocker(model_.RunnableStateStarting)
+	mdl.SetStateDocker(model_.RunnableStateStarting)
 	if couldNotStart {
-		model.SetStateDocker(model_.RunnableStateUnknown)
+		mdl.SetStateDocker(model_.RunnableStateUnknown)
 		return c.tryInstallDocker()
 	}
 
@@ -203,9 +202,9 @@ func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 }
 
 func (c *Controller) restartContainer() {
-	model := c.a.GetModel()
+	mdl := c.a.GetModel()
 
-	model.SetStateContainer(model_.RunnableStateInstalling)
+	mdl.SetStateContainer(model_.RunnableStateInstalling)
 	err := c.mystManager.Restart()
 	if err != nil {
 		c.lg.Println("restart", err)
@@ -213,16 +212,16 @@ func (c *Controller) restartContainer() {
 }
 
 func (c *Controller) upgradeContainer(refreshVersionCache bool) {
-	model := c.a.GetModel()
+	mdl := c.a.GetModel()
 
-	if !model.ImageInfo.HasUpdate {
+	if !mdl.ImageInfo.HasUpdate {
 		return
 	}
 
 	if refreshVersionCache {
 		c.mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
 	}
-	model.SetStateContainer(model_.RunnableStateInstalling)
+	mdl.SetStateContainer(model_.RunnableStateInstalling)
 	err := c.mystManager.Update()
 	if err != nil {
 		c.lg.Println("upgrade", err)
@@ -233,28 +232,28 @@ func (c *Controller) upgradeContainer(refreshVersionCache bool) {
 
 // check for image updates before starting container, offer upgrade interactively
 func (c *Controller) startContainer() {
-	model := c.a.GetModel()
+	mdl := c.a.GetModel()
 	ui := c.a.GetUI()
 
 	c.mystManager.CheckCurrentVersionAndUpgrades(false)
 
-	model.SetStateContainer(model_.RunnableStateInstalling)
-	if !model.Config.Enabled {
+	mdl.SetStateContainer(model_.RunnableStateInstalling)
+	if !mdl.Config.Enabled {
 		return
 	}
 
 	containerAlreadyRunning, err := c.mystManager.Start()
 	if err != nil {
-		model.SetStateContainer(model_.RunnableStateUnknown)
+		mdl.SetStateContainer(model_.RunnableStateUnknown)
 		c.lg.Println("startContainer", err)
 		return
 	}
 
-	model.SetStateContainer(model_.RunnableStateRunning)
+	mdl.SetStateContainer(model_.RunnableStateRunning)
 
-	if !containerAlreadyRunning && model.Config.InitialState == model_.InitialStateFirstRunAfterInstall {
-		model.Config.InitialState = model_.InitialStateNormalRun
-		model.Config.Save()
+	if !containerAlreadyRunning && mdl.Config.InitialState == model_.InitialStateFirstRunAfterInstall {
+		mdl.Config.InitialState = model_.InitialStateNormalRun
+		mdl.Config.Save()
 
 		ui.ShowNotificationInstalled()
 	}
