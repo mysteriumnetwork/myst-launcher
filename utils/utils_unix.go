@@ -19,14 +19,14 @@ func getSysProcAttrs() syscall.SysProcAttr {
 	return syscall.SysProcAttr{}
 }
 
-func IsProcessRunning(name string) bool {
-	res, err := CmdRun(nil, "pgrep", "-xq", "--", `^`+name)
-	if err == nil {
-		return res == 0
-	}
-	log.Println("IsProcessRunning error:", err)
-	return false
-}
+// func IsProcessRunning(name string) bool {
+// 	res, err := CmdRun(nil, "pgrep", "-xq", "--", `^`+name)
+// 	if err == nil {
+// 		return res == 0
+// 	}
+// 	log.Println("IsProcessRunning error:", err)
+// 	return false
+// }
 
 func LauncherUpgradeAvailable() bool {
 	return false

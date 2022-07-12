@@ -27,7 +27,7 @@ type NodeRunner struct {
 
 func NewRunner(mod *model.UIModel) *NodeRunner {
 
-	binpath := path.Join(utils.GetUserProfileDir(), `.mysterium-node\bin\`)
+	binpath := path.Join(utils.GetUserProfileDir(), `.mysterium-node`, `bin`)
 	binpath = utils.MakeCanonicalPath(binpath)
 	utils.MakeDirectoryIfNotExists(binpath)
 
@@ -75,24 +75,27 @@ func (r *NodeRunner) Stop() {
 
 func (r *NodeRunner) startNode() error {
 	exename := getNodeProcessName()
+	fullpath := path.Join(r.binpath, exename)
+	fullpath = utils.MakeCanonicalPath(fullpath)
+
+	const reportLauncherVersionFlag = "--launcher.ver"
+	versionArg := fmt.Sprintf("%s=%s", reportLauncherVersionFlag, r.mod.GetProductVersionString())
 
 	switch runtime.GOOS {
 	case "windows":
-		fullpath := path.Join(r.binpath, exename)
-		fullpath = utils.MakeCanonicalPath(fullpath)
-
-		const reportLauncherVersionFlag = "--launcher.ver"
-		versionArg := fmt.Sprintf("%s=%s", reportLauncherVersionFlag, r.mod.GetProductVersionString())
 
 		r.cmd = exec.Command(fullpath, versionArg /*"--userspace",*/, "service", "--agreed-terms-and-conditions")
 
 	case "darwin":
 		// cmd = exec.Command("open", "/Applications/Docker.app/")
+		r.cmd = exec.Command(fullpath, versionArg /*"--userspace",*/, "service", "--agreed-terms-and-conditions")
+
 	default:
 		return errors.New("unsupported OS: " + runtime.GOOS)
 	}
 
 	var err error
+	log.Println("r.cmd", r.cmd)
 	if err = r.cmd.Start(); err != nil {
 		log.Println("err>", err)
 		return err

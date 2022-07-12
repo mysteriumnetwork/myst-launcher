@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	asset = "myst_windows_amd64.zip"
+	asset = "myst_darwin_amd64.tar.gz"
 	org   = "mysteriumnetwork"
 	repo  = "node"
 )
@@ -25,6 +25,7 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 	exename := getNodeProcessName()
 	fullpath := path.Join(c.runner.binpath, exename)
 	fullpath = utils.MakeCanonicalPath(fullpath)
+	log.Println("CheckAndUpgradeNodeExe>", fullpath)
 
 	sha256, _ := checksum.SHA256sum(fullpath)
 	if cfg.NodeExeDigest == sha256 {
@@ -37,10 +38,14 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 		cfg.Save()
 	}
 
+	log.Println("CheckAndUpgradeNodeExe>", cfg, forceUpgrade)
+
 	if cfg.NodeExeVersion == "" || cfg.NeedToCheckUpgrade() || forceUpgrade {
 		ctx := context.Background()
 		release, _ := updates.FetchLatestRelease(ctx, org, repo)
 		tagLatest := release.TagName
+		log.Println("CheckAndUpgradeNodeExe>", release)
+
 
 		mdl.ImageInfo.VersionLatest = tagLatest
 		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion

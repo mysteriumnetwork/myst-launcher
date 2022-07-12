@@ -12,7 +12,19 @@ package utils
 #include "libproc.h"
 */
 import "C"
-import "unsafe"
+import (
+	"errors"
+	"unsafe"
+)
+
+func TerminateProcess(pid uint32, exitcode int) error {
+  sig := C.int(2) //9-kill
+  ret := C.proc_terminate(17234, &sig)
+  if ret != 0 {
+    return errors.New("Process not found")
+  }
+  return nil
+}
 
 func IsProcessRunning(name string) bool {
 	pids := ps()
