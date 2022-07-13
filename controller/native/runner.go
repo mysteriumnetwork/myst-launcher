@@ -50,15 +50,19 @@ func getNodeProcessName() string {
 	return exe
 }
 
-// return values: isRunning
-func (r *NodeRunner) IsRunningOrTryStart() bool {
+func (r *NodeRunner) isRunning() uint32 {
 	exename := getNodeProcessName()
-
 	fullpath := path.Join(r.binpath, exename)
 	fullpath = utils.MakeCanonicalPath(fullpath)
 
-	p, err := utils.IsProcessRunningExt(exename, fullpath)
-	_ = err
+	p, _ := utils.IsProcessRunningExt(exename, fullpath)
+	return p
+}
+
+// return values: isRunning
+func (r *NodeRunner) IsRunningOrTryStart() bool {
+
+	p := r.isRunning()
 	if p == 0 {
 		return r.startNode() == nil
 	}
@@ -67,9 +71,16 @@ func (r *NodeRunner) IsRunningOrTryStart() bool {
 }
 
 func (r *NodeRunner) Stop() {
-	if r.cmd.Process != nil {
+	if r.cmd != nil && r.cmd.Process != nil {
 		r.cmd.Process.Kill()
 		r.cmd.Wait()
+	} else {
+		// if process was started in prev. run of launcher
+		
+		p := r.isRunning()
+		if p != 0 {
+			utils.TerminateProcess(p, 0)
+		}
 	}
 }
 
@@ -95,7 +106,6 @@ func (r *NodeRunner) startNode() error {
 	}
 
 	var err error
-	log.Println("r.cmd", r.cmd)
 	if err = r.cmd.Start(); err != nil {
 		log.Println("err>", err)
 		return err
