@@ -20,20 +20,25 @@ import (
 )
 
 type NodeRunner struct {
-	mod     *model.UIModel // from main App
-	binpath string
-	cmd     *exec.Cmd
+	mod        *model.UIModel // from main App
+	binpath    string
+	configpath string
+
+	cmd *exec.Cmd
 }
 
 func NewRunner(mod *model.UIModel) *NodeRunner {
 
-	binpath := path.Join(utils.GetUserProfileDir(), `.mysterium-node`, `bin`)
-	binpath = utils.MakeCanonicalPath(binpath)
+	binpath := path.Join(utils.GetUserProfileDir(), `.mysterium-bin`)
 	utils.MakeDirectoryIfNotExists(binpath)
 
+	configpath := path.Join(utils.GetUserProfileDir(), `.mysterium`)
+	utils.MakeDirectoryIfNotExists(configpath)
+
 	return &NodeRunner{
-		mod:     mod,
-		binpath: binpath,
+		mod:        mod,
+		binpath:    binpath,
+		configpath: configpath,
 	}
 }
 
@@ -76,7 +81,7 @@ func (r *NodeRunner) Stop() {
 		r.cmd.Wait()
 	} else {
 		// if process was started in prev. run of launcher
-		
+
 		p := r.isRunning()
 		if p != 0 {
 			utils.TerminateProcess(p, 0)
@@ -85,21 +90,19 @@ func (r *NodeRunner) Stop() {
 }
 
 func (r *NodeRunner) startNode() error {
-	exename := getNodeProcessName()
-	fullpath := path.Join(r.binpath, exename)
-	fullpath = utils.MakeCanonicalPath(fullpath)
+	fullExePath := path.Join(r.binpath, getNodeProcessName())
 
-	const reportLauncherVersionFlag = "--launcher.ver"
-	versionArg := fmt.Sprintf("%s=%s", reportLauncherVersionFlag, r.mod.GetProductVersionString())
+	versionArg := fmt.Sprintf("--launcher.ver=%s", r.mod.GetProductVersionString())
+	configDirArg := fmt.Sprintf("--config-dir=%s", r.configpath)
+	dataDirArg := fmt.Sprintf("--data-dir=%s", r.configpath)
 
 	switch runtime.GOOS {
 	case "windows":
-
-		r.cmd = exec.Command(fullpath, versionArg /*"--userspace",*/, "service", "--agreed-terms-and-conditions")
+		r.cmd = exec.Command(fullExePath, versionArg, configDirArg, dataDirArg /*"--userspace",*/, "service", "--agreed-terms-and-conditions")
 
 	case "darwin":
 		// cmd = exec.Command("open", "/Applications/Docker.app/")
-		r.cmd = exec.Command(fullpath, versionArg /*"--userspace",*/, "service", "--agreed-terms-and-conditions")
+		r.cmd = exec.Command(fullExePath, versionArg, configDirArg, dataDirArg /*"--userspace",*/, "service", "--agreed-terms-and-conditions")
 
 	default:
 		return errors.New("unsupported OS: " + runtime.GOOS)
