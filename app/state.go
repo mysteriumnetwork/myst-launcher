@@ -32,8 +32,6 @@ func NewApp() *AppState {
 }
 
 func (s *AppState) StopAppController() {
-
-	fmt.Println("Run >", s.ctrApp.GetFinished())
 	if !s.ctrApp.GetFinished() {
 		s.TriggerAction(model.ActionStop)
 	}
@@ -41,7 +39,6 @@ func (s *AppState) StopAppController() {
 
 func (s *AppState) StartAppController() {
 	setUIController := func() {
-		// fmt.Println("set controller", mod.Config.Backend)
 		var nc model.Controller
 
 		switch s.model.Config.Backend {
@@ -50,7 +47,6 @@ func (s *AppState) StartAppController() {
 		case "docker":
 			nc = docker.NewController()
 		}
-
 		s.setAppController(nc)
 		go nc.Start()
 	}

@@ -58,6 +58,9 @@ func main() {
 
 	prodVersion, _ := utils.GetProductVersion()
 	mod.SetProductVersion(prodVersion)
+	if debugMode != "" {
+		log.Println("Product version:", prodVersion)
+	}
 
 	gui_win32.InitGDIPlus()
 	ui := gui_win32.NewGui(mod)
@@ -82,7 +85,7 @@ func main() {
 	ap.StopAppController()
 
 	if debugMode != "" {
-		fmt.Print("Press 'Enter' to continue...")
+		fmt.Println("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}
 }

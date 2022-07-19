@@ -52,7 +52,6 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 		ctx := context.Background()
 		release, _ := updates.FetchLatestRelease(ctx, org, repo)
 		tagLatest := release.TagName
-		log.Println("CheckAndUpgradeNodeExe>", release)
 
 		mdl.ImageInfo.VersionLatest = tagLatest
 		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
@@ -76,7 +75,7 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 				utils.TerminateProcess(p, 0)
 			}
 
-			if c.a.GetModel().Config.AutoUpgrade {
+			if c.a.GetModel().Config.AutoUpgrade || sha256 == "" {
 				c.tryInstall()
 
 				sha256, _ := checksum.SHA256sum(fullpath)

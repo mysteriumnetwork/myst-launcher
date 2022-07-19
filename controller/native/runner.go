@@ -30,9 +30,11 @@ type NodeRunner struct {
 func NewRunner(mod *model.UIModel) *NodeRunner {
 
 	binpath := path.Join(utils.GetUserProfileDir(), `.mysterium-bin`)
+	binpath = utils.MakeCanonicalPath(binpath)
 	utils.MakeDirectoryIfNotExists(binpath)
 
 	configpath := path.Join(utils.GetUserProfileDir(), `.mysterium`)
+	configpath = utils.MakeCanonicalPath(configpath)
 	utils.MakeDirectoryIfNotExists(configpath)
 
 	return &NodeRunner{
@@ -91,6 +93,7 @@ func (r *NodeRunner) Stop() {
 
 func (r *NodeRunner) startNode() error {
 	fullExePath := path.Join(r.binpath, getNodeProcessName())
+	fullExePath = utils.MakeCanonicalPath(fullExePath)
 
 	versionArg := fmt.Sprintf("--launcher.ver=%s", r.mod.GetProductVersionString())
 	configDirArg := fmt.Sprintf("--config-dir=%s", r.configpath)
