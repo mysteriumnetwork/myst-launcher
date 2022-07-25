@@ -9,6 +9,7 @@ package model
 
 import (
 	"log"
+	"runtime"
 	"strings"
 
 	"github.com/asaskevich/EventBus"
@@ -19,12 +20,17 @@ import (
 type UIModel struct {
 	UIBus EventBus.Bus
 
+	// EventBus event handler blocks other handlers, so we can not use blocking channel operation (on stop),
+	// so for backend switch event we need a separate bus
+	Bus2 EventBus.Bus
+
 	State    UIState
 	WantExit bool
 
 	// common
 	StateDocker    RunnableState
 	StateContainer RunnableState
+	Caps           int // UI controller capabilities
 
 	// inst
 	CheckWindowsVersion  InstallStep
@@ -37,7 +43,7 @@ type UIModel struct {
 	InstallDocker        InstallStep
 	CheckGroupMembership InstallStep
 
-	App       AppInterface
+	App       App
 	ImageInfo ImageInfo
 	Config    Config
 
@@ -80,6 +86,7 @@ func (i *ImageInfo) HasDigest(digest string) bool {
 func NewUIModel() *UIModel {
 	m := &UIModel{}
 	m.UIBus = EventBus.New()
+	m.Bus2 = EventBus.New()
 	m.Config.Read()
 
 	if m.Config.Network == "mainnet" {
@@ -108,11 +115,15 @@ func (m *UIModel) SetProductVersion(v string) {
 	}
 }
 
+func (m *UIModel) GetProductVersionString() string {
+	return m.ProductVersion + "/" + runtime.GOOS
+}
+
 func (m *UIModel) GetConfig() *Config {
 	return &m.Config
 }
 
-func (m *UIModel) SetApp(app AppInterface) {
+func (m *UIModel) SetApp(app App) {
 	m.App = app
 }
 
@@ -217,9 +228,21 @@ func (m *UIModel) TriggerAutostartAction() {
 }
 
 func (m *UIModel) TriggerNodeEnableAction() {
+	m.Config.Enabled = !m.Config.Enabled
+	m.Config.Save()
 	if m.Config.Enabled {
-		m.TriggerAction("disable")
-	} else {
 		m.TriggerAction("enable")
+	} else {
+		m.TriggerAction("disable")
+	}
+}
+
+func (m *UIModel) TriggerChangeBackend(i string) {
+	if m.Config.Backend != i {
+
+		m.Config.Backend = i
+		m.Config.Save()
+		m.UIBus.Publish("model-change")
+		m.Bus2.Publish("backend")
 	}
 }

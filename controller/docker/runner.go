@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package app
+package docker
 
 import (
 	"context"
 	"errors"
-	"log"
+
+	// "log"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -26,7 +28,7 @@ type DockerRunner struct {
 	dockerAPI     *client.Client
 }
 
-func NewDockerMonitor(docker *client.Client) *DockerRunner {
+func NewDockerRunner(docker *client.Client) *DockerRunner {
 	return &DockerRunner{
 		tryStartCount: 0,
 		dockerAPI:     docker,
@@ -43,6 +45,8 @@ func (r *DockerRunner) canPingDocker() bool {
 
 func (r *DockerRunner) IsRunning() bool {
 	canPingDocker := r.canPingDocker()
+	// defer log.Println("IsRunning >", canPingDocker)
+
 	if canPingDocker {
 		r.tryStartCount = 0
 	}
@@ -51,6 +55,8 @@ func (r *DockerRunner) IsRunning() bool {
 
 // return values: isRunning, couldNotStart
 func (r *DockerRunner) IsRunningOrTryStart() (bool, bool) {
+	// fmt.Println("IsRunningOrTryStart >")
+	// defer fmt.Println("IsRunningOrTryStart >>>")
 
 	if !r.canPingDocker() {
 		r.tryStartCount++
@@ -65,37 +71,48 @@ func (r *DockerRunner) IsRunningOrTryStart() (bool, bool) {
 	return true, false
 }
 
-func (r *DockerRunner) tryStartDockerDesktop() bool {
+func getProcessName() string {
 	exe := "Docker Desktop.exe"
 	if runtime.GOOS == "darwin" {
 		exe = "Docker"
 	}
+	return exe
+}
+
+func (r *DockerRunner) tryStartDockerDesktop() bool {
+	exe := getProcessName()
 
 	if utils.IsProcessRunning(exe) {
 		return true
 	}
-	if err := StartDockerDesktop(); err != nil {
-		log.Printf("Failed to start cmd: %v", err)
+	// fmt.Println("Start Docker Desktop 1>>>")
+	err := startDockerDesktop()
+	if err != nil {
+		fmt.Println("Failed to start cmd:", err)
 		return false
 	}
+	// fmt.Println("Start Docker Desktop 2>")
 	return true
 }
 
-func StartDockerDesktop() error {
+func startDockerDesktop() error {
 	var cmd *exec.Cmd
-	log.Println("StartDockerDesktop >")
+	// fmt.Println("Start Docker Desktop>", runtime.GOOS)
+
 	switch runtime.GOOS {
 	case "windows":
 		dd := os.Getenv("ProgramFiles") + "\\Docker\\Docker\\Docker Desktop.exe"
 		cmd = exec.Command(dd, "-Autostart")
+		// fmt.Println("Start Docker Desktop>", cmd)
 	case "darwin":
 		cmd = exec.Command("open", "/Applications/Docker.app/")
 	default:
 		return errors.New("unsupported OS: " + runtime.GOOS)
 	}
+	// fmt.Println("Start Docker Desktop>", cmd)
 
 	if err := cmd.Start(); err != nil {
-		log.Println("err>", err)
+		fmt.Println("err>", err)
 		return err
 	}
 	return nil

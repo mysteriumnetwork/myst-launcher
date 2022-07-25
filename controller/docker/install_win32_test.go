@@ -1,4 +1,4 @@
-package app
+package docker
 
 import (
 	"github.com/blang/semver/v4"

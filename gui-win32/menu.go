@@ -77,6 +77,28 @@ func (g *Gui) menu() []MenuItem {
 						g.model.TriggerNodeEnableAction()
 					},
 				},
+
+				Separator{},
+				Action{
+					Enabled:  false,
+					Text:     "Select backend:",
+				},
+				Action{
+					Enabled:  true,
+					Text:     "Native",
+					AssignTo: &g.actionBackendNative,
+					OnTriggered: func() {
+						g.model.TriggerChangeBackend("native")
+					},
+				},
+				Action{
+					Enabled:  true,
+					Text:     "Docker",
+					AssignTo: &g.actionBackendDocker,
+					OnTriggered: func() {
+						g.model.TriggerChangeBackend("docker")
+					},
+				},
 			},
 		},
 	}

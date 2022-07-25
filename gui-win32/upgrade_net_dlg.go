@@ -96,7 +96,7 @@ func (g *Gui) OpenUpgradeNetworkDlg() {
 		dialog.SetX(g.dlg.X() + 300)
 
 		refresh()
-		g.model.UIBus.Subscribe("model-change", refresh)
+	 	g.model.UIBus.Subscribe("model-change", refresh)
 	})
 	dialog.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
 		g.model.UIBus.Unsubscribe("model-change", refresh)

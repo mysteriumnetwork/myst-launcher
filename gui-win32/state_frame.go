@@ -33,7 +33,7 @@ type StateFrame struct {
 
 	autoUpgrade   *walk.CheckBox
 	lbNetworkMode *walk.Label
-	btnOpenNodeUI *walk.PushButton
+	btnOpenNodeConfig *walk.PushButton
 
 	lbNetwork  *walk.Label
 	btnMainNet *walk.PushButton
@@ -244,10 +244,10 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 					},
 					PushButton{
 						Enabled:  true,
-						AssignTo: &f.btnOpenNodeUI,
+						AssignTo: &f.btnOpenNodeConfig,
 						Text:     "Config..",
 						OnSizeChanged: func() {
-							f.btnOpenNodeUI.SetWidthPixels(75)
+							f.btnOpenNodeConfig.SetWidthPixels(75)
 						},
 						OnClicked: func() {
 							mdl.UIBus.Publish("btn-config-click")
@@ -311,7 +311,7 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 	}
 
 	c.Create(NewBuilder(parent))
-	f.btnOpenNodeUI.SetFocus()
+	f.btnOpenNodeConfig.SetFocus()
 
 	logo, err := walk.NewIconFromResourceWithSize("APPICON", walk.Size{64, 64})
 	if err != nil {
@@ -360,7 +360,7 @@ func (f *StateFrame) handlerState() {
 			if !f.mdl.GetConfig().Enabled {
 				f.lbContainer.SetText("Disabled")
 			}
-			f.btnOpenNodeUI.SetEnabled(f.mdl.IsRunning())
+			f.btnOpenNodeConfig.SetEnabled(f.mdl.IsRunning() && f.mdl.Caps == 1)
 
 			f.lbVersionCurrent.SetText(f.mdl.ImageInfo.VersionCurrent)
 			f.lbVersionLatest.SetText(f.mdl.ImageInfo.VersionLatest)

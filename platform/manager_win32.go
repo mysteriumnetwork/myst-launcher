@@ -5,14 +5,9 @@ package platform
 
 import (
 	"fmt"
-	"io/fs"
 	"log"
-	"os"
-	"path/filepath"
+	"runtime"
 	"strings"
-	"syscall"
-
-	"github.com/mysteriumnetwork/myst-launcher/native"
 
 	"github.com/gabriel-samfira/go-wmi/wmi"
 	"github.com/google/glazier/go/dism"
@@ -29,7 +24,7 @@ const (
 var features = []string{
 	FeatureWSL,
 	FeatureHyperV,
-	// FeatureVMPlatform,
+	FeatureVMPlatform,
 }
 
 type Manager struct {
@@ -39,6 +34,10 @@ type Manager struct {
 }
 
 func NewManager() (*Manager, error) {
+
+	// once
+	runtime.LockOSThread()
+
 	w, err := wmi.NewConnection(".", `root\cimv2`)
 	if err != nil {
 		return nil, err
@@ -185,39 +184,41 @@ func (m *Manager) HasVTx() (bool, error) {
 func (m *Manager) EnableHyperVPlatform() error {
 	log.Println("EnableHyperVPlatform > May take ~5 min.")
 
-	// necessary for Home Edition
-	packagesPath := os.Getenv("SYSTEMROOT") + `\servicing\Packages\`
-	err := filepath.Walk(packagesPath, func(path string, info fs.FileInfo, _ error) error {
-		//log.Println("info>", info)
-		if info.IsDir() {
-			return nil
-		}
-		if strings.HasSuffix(info.Name(), ".mum") && strings.Contains(info.Name(), "Hyper-V") {
-			p := packagesPath + info.Name()
+	// // necessary for Home Edition
+	// packagesPath := os.Getenv("SYSTEMROOT") + `\servicing\Packages\`
+	// err := filepath.Walk(packagesPath, func(path string, info fs.FileInfo, _ error) error {
+	// 	//log.Println("info>", info)
+	// 	if info.IsDir() {
+	// 		return nil
+	// 	}
+	// 	if strings.HasSuffix(info.Name(), ".mum") && strings.Contains(info.Name(), "Hyper-V") {
+	// 		p := packagesPath + info.Name()
 
-			exe := "dism.exe"
-			cmdArgs := fmt.Sprintf("/online /norestart /add-package:%s", p)
-			err := native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
-			if err != nil {
-				log.Println("Command failed: failed to enable " + p)
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
+	// 		exe := "dism.exe"
+	// 		cmdArgs := fmt.Sprintf("/online /norestart /add-package:%s", p)
+	// 		err := native.ShellExecuteAndWait(0, "runas", exe, cmdArgs, "", syscall.SW_HIDE)
+	// 		if err != nil {
+	// 			log.Println("Command failed: failed to enable " + p)
+	// 			return err
+	// 		}
+	// 	}
+	// 	return nil
+	// })
+	// if err != nil {
+	// 	return err
+	// }
+	var err error
 
 	if !m.hasDism {
 		m.initializeDism()
 	}
 	for _, f := range features {
-		err = m.ses.EnableFeature(f, "", nil, true, nil, nil)
+		log.Println("EnableFeature>", f)
 
+		err = m.ses.EnableFeature(f, "", nil, true, nil, nil)
 		if err != nil {
 			success := errors.Is(err, windows.ERROR_SUCCESS_REBOOT_REQUIRED) || errors.Is(err, windows.ERROR_SUCCESS_RESTART_REQUIRED)
-			fmt.Println("err>", err, success)
+			log.Println("err>", err, success)
 
 			if !success {
 				return err

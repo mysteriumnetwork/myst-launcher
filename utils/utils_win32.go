@@ -20,6 +20,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/blang/semver/v4"
 	"github.com/go-ole/go-ole"
@@ -244,8 +245,7 @@ func IsWindowsVersionCompatible() bool {
 	return false
 }
 
-// unsafe.Sizeof(windows.ProcessEntry32{})
-const processEntrySize = 568
+const processEntrySize = uint32(unsafe.Sizeof(windows.ProcessEntry32{}))
 
 func IsProcessRunning(name string) bool {
 	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
@@ -260,12 +260,92 @@ func IsProcessRunning(name string) bool {
 		if e != nil {
 			break
 		}
+
 		s := windows.UTF16ToString(p.ExeFile[:])
 		if s == name {
+			log.Println("IsProcessRunning >", s)
+
 			return true
 		}
 	}
 	return false
+}
+
+func getExePath(id uint32) (string, error) {
+	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPMODULE, id)
+	if e != nil {
+		return "", e
+	}
+	defer windows.CloseHandle(h)
+
+	p := windows.ModuleEntry32{Size: uint32(windows.SizeofModuleEntry32)}
+	for {
+		e := windows.Module32Next(h, &p)
+		if e != nil {
+			return "", e
+		}
+
+		s := windows.UTF16ToString(p.ExePath[:])
+		if len(s) > 4 && s[len(s)-3:] == "exe" {
+			return s, nil
+		}
+	}
+}
+
+func TerminateProcess(pid uint32, exitcode int) error {
+	h, e := windows.OpenProcess(syscall.PROCESS_TERMINATE, false, uint32(pid))
+	if e != nil {
+		return e
+	}
+	defer windows.CloseHandle(h)
+	e = windows.TerminateProcess(h, uint32(exitcode))
+	return e
+}
+
+func FindProcess(exeName, fullpath string) (uint32, error) {
+	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
+	if e != nil {
+		return 0, e
+	}
+	defer windows.CloseHandle(h)
+
+	p := windows.ProcessEntry32{Size: processEntrySize}
+	for {
+		if e := windows.Process32Next(h, &p); e != nil {
+			return 0, e
+		}
+
+		if s := windows.UTF16ToString(p.ExeFile[:]); s == exeName {
+			return p.ProcessID, e
+		}
+	}
+	// return 0, nil
+}
+
+func IsProcessRunningExt(exeName, fullpath string) (uint32, error) {
+	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
+	if e != nil {
+		return 0, e
+	}
+	defer windows.CloseHandle(h)
+
+	p := windows.ProcessEntry32{Size: processEntrySize}
+	for {
+		if e := windows.Process32Next(h, &p); e != nil {
+			return 0, e
+		}
+
+		if s := windows.UTF16ToString(p.ExeFile[:]); s == exeName {
+			pp, e := getExePath(p.ProcessID)
+			if e != nil {
+				return 0, e
+			}
+
+			if pp == fullpath {
+				return uint32(p.ProcessID), nil
+			}
+		}
+	}
 }
 
 func isWindowsUpdateEnabled() bool {
@@ -382,7 +462,7 @@ func IsWSLUpdated() (bool, error) {
 		return false, nil
 	}
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 	log.Println("wslUpdateProductCode", wslUpdateProductCode)
 

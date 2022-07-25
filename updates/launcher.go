@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -12,11 +13,11 @@ import (
 )
 
 var (
-	// APITimeout is how long we wait for the GitHub API
-	APITimeout = 30 * time.Second
+	// apiTimeout is how long we wait for the GitHub API
+	apiTimeout = 30 * time.Second
 
-	// BaseURL is exported for tests
-	BaseURL = "https://api.github.com/repos/%s/%s/releases/latest"
+	// baseURL is exported for tests
+	baseURL = "https://api.github.com/repos/%s/%s/releases/latest"
 )
 
 // Asset is a GitHub release asset
@@ -38,13 +39,14 @@ type Release struct {
 	Version     semver.Version `json:"-"`
 }
 
-// FetchLatestLauncherRelease fetches meta-data about the latest release from GitHub
-func FetchLatestLauncherRelease(ctx context.Context, githubOrg, githubRepo string) (Release, error) {
+// FetchLatestRelease fetches meta-data about the latest release from GitHub
+func FetchLatestRelease(ctx context.Context, githubOrg, githubRepo string) (Release, error) {
+	log.Println("FetchLatestRelease>")
 
-	ctx, cancel := context.WithTimeout(ctx, APITimeout)
+	ctx, cancel := context.WithTimeout(ctx, apiTimeout)
 	defer cancel()
 
-	url := fmt.Sprintf(BaseURL, githubOrg, githubRepo)
+	url := fmt.Sprintf(baseURL, githubOrg, githubRepo)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return Release{}, nil
