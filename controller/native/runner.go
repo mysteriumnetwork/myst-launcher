@@ -98,10 +98,13 @@ func (r *NodeRunner) startNode() error {
 	versionArg := fmt.Sprintf("--launcher.ver=%s", r.mod.GetProductVersionString())
 	configDirArg := fmt.Sprintf("--config-dir=%s", r.configpath)
 	dataDirArg := fmt.Sprintf("--data-dir=%s", r.configpath)
+	userspaceArg := "--userspace"
+	
 
 	switch runtime.GOOS {
 	case "windows":
-		r.cmd = exec.Command(fullExePath, versionArg, configDirArg, dataDirArg /*"--userspace",*/, "service", "--agreed-terms-and-conditions")
+		r.cmd = exec.Command(fullExePath, userspaceArg, versionArg, configDirArg, dataDirArg /*"--userspace",*/, "service", "--agreed-terms-and-conditions")
+		log.Println("err>", r.cmd)
 
 	case "darwin":
 		// cmd = exec.Command("open", "/Applications/Docker.app/")

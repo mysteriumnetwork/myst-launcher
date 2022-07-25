@@ -14,6 +14,8 @@ import (
 const (
 	org  = "zensey"
 	repo = "myst-node-build"
+	// org  = "mysteriumnetwork"
+	// repo = "node"
 )
 
 func getAssetName() string {
@@ -36,6 +38,8 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 	log.Println("CheckAndUpgradeNodeExe>", fullpath)
 
 	sha256, _ := checksum.SHA256sum(fullpath)
+	log.Println("CheckAndUpgradeNodeExe>", cfg.NodeExeDigest, sha256, cfg.NodeExeDigest == sha256)
+
 	if cfg.NodeExeDigest == sha256 {
 		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
 		mdl.Update()
@@ -95,6 +99,7 @@ func (c *Controller) tryInstall() bool {
 	log.Println("tryInstall >")
 	ctx := context.Background()
 	release, _ := updates.FetchLatestRelease(ctx, org, repo)
+	log.Println("tryInstall >", release)
 
 	asset := getAssetName()
 	for _, v := range release.Assets {
