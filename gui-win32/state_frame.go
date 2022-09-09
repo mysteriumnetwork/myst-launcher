@@ -23,16 +23,18 @@ type StateFrame struct {
 	*walk.Composite
 	mdl *model.UIModel
 
-	stDocker         *impl.StatusViewImpl
-	stContainer      *impl.StatusViewImpl
-	lbDocker         *walk.Label
-	lbContainer      *walk.Label
-	lbVersionCurrent *walk.Label
-	lbVersionLatest  *walk.Label
-	lbImageName      *walk.Label
+	stDocker              *impl.StatusViewImpl
+	stContainer           *impl.StatusViewImpl
+	lbBackend             *walk.Label
+	lbDockerDesktopStatus *walk.Label
+	lbDocker              *walk.Label
+	lbContainer           *walk.Label
+	lbVersionCurrent      *walk.Label
+	lbVersionLatest       *walk.Label
+	lbImageName           *walk.Label
 
-	autoUpgrade   *walk.CheckBox
-	lbNetworkMode *walk.Label
+	autoUpgrade       *walk.CheckBox
+	lbNetworkMode     *walk.Label
 	btnOpenNodeConfig *walk.PushButton
 
 	lbNetwork  *walk.Label
@@ -182,7 +184,7 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 					VSpacer{ColumnSpan: 2, Size: 10},
 
 					Label{
-						Text: "Docker Hub image name",
+						Text: "Node package source",
 					},
 					Label{
 						AssignTo: &f.lbImageName,
@@ -259,7 +261,7 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 					},
 
 					Label{
-						Text: "Docker Desktop",
+						Text: "Backend",
 						Font: Font{
 							PointSize: 8,
 							Bold:      true,
@@ -267,9 +269,11 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 					},
 					Label{
 						Text: "",
+						AssignTo: &f.lbBackend,
 					},
 					Label{
-						Text: "Status",
+						Text:     "Status",
+						AssignTo: &f.lbDockerDesktopStatus,
 					},
 
 					Composite{
@@ -349,6 +353,18 @@ func (f *StateFrame) handlerState() {
 				f.lbNetworkMode.SetText(`Port restricted cone NAT`)
 			} else {
 				f.lbNetworkMode.SetText(`Manual port forwarding`)
+			}
+
+			isNative := f.mdl.Config.Backend == "native"
+			{
+				f.lbBackend.SetText("native")
+				if !isNative {
+					f.lbBackend.SetText("docker")
+				}
+
+				f.lbDockerDesktopStatus.SetVisible(!isNative)
+				f.stDocker.SetVisible(!isNative)
+				f.lbDocker.SetVisible(!isNative)
 			}
 
 			f.lbDocker.SetText(f.mdl.StateDocker.String())

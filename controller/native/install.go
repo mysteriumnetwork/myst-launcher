@@ -12,10 +12,8 @@ import (
 )
 
 const (
-	org  = "zensey"
-	repo = "myst-node-build"
-	// org  = "mysteriumnetwork"
-	// repo = "node"
+	org  = "mysteriumnetwork"
+	repo = "node"
 )
 
 func getAssetName() string {

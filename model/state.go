@@ -54,7 +54,8 @@ type Config struct {
 	PortRangeBegin       int  `json:"port_range_begin"`
 	PortRangeEnd         int  `json:"port_range_end"`
 
-	Network string `json:"network"`
+	Network         string `json:"network"`
+	LauncherVersion string `json:"version"`
 }
 
 func (c *Config) GetLatestImageTag() string {
@@ -65,7 +66,11 @@ func (c *Config) GetLatestImageTag() string {
 }
 
 func (c *Config) GetFullImageName() string {
-	return _const.ImageNamePrefix + ":" + c.GetLatestImageTag()
+	if c.Backend == "docker" {
+		return _const.ImageNamePrefix + ":" + c.GetLatestImageTag()
+	} else {
+		return "http://github.com/mysteriumnetwork/node/"
+	}
 }
 
 func (c *Config) GetImageNamePrefix() string {
@@ -95,19 +100,32 @@ func (c *Config) NeedToCheckUpgrade() bool {
 	return t.Add(upgradeCheckPeriod).Before(time.Now())
 }
 
-func (c *Config) getDefaultValues() {
+func (c *Config) getDefaultValues(isNewFile bool) {
+	prodVersion, _ := utils.GetProductVersion()
+
 	c.Enabled = true
 	c.EnablePortForwarding = false
 	c.PortRangeBegin = 42000
 	c.PortRangeEnd = 42100
+
+	// if fresh file  -> native
+	// if has version -> prev
+	// if no version  -> docker
+
 	c.Backend = "native"
+	if !isNewFile {
+		if c.LauncherVersion == "" {
+			c.Backend = "docker"
+		}
+	}
+	c.LauncherVersion = prodVersion
 }
 
 func (c *Config) Read() {
 	f := utils.GetUserProfileDir() + "/.myst_node_launcher"
 	_, err := os.Stat(f)
 	if os.IsNotExist(err) {
-		c.getDefaultValues()
+		c.getDefaultValues(true)
 		c.Save()
 		return
 	}
@@ -117,7 +135,8 @@ func (c *Config) Read() {
 		return
 	}
 
-	c.getDefaultValues()
+	json.NewDecoder(file).Decode(&c) // for version check
+	c.getDefaultValues(false)
 	json.NewDecoder(file).Decode(&c)
 }
 
