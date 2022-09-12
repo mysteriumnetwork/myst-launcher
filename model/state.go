@@ -40,18 +40,22 @@ type Config struct {
 
 	InitialState InitialState `json:"state"`
 
-	// allow auto-upgrades
-	AutoUpgrade bool `json:"auto_upgrade"`
-
-	// the last time we checked for upgrade, Unix timestamp, [second]
-	LastUpgradeCheck int64 `json:"last_upgrade_check"` // once a day
+	// autoupgrade node
+	AutoUpgrade    bool   `json:"auto_upgrade"`
+	NodeExeDigest  string `json:"node_exe_digest"`
+	NodeExeVersion string `json:"node_exe_version"`
+	NodeLatestTag  string `json:"node_latest_tag"` // cache latest tag
+	// the last time we checked for upgrade of Myst / Exe, Unix timestamp, [second]
+	LastUpgradeCheck int64  `json:"last_upgrade_check"` // once a day
+	Backend          string `json:"backend"`            // runner: docker | native
 
 	// Networking mode
 	EnablePortForwarding bool `json:"enable_port_forwarding"`
 	PortRangeBegin       int  `json:"port_range_begin"`
 	PortRangeEnd         int  `json:"port_range_end"`
 
-	Network string `json:"network"`
+	Network         string `json:"network"`
+	LauncherVersion string `json:"version"`
 }
 
 func (c *Config) GetLatestImageTag() string {
@@ -62,7 +66,11 @@ func (c *Config) GetLatestImageTag() string {
 }
 
 func (c *Config) GetFullImageName() string {
-	return _const.ImageNamePrefix + ":" + c.GetLatestImageTag()
+	if c.Backend == "docker" {
+		return _const.ImageNamePrefix + ":" + c.GetLatestImageTag()
+	} else {
+		return "http://github.com/mysteriumnetwork/node/"
+	}
 }
 
 func (c *Config) GetImageNamePrefix() string {
@@ -92,18 +100,32 @@ func (c *Config) NeedToCheckUpgrade() bool {
 	return t.Add(upgradeCheckPeriod).Before(time.Now())
 }
 
-func (c *Config) getDefaultValues() {
+func (c *Config) getDefaultValues(isNewFile bool) {
+	prodVersion, _ := utils.GetProductVersion()
+
 	c.Enabled = true
 	c.EnablePortForwarding = false
 	c.PortRangeBegin = 42000
 	c.PortRangeEnd = 42100
+
+	// if fresh file  -> native
+	// if has version -> prev
+	// if no version  -> docker
+
+	c.Backend = "native"
+	if !isNewFile {
+		if c.LauncherVersion == "" {
+			c.Backend = "docker"
+		}
+	}
+	c.LauncherVersion = prodVersion
 }
 
 func (c *Config) Read() {
 	f := utils.GetUserProfileDir() + "/.myst_node_launcher"
 	_, err := os.Stat(f)
 	if os.IsNotExist(err) {
-		c.getDefaultValues()
+		c.getDefaultValues(true)
 		c.Save()
 		return
 	}
@@ -113,7 +135,8 @@ func (c *Config) Read() {
 		return
 	}
 
-	c.getDefaultValues()
+	json.NewDecoder(file).Decode(&c) // for version check
+	c.getDefaultValues(false)
 	json.NewDecoder(file).Decode(&c)
 }
 

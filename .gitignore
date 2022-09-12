@@ -4,4 +4,7 @@
 *.exe
 *.lnk
 TODO
+
 z.bat
+bin/*
+*.gif

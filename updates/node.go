@@ -63,7 +63,7 @@ var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+).*$`)
 var minVersion = []int{0, 66, 3}
 
 func checkVersionRequirement(v string, minVersion []int) bool {
-	log.Println("checkVersionRequirement>", v)
+	log.Println("[updates] !checkVersionRequirement", v)
 	match := versionRegex.MatchString(v)
 	if !match {
 		return false
@@ -89,7 +89,7 @@ func checkVersionRequirement(v string, minVersion []int) bool {
 }
 
 func CheckVersionAndUpgrades(mod *model.UIModel, refreshVersionCache bool) {
-	log.Println("CheckCurrentVersionAndUpgrades>")
+	log.Println("[updates] !CheckCurrentVersionAndUpgrades")
 
 	var data []byte
 	getFile := func() bool {

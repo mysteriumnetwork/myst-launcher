@@ -17,6 +17,7 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/controller/native"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -24,16 +25,9 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
-const (
-	gitHubOrg  = "mysteriumnetwork"
-	gitHubRepo = "myst-launcher"
-)
-
 var debugMode = ""
 
 func main() {
-	defer utils.PanicHandler("main")
-
 	ap := app.NewApp()
 	ipc := ipc_.NewHandler()
 
@@ -46,6 +40,10 @@ func main() {
 		case _const.FlagUninstall:
 			ipc.SendStopApp()
 			utils.UninstallExe()
+			return
+
+		case _const.FlagInstallFirewall:
+			native.CheckAndInstallFirewallRules()
 			return
 		}
 	}
@@ -64,6 +62,9 @@ func main() {
 
 	prodVersion, _ := utils.GetProductVersion()
 	mod.SetProductVersion(prodVersion)
+	if debugMode != "" {
+		log.Println("Product version:", prodVersion)
+	}
 
 	gui_win32.InitGDIPlus()
 	ui := gui_win32.NewGui(mod)
@@ -73,29 +74,22 @@ func main() {
 		return
 	}
 	ap.SetModel(mod)
+	log.SetOutput(ap)
 
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
-
 	ap.SetUI(ui)
-	ap.WaitGroup.Add(1)
 
-	go ap.SuperviseDockerNode()
-	go ap.CheckLauncherUpdates(gitHubOrg, gitHubRepo)
-
+	ap.StartAppController()
 	ipc.Listen(ui)
-	log.SetOutput(ap)
 
 	// Run the message loop
 	ui.Run()
 	gui_win32.ShutdownGDIPlus()
-
-	// send stop action to SuperviseDockerNode
-	ap.TriggerAction("stop")
-	ap.Shutdown()
+	ap.StopAppController()
 
 	if debugMode != "" {
-		fmt.Print("Press 'Enter' to continue...")
+		fmt.Println("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}
 }

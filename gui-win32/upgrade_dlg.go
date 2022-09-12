@@ -44,7 +44,7 @@ func (g *Gui) OpenUpgradeDlg() {
 		Children: []Widget{
 			VSpacer{ColumnSpan: 2},
 			Label{
-				Text: "Docker Hub image name",
+				Text: "Node package source",
 			},
 			Label{
 				Text:     "-",

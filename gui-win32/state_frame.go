@@ -23,17 +23,19 @@ type StateFrame struct {
 	*walk.Composite
 	mdl *model.UIModel
 
-	stDocker         *impl.StatusViewImpl
-	stContainer      *impl.StatusViewImpl
-	lbDocker         *walk.Label
-	lbContainer      *walk.Label
-	lbVersionCurrent *walk.Label
-	lbVersionLatest  *walk.Label
-	lbImageName      *walk.Label
+	stDocker              *impl.StatusViewImpl
+	stContainer           *impl.StatusViewImpl
+	lbBackend             *walk.Label
+	lbDockerDesktopStatus *walk.Label
+	lbDocker              *walk.Label
+	lbContainer           *walk.Label
+	lbVersionCurrent      *walk.Label
+	lbVersionLatest       *walk.Label
+	lbImageName           *walk.Label
 
-	autoUpgrade   *walk.CheckBox
-	lbNetworkMode *walk.Label
-	btnOpenNodeUI *walk.PushButton
+	autoUpgrade       *walk.CheckBox
+	lbNetworkMode     *walk.Label
+	btnOpenNodeConfig *walk.PushButton
 
 	lbNetwork  *walk.Label
 	btnMainNet *walk.PushButton
@@ -182,7 +184,7 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 					VSpacer{ColumnSpan: 2, Size: 10},
 
 					Label{
-						Text: "Docker Hub image name",
+						Text: "Node package source",
 					},
 					Label{
 						AssignTo: &f.lbImageName,
@@ -244,10 +246,10 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 					},
 					PushButton{
 						Enabled:  true,
-						AssignTo: &f.btnOpenNodeUI,
+						AssignTo: &f.btnOpenNodeConfig,
 						Text:     "Config..",
 						OnSizeChanged: func() {
-							f.btnOpenNodeUI.SetWidthPixels(75)
+							f.btnOpenNodeConfig.SetWidthPixels(75)
 						},
 						OnClicked: func() {
 							mdl.UIBus.Publish("btn-config-click")
@@ -259,7 +261,7 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 					},
 
 					Label{
-						Text: "Docker Desktop",
+						Text: "Backend",
 						Font: Font{
 							PointSize: 8,
 							Bold:      true,
@@ -267,9 +269,11 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 					},
 					Label{
 						Text: "",
+						AssignTo: &f.lbBackend,
 					},
 					Label{
-						Text: "Status",
+						Text:     "Status",
+						AssignTo: &f.lbDockerDesktopStatus,
 					},
 
 					Composite{
@@ -311,7 +315,7 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 	}
 
 	c.Create(NewBuilder(parent))
-	f.btnOpenNodeUI.SetFocus()
+	f.btnOpenNodeConfig.SetFocus()
 
 	logo, err := walk.NewIconFromResourceWithSize("APPICON", walk.Size{64, 64})
 	if err != nil {
@@ -351,6 +355,18 @@ func (f *StateFrame) handlerState() {
 				f.lbNetworkMode.SetText(`Manual port forwarding`)
 			}
 
+			isNative := f.mdl.Config.Backend == "native"
+			{
+				f.lbBackend.SetText("native")
+				if !isNative {
+					f.lbBackend.SetText("docker")
+				}
+
+				f.lbDockerDesktopStatus.SetVisible(!isNative)
+				f.stDocker.SetVisible(!isNative)
+				f.lbDocker.SetVisible(!isNative)
+			}
+
 			f.lbDocker.SetText(f.mdl.StateDocker.String())
 			f.lbContainer.SetText(f.mdl.StateContainer.String())
 			setState2(f.stDocker, f.mdl.StateDocker)
@@ -360,7 +376,7 @@ func (f *StateFrame) handlerState() {
 			if !f.mdl.GetConfig().Enabled {
 				f.lbContainer.SetText("Disabled")
 			}
-			f.btnOpenNodeUI.SetEnabled(f.mdl.IsRunning())
+			f.btnOpenNodeConfig.SetEnabled(f.mdl.IsRunning() && f.mdl.Caps == 1)
 
 			f.lbVersionCurrent.SetText(f.mdl.ImageInfo.VersionCurrent)
 			f.lbVersionLatest.SetText(f.mdl.ImageInfo.VersionLatest)
