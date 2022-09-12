@@ -8,6 +8,7 @@
 package _const
 
 const (
-	FlagInstall   = "-install-binary"
-	FlagUninstall = "-uninstall"
+	FlagInstall         = "-install-binary"
+	FlagUninstall       = "-uninstall"
+	FlagInstallFirewall = "-install-fw"
 )

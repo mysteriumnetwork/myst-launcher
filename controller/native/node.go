@@ -149,6 +149,9 @@ func (c *Controller) startContainer() {
 	model.SetStateContainer(model_.RunnableStateInstalling)
 	if model.Config.Enabled {
 
+		ui := c.a.GetUI()
+		tryInstallFirewallRules(ui)
+		
 		running := c.runner.IsRunningOrTryStart()
 		if running {
 			model.SetStateContainer(model_.RunnableStateRunning)

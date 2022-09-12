@@ -17,6 +17,7 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/controller/native"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -28,7 +29,6 @@ var debugMode = ""
 
 func main() {
 	ap := app.NewApp()
-
 	ipc := ipc_.NewHandler()
 
 	if len(os.Args) > 1 {
@@ -40,6 +40,10 @@ func main() {
 		case _const.FlagUninstall:
 			ipc.SendStopApp()
 			utils.UninstallExe()
+			return
+
+		case _const.FlagInstallFirewall:
+			native.CheckAndInstallFirewallRules()
 			return
 		}
 	}
@@ -75,7 +79,7 @@ func main() {
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
 	ap.SetUI(ui)
-	
+
 	ap.StartAppController()
 	ipc.Listen(ui)
 

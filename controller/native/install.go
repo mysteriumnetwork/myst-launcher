@@ -7,6 +7,10 @@ import (
 	"runtime"
 
 	"github.com/codingsince1985/checksum"
+	wapi "github.com/iamacarpet/go-win64api"
+
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -121,5 +125,28 @@ func (c *Controller) tryInstall() bool {
 		break
 	}
 
+	ui := c.a.GetUI()
+	tryInstallFirewallRules(ui)
+
 	return false
+}
+
+func tryInstallFirewallRules(ui model.Gui_) {
+
+	// check firewall rules
+	needFirewallSetup := false
+	rule, err := wapi.FirewallRuleGet(fwRuleNameUDP)
+	if err != nil || rule.Name == "" {
+		needFirewallSetup = true
+	}
+	rule, err = wapi.FirewallRuleGet(fwRuleNameTCP)
+	if err != nil || rule.Name == "" {
+		needFirewallSetup = true
+	}
+	if needFirewallSetup {
+		ret := ui.ConfirmModal("Installation", "Firewall rule missing, addition is required. Press OK to approve.")
+		if ret == model.IDOK {
+			utils.RunasWithArgsAndWait(_const.FlagInstallFirewall)
+		}
+	}
 }

@@ -10,3 +10,6 @@ import (
 func extractNodeBinary(src, dest string) error {
 	return extractor.NewTgz().Extract(src, dest)
 }
+
+func CheckAndInstallFirewall() {
+}
