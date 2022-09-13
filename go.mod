@@ -48,6 +48,9 @@ replace (
 	//tag:shlwapi-r4
 	github.com/gonutz/w32 => github.com/mysteriumnetwork/w32 v1.0.1-0.20211216070125-4741b8b8111b
 
+	//tag:patch-v1
+	github.com/iamacarpet/go-win64api => github.com/mysteriumnetwork/go-win64api v0.0.0-20220913095126-48aad5daeb64
+
 	//branch:linklabel-color
 	github.com/lxn/walk => github.com/mysteriumnetwork/walk v0.0.0-20220201093859-484feb886dfe
 

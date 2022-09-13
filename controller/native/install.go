@@ -5,6 +5,7 @@ import (
 	"log"
 	"path"
 	"runtime"
+	"sync"
 
 	"github.com/codingsince1985/checksum"
 	wapi "github.com/iamacarpet/go-win64api"
@@ -131,22 +132,26 @@ func (c *Controller) tryInstall() bool {
 	return false
 }
 
-func tryInstallFirewallRules(ui model.Gui_) {
+var once sync.Once
 
-	// check firewall rules
-	needFirewallSetup := false
-	rule, err := wapi.FirewallRuleGet(fwRuleNameUDP)
-	if err != nil || rule.Name == "" {
-		needFirewallSetup = true
-	}
-	rule, err = wapi.FirewallRuleGet(fwRuleNameTCP)
-	if err != nil || rule.Name == "" {
-		needFirewallSetup = true
-	}
-	if needFirewallSetup {
-		ret := ui.ConfirmModal("Installation", "Firewall rule missing, addition is required. Press OK to approve.")
-		if ret == model.IDOK {
-			utils.RunasWithArgsAndWait(_const.FlagInstallFirewall)
+func tryInstallFirewallRules(ui model.Gui_) {
+	once.Do(func() {
+		// check firewall rules
+		needFirewallSetup := false
+		rule, err := wapi.FirewallRuleGet(fwRuleNameUDP)
+		if err != nil || rule.Name == "" {
+			needFirewallSetup = true
 		}
-	}
+
+		rule, err = wapi.FirewallRuleGet(fwRuleNameTCP)
+		if err != nil || rule.Name == "" {
+			needFirewallSetup = true
+		}
+		if needFirewallSetup {
+			ret := ui.YesNoModal("Installation", "Firewall rule missing, addition is required. Press Yes to approve.")
+			if ret == model.IDYES {
+				utils.RunasWithArgsAndWait(_const.FlagInstallFirewall)
+			}
+		}
+	})
 }

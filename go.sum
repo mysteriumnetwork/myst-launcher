@@ -418,9 +418,6 @@ github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
-github.com/iamacarpet/go-win64api v0.0.0-20210311141720-fe38760bed28/go.mod h1:oGJx9dz0Ny7HC7U55RZ0Smd6N9p3hXP/+hOFtuYrAxM=
-github.com/iamacarpet/go-win64api v0.0.0-20220720120512-241a9064deec h1:y9s6kHAovwyzFLhemqf99/gG1fLTmd8LpyQEMlasj/A=
-github.com/iamacarpet/go-win64api v0.0.0-20220720120512-241a9064deec/go.mod h1:B7zFQPAznj+ujXel5X+LUoK3LgY6VboCdVYHZNn7gpg=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
@@ -499,6 +496,8 @@ github.com/mysteriumnetwork/gdiplus v0.0.0-20211020173905-2bd21ea15fae h1:OCNWyw
 github.com/mysteriumnetwork/gdiplus v0.0.0-20211020173905-2bd21ea15fae/go.mod h1:vPW3wMwJNynS4wCzfJx0Izy3NHX+mbuuT0UKuw6NKzE=
 github.com/mysteriumnetwork/go-fileversion v1.0.0-fix1 h1:5hXvl45QKdd+IY9rVbFLnZJ7sVvzzhkvZHMcxQ16HKo=
 github.com/mysteriumnetwork/go-fileversion v1.0.0-fix1/go.mod h1:VM+SiWjSJROa/fvPsFV24bWoHcCvyXnI0mmwKv9dVjc=
+github.com/mysteriumnetwork/go-win64api v0.0.0-20220913095126-48aad5daeb64 h1:5J0HbxnAdC1E3KGwUDOVRE5CqC4CevVDXhlK8cW/5Jw=
+github.com/mysteriumnetwork/go-win64api v0.0.0-20220913095126-48aad5daeb64/go.mod h1:B7zFQPAznj+ujXel5X+LUoK3LgY6VboCdVYHZNn7gpg=
 github.com/mysteriumnetwork/go-wmi v0.0.0-20211216181752-dbce75057213 h1:Ywxv9qzd1zXjtopGSUBV6ACtTDolRugjU0eB7FqtkSI=
 github.com/mysteriumnetwork/go-wmi v0.0.0-20211216181752-dbce75057213/go.mod h1:4i91vCsWTxVaXLNe8XYtK1D1kRUSkZtJqQbY3FvBIgU=
 github.com/mysteriumnetwork/w32 v1.0.1-0.20211216070125-4741b8b8111b h1:7jQ0RQA4Jq7Hm0/U23rj8kwJLWRvrwH7MQwXIIJqotg=
@@ -851,7 +850,6 @@ golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20200622182413-4b0db7f3f76b/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200817155316-9781c653f443/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
