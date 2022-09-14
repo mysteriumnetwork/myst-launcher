@@ -20,14 +20,25 @@ import (
 	"time"
 )
 
-var a = getSysProcAttrs()
+var sysProcAttrs = getSysProcAttrs()
+
+func CmdStart(name string, args ...string) error {
+	log.Print(fmt.Sprintf("Run: %v %v \r\n", name, strings.Join(args, " ")))
+
+	cmd := exec.Command(name, args...)
+	cmd.SysProcAttr = &sysProcAttrs
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	return nil
+}
 
 // returns: exit status, error
 func CmdRun(out *bytes.Buffer, name string, args ...string) (int, error) {
-	log.Print(fmt.Sprintf("Run %v %v \r\n", name, strings.Join(args, " ")))
+	log.Print(fmt.Sprintf("Run and wait: %v %v \r\n", name, strings.Join(args, " ")))
 
 	cmd := exec.Command(name, args...)
-	cmd.SysProcAttr = &a
+	cmd.SysProcAttr = &sysProcAttrs
 	if out != nil {
 		cmd.Stdout = out
 	}
