@@ -44,7 +44,7 @@ func checkFirewallRules() bool {
 
 	rule, err = wapi.FirewallRuleGet(fwRuleNameTCP)
 	if err != nil || rule.Name == "" {
-		return = true
+		return true
 	}
 	return false
 }
