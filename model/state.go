@@ -9,7 +9,6 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"time"
