@@ -110,18 +110,17 @@ func (r *NodeRunner) startNode() error {
 	dataDirArg := fmt.Sprintf("--data-dir=%s", r.configpath)
 	userspaceArg := "--userspace"
 
+	args := []string{userspaceArg, versionArg, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions"}
+
 	switch runtime.GOOS {
 	case "windows":
-		args := []string{userspaceArg, versionArg, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions"}
 		if err := utils.CmdStart(fullExePath, args...); err != nil {
 			log.Println("run node failed:", err)
 			return err
 		}
 
 	case "darwin":
-		// cmd = exec.Command("open", "/Applications/Docker.app/")
-		r.cmd = exec.Command(fullExePath, versionArg, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions")
-		if err := r.cmd.Start(); err != nil {
+		if err := utils.CmdStart(fullExePath, args...); err != nil {
 			log.Println("run node failed:", err)
 			return err
 		}

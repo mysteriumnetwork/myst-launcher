@@ -8,12 +8,12 @@ import (
 	"sync"
 
 	"github.com/codingsince1985/checksum"
-	wapi "github.com/iamacarpet/go-win64api"
 
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
+
 )
 
 const (
@@ -136,17 +136,10 @@ var once sync.Once
 
 func tryInstallFirewallRules(ui model.Gui_) {
 	once.Do(func() {
-		// check firewall rules
-		needFirewallSetup := false
-		rule, err := wapi.FirewallRuleGet(fwRuleNameUDP)
-		if err != nil || rule.Name == "" {
-			needFirewallSetup = true
-		}
 
-		rule, err = wapi.FirewallRuleGet(fwRuleNameTCP)
-		if err != nil || rule.Name == "" {
-			needFirewallSetup = true
-		}
+		// check firewall rules
+		needFirewallSetup := checkFirewallRules()
+		
 		if needFirewallSetup {
 			ret := ui.YesNoModal("Installation", "Firewall rule missing, addition is required. Press Yes to approve.")
 			if ret == model.IDYES {

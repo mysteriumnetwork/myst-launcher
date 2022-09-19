@@ -19,7 +19,7 @@ import (
 
 func TerminateProcess(pid uint32, exitcode int) error {
   sig := C.int(2) //9-kill
-  ret := C.proc_terminate(17234, &sig)
+  ret := C.proc_terminate(C.int(pid), &sig)
   if ret != 0 {
     return errors.New("Process not found")
   }
