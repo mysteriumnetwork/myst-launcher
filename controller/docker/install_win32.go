@@ -78,6 +78,8 @@ func (c *Controller) tryInstallDocker() bool {
 			mdl.Config.Save()
 
 			utils.CreateAutostartShortcut("")
+			utils.EnableAutorun(true)
+			
 			utils.CreateDesktopShortcut("")
 			utils.CreateStartMenuShortcut("")
 		}

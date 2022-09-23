@@ -222,6 +222,7 @@ func (m *UIModel) TriggerAutostartAction() {
 	m.Config.Save()
 	m.UIBus.Publish("model-change")
 
+	utils.EnableAutorun(m.Config.AutoStart)
 	if m.Config.AutoStart {
 		utils.CheckAndInstallExe()
 	}
