@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+    <Fragment>
+    <UI>
+            <Dialog Id="CustomDlg" Width="370" Height="270" Title="[ProductName] Setup">
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+
+                <Control Id="LicenseAcceptedCheckBox" Type="CheckBox" X="20" Y="207" Width="330" Height="18" CheckBoxValue="1" Property="LicenseAccepted" Text="!(loc.LicenseAgreementDlgLicenseAcceptedCheckBox)" />
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="!(loc.WixUIBack)" />
+                <Control Id="InstallButton" Type="PushButton" X="236" Y="243" Width="56" Height="17"
+                 Text="!(loc.WixUINext)" TabSkip="no" Default="yes" ElevationShield="yes">
+                    <Condition Action="disable">
+                    <![CDATA[ LicenseAccepted <> "1" ]]>
+                    </Condition>
+                    <Condition Action="enable">LicenseAccepted = "1"</Condition>
+                    <Publish Event="EndDialog" Value="Return" />
+                </Control>
+
+                <Control Id="CancelButton" Type="PushButton" X="304" Y="243" Width="56" Height="17" Text="!(loc.WixUICancel)" TabSkip="no" Cancel="yes">
+                    <Publish Event="EndDialog" Value="Exit" />
+                </Control>
+
+                <Control Id="LicenseText" Type="ScrollableText" X="20" Y="60" Width="330" Height="140" Sunken="yes" TabSkip="no">
+                    <Text SourceFile="installer\TERMS_END_USER.rtf" />
+                </Control>
+
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+            </Dialog>
+
+    </UI>
+    </Fragment>
+</Wix>
