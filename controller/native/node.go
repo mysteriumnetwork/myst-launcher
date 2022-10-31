@@ -107,6 +107,8 @@ func (c *Controller) Start() {
 
 			case model_.ActionStop:
 				c.lg.Println("[native] stop")
+				model.SetStateContainer(model_.RunnableStateUnknown)
+				c.stop()
 				return
 			}
 

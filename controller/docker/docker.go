@@ -87,7 +87,6 @@ func (c *Controller) Start() {
 			c.upgradeContainer(false)
 		}
 
-		// c.lg.Println("wait action >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 		select {
 		case act := <-action:
 			c.lg.Println("action:", act)
@@ -121,6 +120,8 @@ func (c *Controller) Start() {
 
 			case model_.ActionStop:
 				c.lg.Println("[docker] stop")
+				mdl.SetStateContainer(model_.RunnableStateUnknown)
+				mystManager.Stop()
 				return
 			}
 
