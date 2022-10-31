@@ -6,12 +6,12 @@ package platform
 import (
 	"fmt"
 	"log"
-	"runtime"
 	"strings"
 
 	"github.com/gabriel-samfira/go-wmi/wmi"
 	"github.com/google/glazier/go/dism"
 	"github.com/pkg/errors"
+	"github.com/scjalliance/comshim"
 	"golang.org/x/sys/windows"
 )
 
@@ -29,29 +29,27 @@ var features = []string{
 
 type Manager struct {
 	hasDism bool
-	con     *wmi.WMI
 	ses     dism.Session
 }
 
 func NewManager() (*Manager, error) {
-
-	// once
-	runtime.LockOSThread()
-
-	w, err := wmi.NewConnection(".", `root\cimv2`)
-	if err != nil {
-		return nil, err
-	}
-
-	m := &Manager{
-		con: w,
-	}
+	m := &Manager{}
 	return m, nil
 }
 
-func (m *Manager) queryOptionalFeature(feature string) (error, bool) {
+func wmiAPIInit() (*wmi.WMI, error) {
+	comshim.Add(1)
+	return wmi.NewConnection(".", `root\cimv2`)
+}
+
+func wmiAPIRelease(w *wmi.WMI) {
+	w.Close()
+	comshim.Done()
+}
+
+func (m *Manager) queryOptionalFeature(con *wmi.WMI, feature string) (error, bool) {
 	log.Println("Query optional feature:", feature)
-	res, err := m.con.CallMethod("ExecQuery", fmt.Sprintf("SELECT * FROM Win32_OptionalFeature Where Name='%s'", feature))
+	res, err := con.CallMethod("ExecQuery", fmt.Sprintf("SELECT * FROM Win32_OptionalFeature Where Name='%s'", feature))
 	if err != nil {
 		return errors.Wrap(err, "ExecQuery"), false
 	}
@@ -71,8 +69,11 @@ func (m *Manager) queryOptionalFeature(feature string) (error, bool) {
 }
 
 func (m *Manager) Features() (bool, error) {
+	w, _ := wmiAPIInit()
+	defer wmiAPIRelease(w)
+
 	for _, f := range features {
-		err, installed := m.queryOptionalFeature(f)
+		err, installed := m.queryOptionalFeature(w, f)
 		if err != nil {
 			log.Println("Features >", err)
 			return false, err
@@ -86,7 +87,10 @@ func (m *Manager) Features() (bool, error) {
 }
 
 func (m *Manager) SystemUnderVm() (bool, error) {
-	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
+	con,_ := wmiAPIInit()
+	defer wmiAPIRelease(con)
+
+	res, err := con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
 	if err != nil {
 		return false, errors.Wrap(err, "ExecQuery")
 	}
@@ -116,7 +120,10 @@ func (m *Manager) SystemUnderVm() (bool, error) {
  */
 
 func (m *Manager) IsVMcomputeRunning() (bool, error) {
-	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
+	con,_ := wmiAPIInit()
+	defer wmiAPIRelease(con)
+
+	res, err := con.CallMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
 	if err != nil {
 		return false, errors.Wrap(err, "ExecQuery")
 	}
@@ -133,7 +140,10 @@ func (m *Manager) IsVMcomputeRunning() (bool, error) {
 }
 
 func (m *Manager) StartVmcomputeIfNotRunning() (bool, error) {
-	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
+	con,_ := wmiAPIInit()
+	defer wmiAPIRelease(con)
+
+	res, err := con.CallMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
 	if err != nil {
 		return false, errors.Wrap(err, "ExecQuery")
 	}
@@ -166,7 +176,10 @@ func (m *Manager) StartVmcomputeIfNotRunning() (bool, error) {
 // We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
 // see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
 func (m *Manager) HasVTx() (bool, error) {
-	res, err := m.con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
+	con,_ := wmiAPIInit()
+	defer wmiAPIRelease(con)
+
+	res, err := con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
 	if err != nil {
 		return false, errors.Wrap(err, "ExecQuery")
 	}

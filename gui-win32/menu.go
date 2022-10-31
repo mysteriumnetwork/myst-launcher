@@ -34,7 +34,7 @@ func (g *Gui) menu() []MenuItem {
 				Separator{},
 				Action{
 					Checked: Bind("isAutostartEnabled"),
-					Text:    "Autostart launcher",
+					Text:    "Start with Windows",
 					OnTriggered: func() {
 						g.model.TriggerAutostartAction()
 					},

@@ -22,7 +22,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/blang/semver/v4"
+	"github.com/scjalliance/comshim"
+		"github.com/blang/semver/v4"
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 	"github.com/gonutz/w32"
@@ -50,6 +51,9 @@ func getSysProcAttrs() syscall.SysProcAttr {
 }
 
 func CreateShortcut(dst, target, args string) error {
+	comshim.Add(1)
+	defer comshim.Done()
+	
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
 		return err
@@ -155,7 +159,10 @@ func RunWithArgsNoWait(cmdArgs string) error {
 
 func EnableAutorun(en bool) error {
 	// re-create
-	CreateAutostartShortcut("")
+	err := CreateAutostartShortcut("")
+	if err != nil {
+		return err
+	}
 
 	k, _, err := registry.CreateKey(registry.CURRENT_USER, `SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder`, registry.ALL_ACCESS)
 	if err != nil {
@@ -220,21 +227,21 @@ func MystNodeLauncherExePath() string {
 	return os.Getenv("ProgramFiles") + "\\MystNodeLauncher" + "\\" + launcherExe
 }
 
-func CreateAutostartShortcut(args string) {
+func CreateAutostartShortcut(args string) error {
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", launcherLnk)
-	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+	return CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
-func CreateDesktopShortcut(args string) {
+func CreateDesktopShortcut(args string) error {
 	shcDst := path.Join(os.Getenv("USERPROFILE"), "Desktop", launcherLnk)
-	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+	return CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
-func CreateStartMenuShortcut(args string) {
+func CreateStartMenuShortcut(args string) error {
 	dir := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Mysterium Network")
 	os.Mkdir(dir, os.ModePerm)
 	shcDst := path.Join(dir, launcherLnk)
-	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+	return CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
 func IsWindowsVersionCompatible() bool {

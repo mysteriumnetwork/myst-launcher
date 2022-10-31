@@ -59,8 +59,8 @@ func main() {
 			return
 		}
 	}
-	utils.EnableAutorun(mod.Config.AutoStart)
-
+	err := utils.EnableAutorun(mod.Config.AutoStart)
+	fmt.Println("utils.EnableAutorun", err)
 
 	prodVersion, _ := utils.GetProductVersion()
 	mod.SetProductVersion(prodVersion)
