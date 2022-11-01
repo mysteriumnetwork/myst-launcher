@@ -535,3 +535,39 @@ func OpenUrlInBrowser(url string) {
 		"",
 		syscall.SW_NORMAL)
 }
+
+// win32 console utils. Borrowed from https://github.com/yuk7/wsldl/blob/main/src/lib/utils/utils.go
+
+// AllocConsole calls AllocConsole API in Windows kernel32
+func AllocConsole() {
+	kernel32, _ := syscall.LoadDLL("Kernel32.dll")
+	alloc, _ := kernel32.FindProc("AllocConsole")
+	alloc.Call()
+
+	hout, _ := syscall.GetStdHandle(syscall.STD_OUTPUT_HANDLE)
+	herr, _ := syscall.GetStdHandle(syscall.STD_ERROR_HANDLE)
+	hin, _ := syscall.GetStdHandle(syscall.STD_INPUT_HANDLE)
+	os.Stdout = os.NewFile(uintptr(hout), "/dev/stdout")
+	os.Stderr = os.NewFile(uintptr(herr), "/dev/stderr")
+	os.Stdin = os.NewFile(uintptr(hin), "/dev/stdin")
+}
+
+// SetConsoleTitle calls SetConsoleTitleW API in Windows kernel32
+func SetConsoleTitle(title string) {
+	kernel32, _ := syscall.LoadDLL("Kernel32.dll")
+	proc, _ := kernel32.FindProc("SetConsoleTitleW")
+	pTitle, _ := syscall.UTF16PtrFromString(title)
+	syscall.Syscall(proc.Addr(), 1, uintptr(unsafe.Pointer(pTitle)), 0, 0)
+	return
+}
+
+// FreeConsole calls FreeConsole API in Windows kernel32
+func FreeConsole() error {
+	kernel32, _ := syscall.LoadDLL("Kernel32.dll")
+	proc, err := kernel32.FindProc("FreeConsole")
+	if err != nil {
+		return err
+	}
+	proc.Call()
+	return nil
+}

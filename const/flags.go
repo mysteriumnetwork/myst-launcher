@@ -11,4 +11,5 @@ const (
 	FlagInstall         = "-install-binary"
 	FlagUninstall       = "-uninstall"
 	FlagInstallFirewall = "-install-fw"
+	FlagDebug           = "-debug"
 )

@@ -25,14 +25,24 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
-var debugMode = ""
-
 func main() {
 	ap := app.NewApp()
 	ipc := ipc_.NewHandler()
 
-	if len(os.Args) > 1 {
-		switch os.Args[1] {
+	cmd := ""
+	debugMode := false
+	for _, v := range os.Args {
+		switch v {
+		case _const.FlagInstall,
+			_const.FlagUninstall,
+			_const.FlagInstallFirewall:
+			cmd = v
+		case _const.FlagDebug:
+			debugMode = true
+		}
+	}
+	if cmd != "" {
+		switch cmd {
 		case _const.FlagInstall:
 			utils.InstallExe()
 			return
@@ -46,6 +56,9 @@ func main() {
 			native.CheckAndInstallFirewallRules()
 			return
 		}
+	}
+	if debugMode {
+		utils.AllocConsole()
 	}
 
 	mod := model.NewUIModel()
@@ -64,7 +77,7 @@ func main() {
 
 	prodVersion, _ := utils.GetProductVersion()
 	mod.SetProductVersion(prodVersion)
-	if debugMode != "" {
+	if debugMode {
 		log.Println("Product version:", prodVersion)
 	}
 
@@ -90,7 +103,7 @@ func main() {
 	gui_win32.ShutdownGDIPlus()
 	ap.StopAppController()
 
-	if debugMode != "" {
+	if debugMode {
 		fmt.Println("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}

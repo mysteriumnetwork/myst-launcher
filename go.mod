@@ -27,7 +27,7 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/scjalliance/comshim v0.0.0-20190308082608-cf06d2532c4e // indirect
+	github.com/scjalliance/comshim v0.0.0-20190308082608-cf06d2532c4e
 	github.com/stretchr/testify v1.7.0
 	github.com/tc-hib/winres v0.1.5
 	github.com/tryor/gdiplus v0.0.0-20200830101413-c570de9579b3
