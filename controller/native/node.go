@@ -8,7 +8,9 @@
 package native
 
 import (
+	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	model_ "github.com/mysteriumnetwork/myst-launcher/model"
@@ -19,16 +21,15 @@ type Controller struct {
 	a model_.AppState
 
 	finished bool
-	runner   *NodeRunner
-	lg       *log.Logger
+	wg       sync.WaitGroup
+
+	runner *NodeRunner
+	lg     *log.Logger
 }
 
-func (c *Controller) GetFinished() bool {
-	return c.finished
-}
-
-func (c *Controller) SetFinished() {
+func (c *Controller) setFinished() {
 	c.finished = true
+	c.wg.Done()
 }
 
 func NewController() *Controller {
@@ -45,7 +46,12 @@ func (c *Controller) SetApp(a model_.AppState) {
 	c.runner = NewRunner(a.GetModel())
 }
 
-func (c *Controller) Shutdown() {}
+func (c *Controller) Shutdown() {
+	if !c.finished {
+		c.a.GetAction() <- model_.ActionStop
+		c.wg.Wait()
+	}
+}
 
 // Supervise the node
 func (c *Controller) Start() {
@@ -61,7 +67,8 @@ func (c *Controller) Start() {
 	model.ImageInfo.VersionLatest = cfg.NodeLatestTag
 	model.Update()
 
-	defer c.SetFinished()
+	c.wg.Add(1)
+	defer c.setFinished()
 
 	t1 := time.NewTicker(15 * time.Second)
 	for {
@@ -153,7 +160,7 @@ func (c *Controller) startContainer() {
 
 		ui := c.a.GetUI()
 		tryInstallFirewallRules(ui)
-		
+
 		running := c.runner.IsRunningOrTryStart()
 		if running {
 			model.SetStateContainer(model_.RunnableStateRunning)

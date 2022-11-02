@@ -543,6 +543,10 @@ func AllocConsole() {
 	kernel32, _ := syscall.LoadDLL("Kernel32.dll")
 	alloc, _ := kernel32.FindProc("AllocConsole")
 	alloc.Call()
+	
+// 	attach, _ := kernel32.FindProc("AttachConsole")
+// 	const ATTACH_PARENT_PROCESS = ^uintptr(0)
+// 	attach.Call(ATTACH_PARENT_PROCESS)
 
 	hout, _ := syscall.GetStdHandle(syscall.STD_OUTPUT_HANDLE)
 	herr, _ := syscall.GetStdHandle(syscall.STD_ERROR_HANDLE)

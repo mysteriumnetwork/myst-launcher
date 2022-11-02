@@ -80,8 +80,7 @@ func (r *NodeRunner) isRunning() uint32 {
 // return values: isRunning
 func (r *NodeRunner) IsRunningOrTryStart() bool {
 
-	p := r.isRunning()
-	if p == 0 {
+	if r.isRunning() == 0 {
 		return r.startNode() == nil
 	}
 
@@ -113,17 +112,13 @@ func (r *NodeRunner) startNode() error {
 	args := []string{userspaceArg, versionArg, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions"}
 
 	switch runtime.GOOS {
-	case "windows":
-		if err := utils.CmdStart(fullExePath, args...); err != nil {
+	case "windows", "darwin":
+		cmd, err := utils.CmdStart(fullExePath, args...)
+		if err != nil {
 			log.Println("run node failed:", err)
 			return err
 		}
-
-	case "darwin":
-		if err := utils.CmdStart(fullExePath, args...); err != nil {
-			log.Println("run node failed:", err)
-			return err
-		}
+		r.cmd = cmd
 
 	default:
 		return errors.New("unsupported OS: " + runtime.GOOS)

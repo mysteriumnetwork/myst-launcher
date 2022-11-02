@@ -22,15 +22,15 @@ import (
 
 var sysProcAttrs = getSysProcAttrs()
 
-func CmdStart(name string, args ...string) error {
+func CmdStart(name string, args ...string) (*exec.Cmd, error) {
 	log.Print(fmt.Sprintf("Run: %v %v \r\n", name, strings.Join(args, " ")))
 
 	cmd := exec.Command(name, args...)
 	cmd.SysProcAttr = &sysProcAttrs
 	if err := cmd.Start(); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return cmd, nil
 }
 
 // returns: exit status, error
