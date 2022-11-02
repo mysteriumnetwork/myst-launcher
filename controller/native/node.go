@@ -8,7 +8,6 @@
 package native
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -80,7 +79,6 @@ func (c *Controller) Start() {
 		// c.upgradeContainer(false)
 		// }
 
-		// c.lg.Println("wait action >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 		select {
 		case act := <-action:
 			c.lg.Println("action:", act)
@@ -164,6 +162,14 @@ func (c *Controller) startContainer() {
 		running := c.runner.IsRunningOrTryStart()
 		if running {
 			model.SetStateContainer(model_.RunnableStateRunning)
+
+			cfg := &model.Config
+			switch cfg.InitialState {
+			case model_.InitialStateFirstRunAfterInstall, model_.InitialStateUndefined:
+				cfg.InitialState = model_.InitialStateNormalRun
+				cfg.Save()
+				ui.ShowNotificationInstalled()
+			}
 		}
 	}
 }
