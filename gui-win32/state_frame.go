@@ -37,9 +37,6 @@ type StateFrame struct {
 	lbNetworkMode     *walk.Label
 	btnOpenNodeConfig *walk.PushButton
 
-	lbNetwork  *walk.Label
-	btnMainNet *walk.PushButton
-
 	cmp              *walk.Composite
 	headerContainer  *walk.Composite
 	lbNodeUI         *walk.LinkLabel
@@ -138,50 +135,6 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 					Label{
 						Text: "",
 					},
-
-					Label{
-						Text: "Network",
-					},
-					Composite{
-						Alignment: AlignHNearVCenter,
-						Layout: HBox{
-							MarginsZero: true,
-							Spacing:     0,
-						},
-
-						Children: []Widget{
-							Label{
-								Text:      "-",
-								AssignTo:  &f.lbNetwork,
-								Alignment: AlignHNearVCenter,
-							},
-							PushButton{
-								Alignment: AlignHNearVCenter,
-								Enabled:   true,
-								AssignTo:  &f.btnMainNet,
-								Text:      "Update to MainNet..",
-
-								OnSizeChanged: func() {
-									f.btnMainNet.SetWidthPixels(115)
-								},
-								OnClicked: func() {
-									mdl.UIBus.Publish("btn-upgrade-network")
-								},
-							},
-							//HSpacer{StretchFactor: 0},
-						},
-					},
-					Label{
-						Text: "",
-					},
-					LinkLabel{
-						Text: "<a>Information about MainNet</a>",
-						OnLinkActivated: func(link *walk.LinkLabelLink) {
-							utils.OpenUrlInBrowser("https://mysterium.network/")
-						},
-						Alignment: AlignHNearVNear,
-					},
-					VSpacer{ColumnSpan: 2, Size: 10},
 
 					Label{
 						Text: "Node package source",
@@ -383,8 +336,6 @@ func (f *StateFrame) handlerState() {
 
 			f.lbImageName.SetText(f.mdl.Config.GetFullImageName())
 
-			f.lbNetwork.SetText(f.mdl.Config.GetNetworkCaption())
-			f.btnMainNet.SetVisible(!f.mdl.CurrentNetIsMainNet())
 			f.lbUpdateLauncher.SetVisible(f.mdl.LauncherHasUpdate)
 		}
 	})

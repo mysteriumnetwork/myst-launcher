@@ -58,7 +58,7 @@ func main() {
 		}
 	}
 	if debugMode {
-		utils.AllocConsole()
+		utils.AllocConsole(false)
 	}
 
 	mod := model.NewUIModel()

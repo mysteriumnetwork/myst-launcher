@@ -22,14 +22,14 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/scjalliance/comshim"
-		"github.com/blang/semver/v4"
+	"github.com/blang/semver/v4"
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 	"github.com/gonutz/w32"
 	"github.com/lxn/walk"
 	"github.com/mysteriumnetwork/go-fileversion"
 	"github.com/pkg/errors"
+	"github.com/scjalliance/comshim"
 	"github.com/winlabs/gowin32"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
@@ -53,7 +53,7 @@ func getSysProcAttrs() syscall.SysProcAttr {
 func CreateShortcut(dst, target, args string) error {
 	comshim.Add(1)
 	defer comshim.Done()
-	
+
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
 		return err
@@ -171,9 +171,9 @@ func EnableAutorun(en bool) error {
 	defer k.Close()
 
 	if en {
-		return k.SetBinaryValue(launcherLnk, []byte{2,0,0})
+		return k.SetBinaryValue(launcherLnk, []byte{2, 0, 0})
 	}
-	return k.SetBinaryValue(launcherLnk, []byte{3,0,0})
+	return k.SetBinaryValue(launcherLnk, []byte{3, 0, 0})
 }
 
 // should be executed with admin's privileges
@@ -539,14 +539,17 @@ func OpenUrlInBrowser(url string) {
 // win32 console utils. Borrowed from https://github.com/yuk7/wsldl/blob/main/src/lib/utils/utils.go
 
 // AllocConsole calls AllocConsole API in Windows kernel32
-func AllocConsole() {
+func AllocConsole(attach bool) {
 	kernel32, _ := syscall.LoadDLL("Kernel32.dll")
-	alloc, _ := kernel32.FindProc("AllocConsole")
-	alloc.Call()
-	
-// 	attach, _ := kernel32.FindProc("AttachConsole")
-// 	const ATTACH_PARENT_PROCESS = ^uintptr(0)
-// 	attach.Call(ATTACH_PARENT_PROCESS)
+
+	if attach {
+		attach, _ := kernel32.FindProc("AttachConsole")
+		const ATTACH_PARENT_PROCESS = ^uintptr(0)
+		attach.Call(ATTACH_PARENT_PROCESS)
+	} else {
+		alloc, _ := kernel32.FindProc("AllocConsole")
+		alloc.Call()
+	}
 
 	hout, _ := syscall.GetStdHandle(syscall.STD_OUTPUT_HANDLE)
 	herr, _ := syscall.GetStdHandle(syscall.STD_ERROR_HANDLE)
