@@ -19,15 +19,6 @@ func getSysProcAttrs() syscall.SysProcAttr {
 	return syscall.SysProcAttr{}
 }
 
-// func IsProcessRunning(name string) bool {
-// 	res, err := CmdRun(nil, "pgrep", "-xq", "--", `^`+name)
-// 	if err == nil {
-// 		return res == 0
-// 	}
-// 	log.Println("IsProcessRunning error:", err)
-// 	return false
-// }
-
 func LauncherUpgradeAvailable() bool {
 	return false
 }
@@ -45,11 +36,25 @@ func HasDocker() (bool, error) {
 	return res == 0 || res == 1, nil
 }
 
+var productVersion string
+
+func SetProductVersion(ver string) {
+	productVersion = ver
+}
+
 func GetProductVersion() (string, error) {
-	return "", nil
+	return productVersion, nil
 }
 
 // install exe if n/e
 func CheckAndInstallExe() error {
 	return nil
+}
+
+func RunasWithArgsAndWait(cmdArgs string) error {
+	panic("not implemented")
+}
+
+func EnableAutorun(en bool) error {
+    return nil
 }

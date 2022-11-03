@@ -15,8 +15,8 @@ type App interface {
 type Controller interface {
 	SetApp(a AppState)
 	Start()
+	Shutdown()
 	GetCaps() int
-	GetFinished() bool
 }
 
 const (

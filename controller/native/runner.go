@@ -80,8 +80,7 @@ func (r *NodeRunner) isRunning() uint32 {
 // return values: isRunning
 func (r *NodeRunner) IsRunningOrTryStart() bool {
 
-	p := r.isRunning()
-	if p == 0 {
+	if r.isRunning() == 0 {
 		return r.startNode() == nil
 	}
 
@@ -110,21 +109,16 @@ func (r *NodeRunner) startNode() error {
 	dataDirArg := fmt.Sprintf("--data-dir=%s", r.configpath)
 	userspaceArg := "--userspace"
 
-	switch runtime.GOOS {
-	case "windows":
-		args := []string{userspaceArg, versionArg, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions"}
-		if err := utils.CmdStart(fullExePath, args...); err != nil {
-			log.Println("run node failed:", err)
-			return err
-		}
+	args := []string{userspaceArg, versionArg, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions"}
 
-	case "darwin":
-		// cmd = exec.Command("open", "/Applications/Docker.app/")
-		r.cmd = exec.Command(fullExePath, versionArg, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions")
-		if err := r.cmd.Start(); err != nil {
+	switch runtime.GOOS {
+	case "windows", "darwin":
+		cmd, err := utils.CmdStart(fullExePath, args...)
+		if err != nil {
 			log.Println("run node failed:", err)
 			return err
 		}
+		r.cmd = cmd
 
 	default:
 		return errors.New("unsupported OS: " + runtime.GOOS)

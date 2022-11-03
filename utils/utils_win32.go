@@ -29,6 +29,7 @@ import (
 	"github.com/lxn/walk"
 	"github.com/mysteriumnetwork/go-fileversion"
 	"github.com/pkg/errors"
+	"github.com/scjalliance/comshim"
 	"github.com/winlabs/gowin32"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
@@ -50,6 +51,9 @@ func getSysProcAttrs() syscall.SysProcAttr {
 }
 
 func CreateShortcut(dst, target, args string) error {
+	comshim.Add(1)
+	defer comshim.Done()
+
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
 		return err
@@ -155,7 +159,10 @@ func RunWithArgsNoWait(cmdArgs string) error {
 
 func EnableAutorun(en bool) error {
 	// re-create
-	CreateAutostartShortcut("")
+	err := CreateAutostartShortcut("")
+	if err != nil {
+		return err
+	}
 
 	k, _, err := registry.CreateKey(registry.CURRENT_USER, `SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder`, registry.ALL_ACCESS)
 	if err != nil {
@@ -164,9 +171,9 @@ func EnableAutorun(en bool) error {
 	defer k.Close()
 
 	if en {
-		return k.SetBinaryValue(launcherLnk, []byte{2,0,0})
+		return k.SetBinaryValue(launcherLnk, []byte{2, 0, 0})
 	}
-	return k.SetBinaryValue(launcherLnk, []byte{3,0,0})
+	return k.SetBinaryValue(launcherLnk, []byte{3, 0, 0})
 }
 
 // should be executed with admin's privileges
@@ -220,21 +227,21 @@ func MystNodeLauncherExePath() string {
 	return os.Getenv("ProgramFiles") + "\\MystNodeLauncher" + "\\" + launcherExe
 }
 
-func CreateAutostartShortcut(args string) {
+func CreateAutostartShortcut(args string) error {
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", launcherLnk)
-	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+	return CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
-func CreateDesktopShortcut(args string) {
+func CreateDesktopShortcut(args string) error {
 	shcDst := path.Join(os.Getenv("USERPROFILE"), "Desktop", launcherLnk)
-	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+	return CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
-func CreateStartMenuShortcut(args string) {
+func CreateStartMenuShortcut(args string) error {
 	dir := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Mysterium Network")
 	os.Mkdir(dir, os.ModePerm)
 	shcDst := path.Join(dir, launcherLnk)
-	CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+	return CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
 }
 
 func IsWindowsVersionCompatible() bool {
@@ -527,4 +534,47 @@ func OpenUrlInBrowser(url string) {
 		"url.dll,FileProtocolHandler "+url,
 		"",
 		syscall.SW_NORMAL)
+}
+
+// win32 console utils. Borrowed from https://github.com/yuk7/wsldl/blob/main/src/lib/utils/utils.go
+
+// AllocConsole calls AllocConsole API in Windows kernel32
+func AllocConsole(attach bool) {
+	kernel32, _ := syscall.LoadDLL("Kernel32.dll")
+
+	if attach {
+		attach, _ := kernel32.FindProc("AttachConsole")
+		const ATTACH_PARENT_PROCESS = ^uintptr(0)
+		attach.Call(ATTACH_PARENT_PROCESS)
+	} else {
+		alloc, _ := kernel32.FindProc("AllocConsole")
+		alloc.Call()
+	}
+
+	hout, _ := syscall.GetStdHandle(syscall.STD_OUTPUT_HANDLE)
+	herr, _ := syscall.GetStdHandle(syscall.STD_ERROR_HANDLE)
+	hin, _ := syscall.GetStdHandle(syscall.STD_INPUT_HANDLE)
+	os.Stdout = os.NewFile(uintptr(hout), "/dev/stdout")
+	os.Stderr = os.NewFile(uintptr(herr), "/dev/stderr")
+	os.Stdin = os.NewFile(uintptr(hin), "/dev/stdin")
+}
+
+// SetConsoleTitle calls SetConsoleTitleW API in Windows kernel32
+func SetConsoleTitle(title string) {
+	kernel32, _ := syscall.LoadDLL("Kernel32.dll")
+	proc, _ := kernel32.FindProc("SetConsoleTitleW")
+	pTitle, _ := syscall.UTF16PtrFromString(title)
+	syscall.Syscall(proc.Addr(), 1, uintptr(unsafe.Pointer(pTitle)), 0, 0)
+	return
+}
+
+// FreeConsole calls FreeConsole API in Windows kernel32
+func FreeConsole() error {
+	kernel32, _ := syscall.LoadDLL("Kernel32.dll")
+	proc, err := kernel32.FindProc("FreeConsole")
+	if err != nil {
+		return err
+	}
+	proc.Call()
+	return nil
 }

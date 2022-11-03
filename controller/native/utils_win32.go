@@ -34,3 +34,17 @@ func CheckAndInstallFirewallRules() {
 		log.Println(err)
 	}
 }
+
+// returns true if some firewall rules to be setup
+func checkFirewallRules() bool {
+	rule, err := wapi.FirewallRuleGet(fwRuleNameUDP)
+	if err != nil || rule.Name == "" {
+		return true
+	}
+
+	rule, err = wapi.FirewallRuleGet(fwRuleNameTCP)
+	if err != nil || rule.Name == "" {
+		return true
+	}
+	return false
+}

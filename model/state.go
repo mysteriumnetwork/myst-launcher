@@ -108,17 +108,22 @@ func (c *Config) getDefaultValues(isNewFile bool) {
 	c.PortRangeBegin = 42000
 	c.PortRangeEnd = 42100
 
-	// if fresh file  -> native
-	// if has version -> prev
-	// if no version  -> docker
+	if c.Backend == "" {
+		// if fresh file  -> native
+		// if has version -> prev
+		// if no version  -> docker
 
-	c.Backend = "native"
-	if !isNewFile {
-		if c.LauncherVersion == "" {
-			c.Backend = "docker"
+		c.Backend = "native"
+		if !isNewFile {
+			if c.LauncherVersion == "" {
+				c.Backend = "docker"
+			}
 		}
 	}
-	c.LauncherVersion = prodVersion
+	if c.LauncherVersion != prodVersion {
+		c.LauncherVersion = prodVersion
+		c.Save()
+	}
 }
 
 func (c *Config) Read() {

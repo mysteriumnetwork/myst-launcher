@@ -32,9 +32,7 @@ func NewApp() *AppState {
 }
 
 func (s *AppState) StopAppController() {
-	if !s.ctrApp.GetFinished() {
-		s.TriggerAction(model.ActionStop)
-	}
+	s.ctrApp.Shutdown()
 }
 
 func (s *AppState) StartAppController() {

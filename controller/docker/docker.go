@@ -9,6 +9,7 @@ package docker
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	model_ "github.com/mysteriumnetwork/myst-launcher/model"
@@ -20,7 +21,9 @@ import (
 type Controller struct {
 	a model_.AppState
 
-	finished    bool
+	finished bool
+	wg       sync.WaitGroup
+
 	mgr         model_.PlatformManager
 	mystManager *myst.Manager
 	lg          *log.Logger
@@ -39,12 +42,16 @@ func (c *Controller) SetApp(a model_.AppState) {
 	c.a = a
 }
 
-func (c *Controller) GetFinished() bool {
-	return c.finished
+func (c *Controller) setFinished() {
+	c.finished = true
+	c.wg.Done()
 }
 
-func (c *Controller) SetFinished() {
-	c.finished = true
+func (c *Controller) Shutdown() {
+	if !c.finished {
+		c.a.GetAction() <- model_.ActionStop
+		c.wg.Wait()
+	}
 }
 
 func (c *Controller) Start() {
@@ -70,12 +77,13 @@ func (c *Controller) Start() {
 	c.mystManager = mystManager
 	docker := NewDockerRunner(mystManager.GetDockerClient())
 
-	defer c.SetFinished()
+	c.wg.Add(1)
+	defer c.setFinished()
 
 	t1 := time.NewTicker(15 * time.Second)
 	for {
 		if wantExit := c.tryStartOrInstallDocker(docker); wantExit {
-			c.SetFinished()
+			c.setFinished()
 			ui.CloseUI()
 			return
 		}
@@ -87,7 +95,6 @@ func (c *Controller) Start() {
 			c.upgradeContainer(false)
 		}
 
-		// c.lg.Println("wait action >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 		select {
 		case act := <-action:
 			c.lg.Println("action:", act)
@@ -121,6 +128,8 @@ func (c *Controller) Start() {
 
 			case model_.ActionStop:
 				c.lg.Println("[docker] stop")
+				mdl.SetStateContainer(model_.RunnableStateUnknown)
+				mystManager.Stop()
 				return
 			}
 
@@ -241,14 +250,12 @@ func (c *Controller) startContainer() {
 	if !mdl.Config.Enabled {
 		return
 	}
-
 	containerAlreadyRunning, err := c.mystManager.Start()
 	if err != nil {
 		mdl.SetStateContainer(model_.RunnableStateUnknown)
 		c.lg.Println("startContainer", err)
 		return
 	}
-
 	mdl.SetStateContainer(model_.RunnableStateRunning)
 
 	if !containerAlreadyRunning && mdl.Config.InitialState == model_.InitialStateFirstRunAfterInstall {

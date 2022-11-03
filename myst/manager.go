@@ -16,7 +16,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -179,7 +178,7 @@ func extractRepoDigests(repoDigests []string) []string {
 
 func (m *Manager) launcherVersionChanged(mystContainer *Container) bool {
 	launcherVer := getVersionFromCommand(mystContainer.Command)
-	currentVersion := m.model.ProductVersion + "/" + runtime.GOOS
+	currentVersion := m.model.GetProductVersionString()
 
 	return launcherVer != currentVersion && launcherVer != ""
 }

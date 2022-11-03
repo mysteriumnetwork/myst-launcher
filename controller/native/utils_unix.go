@@ -11,5 +11,8 @@ func extractNodeBinary(src, dest string) error {
 	return extractor.NewTgz().Extract(src, dest)
 }
 
-func CheckAndInstallFirewall() {
+func CheckAndInstallFirewall() {}
+
+func checkFirewallRules() bool {
+	return false
 }
