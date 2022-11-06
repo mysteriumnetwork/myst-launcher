@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <?define ProductVersion = "!(bind.FileVersion.LauncherExe)"?>
+<!-- <?define ProductVersion = "1.0.37"?> -->
 <?define ProductName = "Mysterium Node Launcher" ?>
 <?define ProductAuthor = "Mysterium Network" ?>
 <?define ProductURL = "https://www.mysterium.network/" ?>
@@ -41,6 +42,23 @@
         <Property Id="SEC_KEY" Secure="yes" />
         <Property Id="ASSISTANCE_START_VIA_REGISTRY">1</Property>
 
+<Property Id="LEGACY_PKG">
+    <RegistrySearch Id="LegacyPkg"
+                    Root="HKLM"
+                    Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MysteriumLauncher"
+                    Name="UninstallString"
+                    Type="raw" />
+</Property>
+
+<Property Id="LIC_ACCEPT_VAL">
+    <RegistrySearch Id="LicAcc"
+                    Root="HKLM"
+                    Key="SOFTWARE\MysteriumNodeLauncher"
+                    Name="LicenseAccepted"
+                    Type="raw" />
+</Property>
+
+
 
         <Upgrade Id="$(var.ProductUpgradeCode)">
             <UpgradeVersion Minimum="$(var.ProductVersion)" OnlyDetect="yes" Property="NEWERVERSIONDETECTED" />
@@ -53,6 +71,8 @@
             <ComponentRef Id="ApplicationFiles" />
             <ComponentRef Id="RegistrySettings" />
             <ComponentRef Id="LauncherAutostart" />
+
+<!--             <ComponentRef Id="TargetProgram" /> -->
         </Feature>
 
         <?if $(sys.BUILDARCH) = x86 ?>
@@ -74,6 +94,7 @@
             <Directory Id="StartupFolder" Name="Startup" />
             <Directory Id="DesktopFolder" Name="Desktop"/>
 
+
             <Directory Id="$(var.PlatformProgramFilesFolder)">
                 <Directory Id="INSTALLDIR" Name="$(var.ProductAuthor)">
                     <!-- Exe -->
@@ -85,9 +106,11 @@
                     </Component>
 
                     <!-- Form data -->
-                    <Component Id="RegistrySettings" Guid="*" Win64="$(var.Win64)">
-                        <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="OrgID" Type="string" Value="[ORG_ID]" KeyPath="yes"/>
-                        <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="SecKey" Type="string" Value="[SEC_KEY]"/>
+                    <Component Id="RegistrySettings" Guid="*" Win64="$(var.Win64)" Permanent="yes">
+<!--                         <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="OrgID" Type="string" Value="[ORG_ID]" KeyPath="yes"/> -->
+                        <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="LicenseAccepted" Type="string" Value="[LIC_ACCEPT]" KeyPath="yes" />
+<!--                         <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="SecKey" Type="string" Value="[SEC_KEY]"/> -->
+<!--                         <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="LicenseAccepted" Type="string" Value="[LIC_ACCEPT]" KeyPath="yes"/> -->
                     </Component>
 
                     <!-- Auto-start via Registry -->
@@ -100,12 +123,16 @@
                         <Condition>ASSISTANCE_START_VIA_REGISTRY</Condition>
                     </Component>
 
+
+
                 </Directory>
             </Directory>
         </Directory>
 
         <UI Id="UserInterface">
-            <Property Id="WIXUI_INSTALLDIR" Value="TARGETDIR" />
+<!--             <Property Id="WIXUI_INSTALLDIR" Value="TARGETDIR" /> -->
+            <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>
+
             <Property Id="WixUI_Mode" Value="Custom" />
 
             <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
@@ -120,31 +147,63 @@
             <DialogRef Id="FatalError" />
             <DialogRef Id="UserExit" />
             <DialogRef Id="CustomDlg"/>
-            <DialogRef Id="LicenseAgreementDlg_HK"/>
+<!--             <DialogRef Id="CustomDlg2"/> -->
+<!--             <DialogRef Id="MyInstallDirDlg"/> -->
+<!--             <DialogRef Id="LicenseAgreementDlg_HK"/> -->
 
 
 
             <UIRef Id="WixUI_Common" />
 
+            <!-- InstallDirDlg -->
             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="CustomDlg" Order="2">1</Publish>
+<!--             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="CustomDlg" Order="3">1</Publish> -->
+
             <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
             <Publish Dialog="ExitDialog"
                 Control="Finish"
                 Event="DoAction"
                 Value="LaunchApp" Order="999">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
 
+<!--             <Publish Dialog="MyInstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish> -->
+<!--             <Publish Dialog="MyInstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish> -->
+<!--             <Publish Dialog="MyInstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="2">1</Publish> -->
+<!--             <Publish Dialog="MyInstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish> -->
+<!--             <Publish Dialog="MyInstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish> -->
+
+
+            <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+            <Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+            <Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="WixUIValidatePath" Order="2">NOT WIXUI_DONTVALIDATEPATH</Publish>
+            <Publish Dialog="InstallDirDlg" Control="Next" Event="SpawnDialog" Value="InvalidDirDlg" Order="3"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
+<!--             Event="NewDialog" Value="VerifyReadyDlg" -->
+            <Publish Dialog="InstallDirDlg" Control="Next"
+            Event="EndDialog" Value="Exit"
+            Order="4">WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID="1"</Publish>
+            <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+            <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
+
         </UI>
 
-        <InstallExecuteSequence>
-            <RemoveExistingProducts After="InstallValidate" />
 
+        <SetProperty Id="LIC_ACCEPT" After="AppSearch" Value="1">
+            <![CDATA[LIC_ACCEPT_VAL="1"]]>
+        </SetProperty>
+
+        <InstallExecuteSequence>
+    <!--             <Custom Action="BeforeUninstall01" After="InstallFinalize">(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")</Custom> -->
+                <Custom Action="BeforeUninstall01" Before="InstallValidate"> (REMOVE = "ALL") </Custom>
+                <RemoveExistingProducts After="InstallInitialize" />
         </InstallExecuteSequence>
 
+
+
         <Property Id="WixShellExecTarget" Value="[#LauncherExe]" />
-        <CustomAction Id="LaunchApp"
-            BinaryKey="WixCA"
-            DllEntry="WixShellExec"
-            Impersonate="yes" />
+        <CustomAction Id="LaunchApp" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+        <CustomAction Id="InstallService" Return="check" Impersonate="no" Execute="deferred" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -uninstall"/>
+        <CustomAction Id="BeforeUninstall01" Return="ignore" Impersonate="yes" Execute="firstSequence" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -uninstall"/>
+
+
 
     </Fragment>
 
