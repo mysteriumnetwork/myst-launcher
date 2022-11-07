@@ -158,6 +158,8 @@ func RunWithArgsNoWait(cmdArgs string) error {
 }
 
 func EnableAutorun(en bool) error {
+	return nil
+
 	// re-create
 	err := CreateAutostartShortcut("")
 	if err != nil {

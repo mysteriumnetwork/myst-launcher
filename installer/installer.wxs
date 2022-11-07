@@ -71,6 +71,7 @@
             <ComponentRef Id="ApplicationFiles" />
             <ComponentRef Id="RegistrySettings" />
             <ComponentRef Id="LauncherAutostart" />
+            <ComponentRef Id="INSTALLDIR_comp" />
 
 <!--             <ComponentRef Id="TargetProgram" /> -->
         </Feature>
@@ -97,6 +98,12 @@
 
             <Directory Id="$(var.PlatformProgramFilesFolder)">
                 <Directory Id="INSTALLDIR" Name="$(var.ProductAuthor)">
+
+                    <Component Id="INSTALLDIR_comp" Guid="0CB88C7F-85A7-4986-B6CE-1CAD5C17EA0E" >
+                     <CreateFolder />
+                     <RemoveFile Id="RemoveFilesFromAppDirectory" Name="*.*" On="uninstall" />
+                    </Component>
+
                     <!-- Exe -->
                     <Component Id="ApplicationFiles" Guid="*" Win64="$(var.Win64)">
                         <File Id="LauncherExe" Source="bin\myst-launcher-amd64.exe" Name="myst-launcher-amd64.exe" KeyPath='yes'>
@@ -107,10 +114,7 @@
 
                     <!-- Form data -->
                     <Component Id="RegistrySettings" Guid="*" Win64="$(var.Win64)" Permanent="yes">
-<!--                         <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="OrgID" Type="string" Value="[ORG_ID]" KeyPath="yes"/> -->
                         <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="LicenseAccepted" Type="string" Value="[LIC_ACCEPT]" KeyPath="yes" />
-<!--                         <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="SecKey" Type="string" Value="[SEC_KEY]"/> -->
-<!--                         <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="LicenseAccepted" Type="string" Value="[LIC_ACCEPT]" KeyPath="yes"/> -->
                     </Component>
 
                     <!-- Auto-start via Registry -->
@@ -147,17 +151,14 @@
             <DialogRef Id="FatalError" />
             <DialogRef Id="UserExit" />
             <DialogRef Id="CustomDlg"/>
-<!--             <DialogRef Id="CustomDlg2"/> -->
-<!--             <DialogRef Id="MyInstallDirDlg"/> -->
-<!--             <DialogRef Id="LicenseAgreementDlg_HK"/> -->
-
-
 
             <UIRef Id="WixUI_Common" />
 
-            <!-- InstallDirDlg -->
+            <!-- WelcomeDlg -->
             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="CustomDlg" Order="2">1</Publish>
-<!--             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="CustomDlg" Order="3">1</Publish> -->
+
+            <Publish Dialog="CustomDlg" Control="InstallButton" Event="NewDialog" Value="MyInstallDirDlg" Order="2">1</Publish>
+<!--             <Publish Dialog="CustomDlg" Control="InstallButton" Event="EndDialog" Value="Return" Order="2">1</Publish> -->
 
             <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
             <Publish Dialog="ExitDialog"
@@ -165,23 +166,20 @@
                 Event="DoAction"
                 Value="LaunchApp" Order="999">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
 
-<!--             <Publish Dialog="MyInstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish> -->
-<!--             <Publish Dialog="MyInstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish> -->
-<!--             <Publish Dialog="MyInstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="2">1</Publish> -->
-<!--             <Publish Dialog="MyInstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish> -->
-<!--             <Publish Dialog="MyInstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish> -->
+            <Publish Dialog="MyInstallDirDlg" Control="Back" Event="NewDialog" Value="CustomDlg">1</Publish>
+            <Publish Dialog="MyInstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+            <Publish Dialog="MyInstallDirDlg" Control="Next" Event="EndDialog" Value="Return" Order="2">1</Publish>
+            <Publish Dialog="MyInstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+            <Publish Dialog="MyInstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
 
-
-            <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
-            <Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
-            <Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="WixUIValidatePath" Order="2">NOT WIXUI_DONTVALIDATEPATH</Publish>
-            <Publish Dialog="InstallDirDlg" Control="Next" Event="SpawnDialog" Value="InvalidDirDlg" Order="3"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
-<!--             Event="NewDialog" Value="VerifyReadyDlg" -->
-            <Publish Dialog="InstallDirDlg" Control="Next"
-            Event="EndDialog" Value="Exit"
-            Order="4">WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID="1"</Publish>
-            <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
-            <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
+<!--             <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish> -->
+<!--             <Publish Dialog="InstallDirDlg" Control="Next" Property="ElevationShield" Value="yes" Order="1">1</Publish> -->
+<!--             <Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish> -->
+<!--             <Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="WixUIValidatePath" Order="2">NOT WIXUI_DONTVALIDATEPATH</Publish> -->
+<!--             <Publish Dialog="InstallDirDlg" Control="Next" Event="SpawnDialog" Value="InvalidDirDlg" Order="3"> <![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]> </Publish> -->
+<!--             <Publish Dialog="InstallDirDlg" Control="Next" Event="EndDialog" Value="Return" Order="4">WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID="1"</Publish> -->
+<!--             <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish> -->
+<!--             <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish> -->
 
         </UI>
 
@@ -191,19 +189,16 @@
         </SetProperty>
 
         <InstallExecuteSequence>
-    <!--             <Custom Action="BeforeUninstall01" After="InstallFinalize">(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")</Custom> -->
-                <Custom Action="BeforeUninstall01" Before="InstallValidate"> (REMOVE = "ALL") </Custom>
+                <Custom Action="BeforeUninstall" Before="InstallValidate"> (REMOVE = "ALL") </Custom>
+                <Custom Action="InstallService" After="InstallFiles">(NOT Installed) AND (NOT REMOVE)</Custom>
+
                 <RemoveExistingProducts After="InstallInitialize" />
         </InstallExecuteSequence>
-
-
 
         <Property Id="WixShellExecTarget" Value="[#LauncherExe]" />
         <CustomAction Id="LaunchApp" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
         <CustomAction Id="InstallService" Return="check" Impersonate="no" Execute="deferred" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -uninstall"/>
-        <CustomAction Id="BeforeUninstall01" Return="ignore" Impersonate="yes" Execute="firstSequence" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -uninstall"/>
-
-
+        <CustomAction Id="BeforeUninstall" Return="ignore" Impersonate="yes" Execute="firstSequence" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -stop"/>
 
     </Fragment>
 

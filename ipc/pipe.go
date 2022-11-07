@@ -12,6 +12,7 @@ package ipc
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -73,6 +74,8 @@ func (p *Handler) Listen(ui model.Gui_) {
 
 		rw := bufio.NewReadWriter(bufio.NewReader(c), bufio.NewWriter(c))
 		s, _ := rw.ReadString('\n')
+		fmt.Println("pipe >", s)
+		
 		switch s {
 		case "popup\n":
 			ui.PopupMain()

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gonutz/w32"
 
@@ -35,7 +36,8 @@ func main() {
 		switch v {
 		case _const.FlagInstall,
 			_const.FlagUninstall,
-			_const.FlagInstallFirewall:
+			_const.FlagInstallFirewall,
+			_const.FlagStop:
 			cmd = v
 		case _const.FlagDebug:
 			debugMode = true
@@ -50,6 +52,11 @@ func main() {
 		case _const.FlagUninstall:
 			ipc.SendStopApp()
 			utils.UninstallExe()
+			return
+
+		case _const.FlagStop:
+			ipc.SendStopApp()
+			time.Sleep(1 * time.Second) // wait for main process to finish
 			return
 
 		case _const.FlagInstallFirewall:

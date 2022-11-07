@@ -77,9 +77,7 @@ func (c *Controller) tryInstallDocker() bool {
 			mdl.Config.InitialState = model.InitialStateStage2
 			mdl.Config.Save()
 
-			utils.CreateAutostartShortcut("")
 			utils.EnableAutorun(true)
-			
 			utils.CreateDesktopShortcut("")
 			utils.CreateStartMenuShortcut("")
 		}
