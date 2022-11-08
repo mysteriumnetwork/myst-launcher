@@ -22,6 +22,7 @@ import (
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -89,6 +90,11 @@ func main() {
 
 	gui_win32.InitGDIPlus()
 	ui := gui_win32.NewGui(mod)
+
+	// exit if another instance is running already
+	if updates.PopupFirstInstance(ui, ipc) {
+		return
+	}
 
 	ap.SetModel(mod)
 	log.SetOutput(ap)

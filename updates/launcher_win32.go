@@ -30,3 +30,11 @@ func UpdateLauncherFromNewBinary(ui *gui_win32.Gui, p *ipc_.Handler) bool {
 	}
 	return false
 }
+
+func PopupFirstInstance(ui *gui_win32.Gui, p *ipc_.Handler) bool {
+	if !p.OwnsPipe() {
+		p.SendPopupApp()
+		return true
+	}
+    return false
+}
