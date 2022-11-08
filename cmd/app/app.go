@@ -22,7 +22,6 @@ import (
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -91,10 +90,6 @@ func main() {
 	gui_win32.InitGDIPlus()
 	ui := gui_win32.NewGui(mod)
 
-	// skip update if IsUserAnAdmin
-	if !w32.SHIsUserAnAdmin() && updates.UpdateLauncherFromNewBinary(ui, ipc) {
-		return
-	}
 	ap.SetModel(mod)
 	log.SetOutput(ap)
 
