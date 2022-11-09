@@ -326,9 +326,6 @@ func (f *StateFrame) handlerState() {
 			setState2(f.stContainer, f.mdl.StateContainer)
 
 			f.lbContainer.SetText(f.mdl.StateContainer.String())
-			if !f.mdl.GetConfig().Enabled {
-				f.lbContainer.SetText("Disabled")
-			}
 			f.btnOpenNodeConfig.SetEnabled(f.mdl.IsRunning() && f.mdl.Caps == 1)
 
 			f.lbVersionCurrent.SetText(f.mdl.ImageInfo.VersionCurrent)

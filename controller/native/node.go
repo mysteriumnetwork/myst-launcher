@@ -96,23 +96,18 @@ func (c *Controller) Start() {
 				model.Config.Save()
 
 			case model_.ActionEnable:
-				model.SetStateContainer(model_.RunnableStateStarting)
 				c.startContainer()
-				model.SetStateContainer(model_.RunnableStateRunning)
 
 			case model_.ActionDisable:
-				model.SetStateContainer(model_.RunnableStateUnknown)
 				c.stop()
 
 			case model_.ActionStopRunner:
 				// terminate controller
-				model.SetStateContainer(model_.RunnableStateUnknown)
 				c.stop()
 				return
 
 			case model_.ActionStop:
 				c.lg.Println("[native] stop")
-				model.SetStateContainer(model_.RunnableStateUnknown)
 				c.stop()
 				return
 			}
@@ -128,24 +123,30 @@ func (c *Controller) restartContainer() {
 	model.SetStateContainer(model_.RunnableStateInstalling)
 
 	c.runner.Stop()
-	c.runner.IsRunningOrTryStart()
-	model.SetStateContainer(model_.RunnableStateRunning)
+	running := c.runner.IsRunningOrTryStart()
+	if running {
+		model.SetStateContainer(model_.RunnableStateRunning)
+	} else {
+		model.SetStateContainer(model_.RunnableStateUnknown)
+	}
 }
 
 func (c *Controller) stop() {
+	model := c.a.GetModel()
+	model.SetStateContainer(model_.RunnableStateUnknown)
+
 	c.runner.Stop()
 }
 
 func (c *Controller) upgradeContainer(refreshVersionCache bool) {
-	model := c.a.GetModel()
-
+	c.lg.Println("!up")
+	// model := c.a.GetModel()
 	// if !model.ImageInfo.HasUpdate {
 	// 	return
 	// }
 
-	model.SetStateContainer(model_.RunnableStateInstalling)
 	c.CheckAndUpgradeNodeExe(refreshVersionCache)
-	model.SetStateContainer(model_.RunnableStateRunning)
+	//model.SetStateContainer(model_.RunnableStateRunning)
 }
 
 // check for image updates before starting container, offer upgrade interactively
@@ -153,23 +154,27 @@ func (c *Controller) startContainer() {
 	c.lg.Println("!run")
 	model := c.a.GetModel()
 
-	model.SetStateContainer(model_.RunnableStateInstalling)
-	if model.Config.Enabled {
+	if !model.Config.Enabled {
+		return
+	}
 
-		ui := c.a.GetUI()
-		tryInstallFirewallRules(ui)
+	ui := c.a.GetUI()
+	tryInstallFirewallRules(ui)
 
-		running := c.runner.IsRunningOrTryStart()
-		if running {
-			model.SetStateContainer(model_.RunnableStateRunning)
+	running := c.runner.IsRunningOrTryStart()
+	if running {
+		model.SetStateContainer(model_.RunnableStateRunning)
+	} else {
+		model.SetStateContainer(model_.RunnableStateUnknown)
+	}
 
-			cfg := &model.Config
-			switch cfg.InitialState {
-			case model_.InitialStateFirstRunAfterInstall, model_.InitialStateUndefined:
-				cfg.InitialState = model_.InitialStateNormalRun
-				cfg.Save()
-				ui.ShowNotificationInstalled()
-			}
+	if running {
+		cfg := &model.Config
+		switch cfg.InitialState {
+		case model_.InitialStateFirstRunAfterInstall, model_.InitialStateUndefined:
+			cfg.InitialState = model_.InitialStateNormalRun
+			cfg.Save()
+			ui.ShowNotificationInstalled()
 		}
 	}
 }
