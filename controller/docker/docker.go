@@ -83,7 +83,6 @@ func (c *Controller) Start() {
 	t1 := time.NewTicker(15 * time.Second)
 	for {
 		if wantExit := c.tryStartOrInstallDocker(docker); wantExit {
-			c.setFinished()
 			ui.CloseUI()
 			return
 		}
@@ -109,12 +108,9 @@ func (c *Controller) Start() {
 			case model_.ActionRestart:
 				// restart to apply new settings
 				c.restartContainer()
-				mdl.Config.Save()
 
 			case model_.ActionEnable:
-				mdl.SetStateContainer(model_.RunnableStateStarting)
-				mystManager.Start()
-				mdl.SetStateContainer(model_.RunnableStateRunning)
+				c.startContainer()
 
 			case model_.ActionDisable:
 				mdl.SetStateContainer(model_.RunnableStateUnknown)
@@ -246,10 +242,11 @@ func (c *Controller) startContainer() {
 
 	c.mystManager.CheckCurrentVersionAndUpgrades(false)
 
-	mdl.SetStateContainer(model_.RunnableStateInstalling)
 	if !mdl.Config.Enabled {
 		return
 	}
+
+	mdl.SetStateContainer(model_.RunnableStateInstalling)
 	containerAlreadyRunning, err := c.mystManager.Start()
 	if err != nil {
 		mdl.SetStateContainer(model_.RunnableStateUnknown)

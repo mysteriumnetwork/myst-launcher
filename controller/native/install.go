@@ -9,11 +9,11 @@ import (
 
 	"github.com/codingsince1985/checksum"
 
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
+	model_ "github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-	_const "github.com/mysteriumnetwork/myst-launcher/const"
-
 )
 
 const (
@@ -101,6 +101,10 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 // returns: will exit
 func (c *Controller) tryInstall() bool {
 	log.Println("tryInstall >")
+	
+	model := c.a.GetModel()
+	model.SetStateContainer(model_.RunnableStateInstalling)
+
 	ctx := context.Background()
 	release, _ := updates.FetchLatestRelease(ctx, org, repo)
 	log.Println("tryInstall >", release)
@@ -140,7 +144,7 @@ func tryInstallFirewallRules(ui model.Gui_) {
 
 		// check firewall rules
 		needFirewallSetup := checkFirewallRules()
-		
+
 		if needFirewallSetup {
 			ret := ui.YesNoModal("Installation", "Firewall rule missing, addition is required. Press Yes to approve.")
 			if ret == model.IDYES {
