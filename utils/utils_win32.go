@@ -347,6 +347,33 @@ func FindProcess(exeName, fullpath string) (uint32, error) {
 	// return 0, nil
 }
 
+// kill process by name except current process
+func KillProcessByName(exeName string) error {
+	pid := windows.GetCurrentProcessId()
+
+	h, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
+	if err != nil {
+		return err
+	}
+	defer windows.CloseHandle(h)
+
+	p := windows.ProcessEntry32{Size: processEntrySize}
+	for {
+		if err := windows.Process32Next(h, &p); err != nil {
+			return err
+		}
+
+		if s := windows.UTF16ToString(p.ExeFile[:]); s == exeName {
+			if pid != p.ProcessID {
+				if err := TerminateProcess(p.ProcessID, 0); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+}
+
 func IsProcessRunningExt(exeName, fullpath string) (uint32, error) {
 	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if e != nil {

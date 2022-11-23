@@ -18,6 +18,7 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
 	"github.com/mysteriumnetwork/myst-launcher/controller/native"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
@@ -43,6 +44,14 @@ func main() {
 			debugMode = true
 		}
 	}
+	if debugMode {
+		utils.AllocConsole(false)
+		defer func() {
+			fmt.Println("Press 'Enter' to continue...")
+			bufio.NewReader(os.Stdin).ReadBytes('\n')
+		}()
+	}
+
 	if cmd != "" {
 		switch cmd {
 		case _const.FlagInstall:
@@ -52,20 +61,25 @@ func main() {
 		case _const.FlagUninstall:
 			ipc.SendStopApp()
 			utils.UninstallExe()
-			return
+
+			// for older versions e.g <=1.0.30
+			// it should be shutdown forcefully with a related docker container
+
+			native.KillPreviousLauncher()
+			if err := docker.UninstallMystContainer(); err != nil {
+				fmt.Println("UninstallMystContainer failed:", err)
+				return
+			}
 
 		case _const.FlagStop:
 			ipc.SendStopApp()
-			time.Sleep(1 * time.Second) // wait for main process to finish
+			time.Sleep(1 * time.Second) // wait for main process to finish, this is important for MSI to finish
 			return
 
 		case _const.FlagInstallFirewall:
 			native.CheckAndInstallFirewallRules()
 			return
 		}
-	}
-	if debugMode {
-		utils.AllocConsole(false)
 	}
 
 	mod := model.NewUIModel()
@@ -111,8 +125,4 @@ func main() {
 	gui_win32.ShutdownGDIPlus()
 	ap.StopAppController()
 
-	if debugMode {
-		fmt.Println("Press 'Enter' to continue...")
-		bufio.NewReader(os.Stdin).ReadBytes('\n')
-	}
 }
