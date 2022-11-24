@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <?define ProductVersion = "!(bind.FileVersion.LauncherExe)"?>
-<!-- <?define ProductVersion = "1.0.37"?> -->
-<?define ProductName = "Mysterium Node Launcher" ?>
+<!-- <?define ProductVersion = "1.0.xx"?> -->
+<?define ProductName = "Mysterium Launcher" ?>
 <?define ProductAuthor = "Mysterium Network" ?>
 <?define ProductURL = "https://www.mysterium.network/" ?>
 
@@ -97,7 +97,7 @@
 
 
             <Directory Id="$(var.PlatformProgramFilesFolder)">
-                <Directory Id="INSTALLDIR" Name="$(var.ProductAuthor)">
+                <Directory Id="INSTALLDIR" Name="$(var.ProductName)">
 
                     <Component Id="INSTALLDIR_comp" Guid="0CB88C7F-85A7-4986-B6CE-1CAD5C17EA0E" >
                      <CreateFolder />

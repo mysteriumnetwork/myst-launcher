@@ -6,4 +6,4 @@ del installer\*.msi installer\*.wixobj installer\*.ico
 
 iconsext.exe /save "bin\myst-launcher-amd64.exe" "installer\" -icons
 candle installer\installer.wxs installer\licenseDialogue.wxs  -arch x64 -out installer\
-light installer\installer.wixobj installer\licenseDialogue.wixobj -dcl:high -ext WixUIExtension.dll -ext WixUtilExtension.dll -out installer\launcher-x64.msi
+light installer\installer.wixobj installer\licenseDialogue.wixobj -dcl:high -ext WixUIExtension.dll -ext WixUtilExtension.dll -out installer\myst-launcher-x64.msi
