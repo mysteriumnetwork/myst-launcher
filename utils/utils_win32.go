@@ -26,8 +26,8 @@ import (
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 	"github.com/gonutz/w32"
-	"github.com/lxn/walk"
 	"github.com/mysteriumnetwork/go-fileversion"
+	"github.com/mysteriumnetwork/myst-launcher/native"
 	"github.com/pkg/errors"
 	"github.com/scjalliance/comshim"
 	"github.com/winlabs/gowin32"
@@ -35,7 +35,6 @@ import (
 	"golang.org/x/sys/windows/registry"
 
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
-	"github.com/mysteriumnetwork/myst-launcher/native"
 )
 
 const launcherLnk = "Mysterium Node Launcher.lnk"
@@ -91,8 +90,7 @@ func getExeNameFromFullPath(fullExe string) string {
 const launcherExe = "myst-launcher-amd64.exe"
 
 func checkExe() bool {
-	dst := os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
-	_, err := os.Stat(dst + "\\" + launcherExe)
+	_, err := os.Stat(GetMystNodeLauncherExeLegacyPath())
 	if os.IsNotExist(err) {
 		return false
 	}
@@ -118,7 +116,7 @@ func LauncherUpgradeAvailable() bool {
 		return false
 	}
 
-	verDst, err := fileversion.New(MystNodeLauncherExePath())
+	verDst, err := fileversion.New(GetMystNodeLauncherExeLegacyPath())
 	if err != nil {
 		return false
 	}
@@ -221,29 +219,34 @@ func UninstallExe() error {
 	os.Mkdir(dir, os.ModePerm)
 	shcDst = path.Join(dir, launcherLnk)
 	_ = os.Remove(shcDst)
+	_ = os.RemoveAll(GetMystNodeLauncherLegacyPath())
 
 	return nil
 }
 
-func MystNodeLauncherExePath() string {
+func GetMystNodeLauncherLegacyPath() string {
+	return os.Getenv("ProgramFiles") + "\\MystNodeLauncher"
+}
+
+func GetMystNodeLauncherExeLegacyPath() string {
 	return os.Getenv("ProgramFiles") + "\\MystNodeLauncher" + "\\" + launcherExe
 }
 
 func CreateAutostartShortcut(args string) error {
 	shcDst := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Startup", launcherLnk)
-	return CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+	return CreateShortcut(shcDst, GetMystNodeLauncherExeLegacyPath(), args)
 }
 
 func CreateDesktopShortcut(args string) error {
 	shcDst := path.Join(os.Getenv("USERPROFILE"), "Desktop", launcherLnk)
-	return CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+	return CreateShortcut(shcDst, GetMystNodeLauncherExeLegacyPath(), args)
 }
 
 func CreateStartMenuShortcut(args string) error {
 	dir := path.Join(os.Getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs\\Mysterium Network")
 	os.Mkdir(dir, os.ModePerm)
 	shcDst := path.Join(dir, launcherLnk)
-	return CreateShortcut(shcDst, MystNodeLauncherExePath(), args)
+	return CreateShortcut(shcDst, GetMystNodeLauncherExeLegacyPath(), args)
 }
 
 func IsWindowsVersionCompatible() bool {
@@ -435,10 +438,6 @@ func GetProductVersion() (string, error) {
 	return fv.ProductVersion(), nil
 }
 
-func ErrorModal(title, message string) int {
-	return walk.MsgBox(nil, title, message, walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconError)
-}
-
 func DiscoverDockerPathAndPatchEnv(wait bool) {
 	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SYSTEM\CurrentControlSet\Control\Session Manager\Environment`, registry.QUERY_VALUE)
 	if err != nil {
@@ -471,29 +470,39 @@ func DiscoverDockerPathAndPatchEnv(wait bool) {
 	}
 }
 
-func getMSIProductCodeByName(productName string) (string, error) {
+func getMSIProductCodeByName(productName string) (string, string, error) {
 	l, err := gowin32.GetInstalledProducts()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	for _, v := range l {
 		n, err := gowin32.GetInstalledProductProperty(v, gowin32.InstallPropertyProductName)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
+		// fmt.Println(">", productName, n, v, strings.HasPrefix(n, productName))
 
 		if strings.HasPrefix(n, productName) {
-			return v, nil
+			ver, err := gowin32.GetInstalledProductProperty(v, gowin32.InstallPropertyVersionString)
+			if err != nil {
+				return "", "", err
+			}
+
+			return v, normalizeVersion(ver), nil
 		}
 	}
-	return "", errProductNotFound
+	return "", "", errProductNotFound
 }
 
 // trunk excessive number (build), so that semver could parse it
 // example: "11.22.33.44" -> "11.22.33"
 func normalizeVersion(v string) string {
-	p := strings.Split(v, ".")
+	// trim -xxx postfix
+	p := strings.Split(v, "-")
+	v = p[0]
+
+	p = strings.Split(v, ".")
 	if len(p) > 3 {
 		r := ""
 		p := p[:3]
@@ -508,8 +517,52 @@ func normalizeVersion(v string) string {
 	return v
 }
 
+func GetInstalledPackageVersion() (string, error) {
+	mystProductCode, ver, err := getMSIProductCodeByName("Mysterium Launcher x64")
+	if errors.Is(err, errProductNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", nil
+	}
+
+	ver = normalizeVersion(ver)
+	fmt.Println("mystProductCode", mystProductCode, ver)
+	return ver, nil
+}
+
+func LauncherMSIHasUpdateOrPkgNI(latest string, currentVer *string) (bool, error) {
+	mystProductCode, ver, err := getMSIProductCodeByName("Mysterium Launcher x64")
+	if errors.Is(err, errProductNotFound) {
+		return true, nil
+	}
+	if err != nil {
+		return false, nil
+	}
+
+	latest = normalizeVersion(latest)
+	// fmt.Println("mystProductCode", mystProductCode, ver, latest)
+	_ = mystProductCode
+
+	semverLatest, err := semver.Parse(normalizeVersion(latest))
+	if err != nil {
+		return false, errors.Wrap(err, "semver.Parse")
+	}
+
+	// ver = "1.0.35"
+	current := normalizeVersion(ver)
+	semverCurrent, err := semver.Parse(normalizeVersion(current))
+	if err != nil {
+		return false, errors.Wrap(err, "semver.Parse")
+	}
+	log.Println("semverLatest>", semverLatest, semverCurrent, semverLatest.Compare(semverCurrent))
+	*currentVer = ver
+
+	return semverLatest.Compare(semverCurrent) > 0, nil
+}
+
 func IsWSLUpdated() (bool, error) {
-	wslUpdateProductCode, err := getMSIProductCodeByName("Windows Subsystem for Linux Update")
+	wslUpdateProductCode, _, err := getMSIProductCodeByName("Windows Subsystem for Linux Update")
 	if errors.Is(err, errProductNotFound) {
 		return false, nil
 	}
@@ -565,6 +618,7 @@ func OpenUrlInBrowser(url string) {
 		syscall.SW_NORMAL)
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // win32 console utils. Borrowed from https://github.com/yuk7/wsldl/blob/main/src/lib/utils/utils.go
 
 // AllocConsole calls AllocConsole API in Windows kernel32

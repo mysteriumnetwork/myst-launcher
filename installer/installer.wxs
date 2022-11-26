@@ -190,14 +190,14 @@
 
         <InstallExecuteSequence>
                 <Custom Action="BeforeUninstall" Before="InstallValidate"> (REMOVE = "ALL") </Custom>
-                <Custom Action="InstallService" After="InstallFiles">(NOT Installed) AND (NOT REMOVE)</Custom>
+                <Custom Action="Install" After="InstallFiles">(NOT Installed) AND (NOT REMOVE)</Custom>
 
                 <RemoveExistingProducts After="InstallInitialize" />
         </InstallExecuteSequence>
 
         <Property Id="WixShellExecTarget" Value="[#LauncherExe]" />
         <CustomAction Id="LaunchApp" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
-        <CustomAction Id="InstallService" Return="check" Impersonate="no" Execute="deferred" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -uninstall"/>
+        <CustomAction Id="Install" Return="check" Impersonate="no" Execute="deferred" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -uninstall"/>
         <CustomAction Id="BeforeUninstall" Return="ignore" Impersonate="yes" Execute="firstSequence" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -stop"/>
 
     </Fragment>

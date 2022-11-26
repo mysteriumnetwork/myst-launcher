@@ -10,7 +10,6 @@ package gui_win32
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func (g *Gui) OpenUpgradeLauncherDlg() {
@@ -19,6 +18,7 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 		acceptPB, cancelPB *walk.PushButton
 		lbVersionCurrent   *walk.Label
 		lbVersionLatest    *walk.Label
+		pBarDownload       *walk.ProgressBar
 	)
 
 	refresh := func() {
@@ -28,10 +28,18 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 			acceptPB.SetEnabled(g.model.LauncherHasUpdate)
 		})
 	}
+	setProgress := func(i int) {
+		dialog.Synchronize(func() {
+			pBarDownload.SetValue(i)
+			if i == 100 || i == -1 {
+				dialog.Accept()
+			}
+		})
+	}
 
 	err := Dialog{
 		AssignTo:      &dialog,
-		Title:         "New version of launcher available",
+		Title:         "Update of Mysterium Launcher",
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		MinSize:       Size{400, 175},
@@ -44,7 +52,7 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 			VSpacer{ColumnSpan: 2},
 			Label{
 				ColumnSpan: 2,
-				Text:       "Mysterium Network launcher",
+				Text:       "Mysterium Launcher",
 			},
 
 			Label{
@@ -65,15 +73,22 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 			VSpacer{ColumnSpan: 2},
 			Composite{
 				ColumnSpan: 2,
-				Layout:     HBox{},
+				Layout:     VBox{},
+
 				Children: []Widget{
+					ProgressBar{
+						MaxValue: 100,
+						MinValue: 0,
+						AssignTo: &pBarDownload,
+					},
+
 					PushButton{
 						AssignTo:    &acceptPB,
-						Text:        "Download latest version",
-						ToolTipText: "Open link in browser",
+						Text:        "Download and install update",
+						// ToolTipText: "",
 						OnClicked: func() {
-							dialog.Accept()
-							utils.OpenUrlInBrowser(g.model.ProductVersionLatestUrl)
+							g.model.Publish("launcher-update-ok", int(2))
+							// dialog.Accept()
 						},
 					},
 				},
@@ -88,9 +103,13 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 		dialog.SetX(g.dlg.X() + 300)
 		refresh()
 		g.model.UIBus.Subscribe("model-change", refresh)
+		g.model.UIBus.Subscribe("launcher-update-download", setProgress)
+
 	})
 	dialog.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
 		g.model.UIBus.Unsubscribe("model-change", refresh)
+		g.model.UIBus.Unsubscribe("launcher-update-download", setProgress)
+		g.model.Publish("launcher-update-ok", int(0))
 	})
 	dialog.Run()
 }

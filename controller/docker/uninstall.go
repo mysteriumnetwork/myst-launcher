@@ -3,7 +3,6 @@ package docker
 import "github.com/mysteriumnetwork/myst-launcher/myst"
 
 func UninstallMystContainer() error {
-
 	mystManager, err := myst.NewManager(nil)
 	if err != nil {
 		return err

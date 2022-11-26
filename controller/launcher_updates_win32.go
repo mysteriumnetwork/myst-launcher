@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package updates
+package controller
 
 import (
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"

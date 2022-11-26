@@ -18,12 +18,12 @@ import (
 
 	"github.com/mysteriumnetwork/myst-launcher/app"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
+	"github.com/mysteriumnetwork/myst-launcher/controller"
 	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
 	"github.com/mysteriumnetwork/myst-launcher/controller/native"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -105,8 +105,13 @@ func main() {
 	gui_win32.InitGDIPlus()
 	ui := gui_win32.NewGui(mod)
 
+	// skip update if IsUserAnAdmin
+	if !w32.SHIsUserAnAdmin() && controller.UpdateLauncherFromNewBinary(ui, ipc) {
+		return
+	}
+
 	// exit if another instance is running already
-	if updates.PopupFirstInstance(ui, ipc) {
+	if controller.PopupFirstInstance(ui, ipc) {
 		return
 	}
 
@@ -117,6 +122,7 @@ func main() {
 	ui.CreateMainWindow()
 	ap.SetUI(ui)
 
+	go controller.CheckLauncherUpdates(mod)
 	ap.StartAppController()
 	ipc.Listen(ui)
 
