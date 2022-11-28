@@ -75,7 +75,7 @@ func (c *Controller) tryInstallDocker() bool {
 	c.lg.Println("Downloading Docker desktop: ", url)
 	err = utils.DownloadFile(utils.GetTmpDir()+name, url, func(progress int) {
 		if progress%10 == 0 {
-			c.lg.Println(fmt.Sprintf("%s - %d%%", name, progress))
+			c.lg.Printf("%s - %d%%\n", name, progress)
 		}
 	})
 	if err != nil {

@@ -101,6 +101,15 @@ func (r *NodeRunner) Stop() {
 	}
 }
 
+// Kill all launcher instances except current
+func KillPreviousLauncher() {
+	exename := getNodeProcessName()
+	err := utils.KillProcessByName(exename)
+	if err != nil {
+		log.Println("KillAllByName failed:", err)
+	}
+}
+
 func (r *NodeRunner) startNode() error {
 	fullExePath := getNodeExePath()
 

@@ -12,6 +12,7 @@ package ipc
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -64,7 +65,7 @@ func (p *Handler) Listen(ui model.Gui_) {
 		return
 	}
 
-	handleCommand := func() {
+	handleCommand := func() (exit bool) {
 		c, err := p.pipe.Accept()
 		if err != nil {
 			panic(err)
@@ -73,6 +74,8 @@ func (p *Handler) Listen(ui model.Gui_) {
 
 		rw := bufio.NewReadWriter(bufio.NewReader(c), bufio.NewWriter(c))
 		s, _ := rw.ReadString('\n')
+		fmt.Println("pipe >", s)
+
 		switch s {
 		case "popup\n":
 			ui.PopupMain()
@@ -80,12 +83,17 @@ func (p *Handler) Listen(ui model.Gui_) {
 		case "stop\n":
 			ui.TerminateWaitDialogueComplete()
 			ui.CloseUI()
+			exit = true
 		}
+		return
 	}
 
 	go func() {
 		for {
-			handleCommand()
+			if handleCommand() {
+				p.pipe.Close()
+				break
+			}
 		}
 	}()
 }

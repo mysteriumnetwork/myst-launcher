@@ -213,6 +213,21 @@ func (m *Manager) Stop() error {
 	return nil
 }
 
+func (m *Manager) Remove() error {
+	mystContainer, err := m.findMystContainer()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
+	defer cancel()
+	err = m.dockerAPI.ContainerRemove(ctx, mystContainer.ID, types.ContainerRemoveOptions{})
+	if err != nil {
+		return errors2.Wrap(err, ErrCouldNotRemoveImage.Error())
+	}
+	return nil
+}
+
 //////////////////////////////////////////////////////////////////////
 func (m *Manager) startMystContainer() error {
 	m.lg.Println("!startMystContainer")
@@ -404,3 +419,4 @@ type Container struct {
 func (c *Container) isRunning() bool {
 	return c.State == "running"
 }
+

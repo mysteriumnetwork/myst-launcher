@@ -77,9 +77,7 @@ func (c *Controller) tryInstallDocker() bool {
 			mdl.Config.InitialState = model.InitialStateStage2
 			mdl.Config.Save()
 
-			utils.CreateAutostartShortcut("")
 			utils.EnableAutorun(true)
-			
 			utils.CreateDesktopShortcut("")
 			utils.CreateStartMenuShortcut("")
 		}
@@ -139,7 +137,7 @@ func (c *Controller) tryInstallDocker() bool {
 				if _, err := os.Stat(utils.GetTmpDir() + "\\" + v.name); err != nil {
 					err := utils.DownloadFile(utils.GetTmpDir()+"\\"+v.name, v.url, func(progress int) {
 						if progress%10 == 0 {
-							c.lg.Println(fmt.Sprintf("%s - %d%%", v.name, progress))
+							c.lg.Printf("%s - %d%%\n", v.name, progress)
 						}
 					})
 					if err != nil {

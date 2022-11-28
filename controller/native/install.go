@@ -57,7 +57,11 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 
 	if cfg.NodeExeVersion == "" || cfg.NeedToCheckUpgrade() || forceUpgrade {
 		ctx := context.Background()
-		release, _ := updates.FetchLatestRelease(ctx, org, repo)
+		release, err := updates.FetchLatestRelease(ctx, org, repo)
+		if err != nil {
+        	log.Println("FetchLatestRelease>", err)
+        	return false
+		}
 		tagLatest := release.TagName
 
 		mdl.ImageInfo.VersionLatest = tagLatest
@@ -90,9 +94,9 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 				cfg.NodeExeDigest = sha256
 			}
 
-			return false
+			return true
 		}
-		return true
+		return false
 	}
 
 	return false
@@ -119,7 +123,7 @@ func (c *Controller) tryInstall() bool {
 		fullPath := path.Join(utils.GetTmpDir(), asset)
 		err := utils.DownloadFile(fullPath, v.URL, func(progress int) {
 			if progress%10 == 0 {
-				c.lg.Printf("%s - %d%%", v.Name, progress)
+				c.lg.Printf("%s - %d%%\n", v.Name, progress)
 			}
 		})
 		if err != nil {

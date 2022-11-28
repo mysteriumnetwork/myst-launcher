@@ -12,4 +12,5 @@ const (
 	FlagUninstall       = "-uninstall"
 	FlagInstallFirewall = "-install-fw"
 	FlagDebug           = "-debug"
+	FlagStop            = "-stop" //v1.0.36+
 )

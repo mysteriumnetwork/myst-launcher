@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package updates
+package controller
 
 import (
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
@@ -29,4 +29,12 @@ func UpdateLauncherFromNewBinary(ui *gui_win32.Gui, p *ipc_.Handler) bool {
 		return true
 	}
 	return false
+}
+
+func PopupFirstInstance(ui *gui_win32.Gui, p *ipc_.Handler) bool {
+	if !p.OwnsPipe() {
+		p.SendPopupApp()
+		return true
+	}
+    return false
 }

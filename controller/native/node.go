@@ -146,12 +146,14 @@ func (c *Controller) upgradeContainer(refreshVersionCache bool) {
 	// }
 
 	c.CheckAndUpgradeNodeExe(refreshVersionCache)
+	//model.SetStateContainer(model_.RunnableStateRunning)
 }
 
 // check for image updates before starting container, offer upgrade interactively
 func (c *Controller) startContainer() {
 	c.lg.Println("!run")
 	model := c.a.GetModel()
+
 	if !model.Config.Enabled {
 		return
 	}
