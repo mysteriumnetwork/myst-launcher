@@ -13,6 +13,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/blang/semver/v4"
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -41,13 +42,13 @@ type Config struct {
 	InitialState InitialState `json:"state"`
 
 	// autoupgrade node
-	AutoUpgrade    bool   `json:"auto_upgrade"`
-	NodeExeDigest  string `json:"node_exe_digest"`
-	NodeExeVersion string `json:"node_exe_version"`
-	NodeLatestTag  string `json:"node_latest_tag"` // cache latest tag
-	// the last time we checked for upgrade of Myst / Exe, Unix timestamp, [second]
-	LastUpgradeCheck int64  `json:"last_upgrade_check"` // once a day
-	Backend          string `json:"backend"`            // runner: docker | native
+	AutoUpgrade      bool   `json:"auto_upgrade"`
+	NodeExeDigest    string `json:"node_exe_digest"`
+	NodeExeVersion   string `json:"node_exe_version"`
+	NodeLatestTag    string `json:"node_latest_tag"`    // cache latest tag
+	LastUpgradeCheck int64  `json:"last_upgrade_check"` // node exe last check, once a day
+
+	Backend string `json:"backend"` // runner: docker | native
 
 	// Networking mode
 	EnablePortForwarding bool `json:"enable_port_forwarding"`
@@ -121,6 +122,17 @@ func (c *Config) getDefaultValues(isNewFile bool) {
 		}
 	}
 	if c.LauncherVersion != prodVersion {
+
+		v, _ := semver.Parse(c.LauncherVersion)
+		v38, _ := semver.Parse("1.0.38")
+		if v38.Compare(v) > 0 {
+			// trigger refresh node exe, if previous version was <1.0.38
+			// there was a node update bug
+			c.LastUpgradeCheck = 0
+			c.NodeLatestTag = ""
+			c.NodeExeVersion = ""
+		}
+
 		c.LauncherVersion = prodVersion
 		c.Save()
 	}

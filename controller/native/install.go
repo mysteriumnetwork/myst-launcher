@@ -52,50 +52,52 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 		cfg.NodeExeVersion = ""
 		cfg.Save()
 	}
-
-	log.Println("CheckAndUpgradeNodeExe>", cfg, forceUpgrade)
+	log.Println("CheckAndUpgradeNodeExe >", cfg, cfg.NodeExeVersion, cfg.NeedToCheckUpgrade(), forceUpgrade)
 
 	if cfg.NodeExeVersion == "" || cfg.NeedToCheckUpgrade() || forceUpgrade {
 		ctx := context.Background()
 		release, err := updates.FetchLatestRelease(ctx, org, repo)
 		if err != nil {
-        	log.Println("FetchLatestRelease>", err)
-        	return false
+			log.Println("FetchLatestRelease>", err)
+			return false
 		}
 		tagLatest := release.TagName
 
 		mdl.ImageInfo.VersionLatest = tagLatest
 		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
 		mdl.ImageInfo.HasUpdate = tagLatest != cfg.NodeExeVersion
-
+		
+		cfg.NodeLatestTag = tagLatest
+		
 		defer func() {
-			cfg.NodeLatestTag = tagLatest
-			cfg.NodeExeVersion = tagLatest
-
 			cfg.RefreshLastUpgradeCheck()
 			cfg.Save()
 		}()
 
 		if cfg.NodeExeVersion != tagLatest {
+			c.lg.Println("Mysterium Node is not up to date")
+
 			fullpath := path.Join(c.runner.binpath, exename)
 			fullpath = utils.MakeCanonicalPath(fullpath)
-			p, err := utils.IsProcessRunningExt(exename, fullpath)
-			if err != nil {
-				// c.lg.Println("IsRunningOrTryStart >", err)
-			}
+			p, _ := utils.IsProcessRunningExt(exename, fullpath)
 			if p != 0 {
 				utils.TerminateProcess(p, 0)
 			}
 
 			if cfg.AutoUpgrade || sha256 == "" {
-				c.tryInstall()
+				err := c.tryInstall(release)
+				if err != nil {
+					c.lg.Println("tryInstall >", err)
+					return false
+				}
 
 				sha256, _ := checksum.SHA256sum(fullpath)
-				cfg.NodeExeDigest = sha256
+				cfg.NodeExeVersion = tagLatest
+				cfg.NodeExeDigest = sha256				
 			}
-
 			return true
 		}
+		
 		return false
 	}
 
@@ -103,15 +105,11 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 }
 
 // returns: will exit
-func (c *Controller) tryInstall() bool {
+func (c *Controller) tryInstall(release updates.Release) error {
 	log.Println("tryInstall >")
-	
+
 	model := c.a.GetModel()
 	model.SetStateContainer(model_.RunnableStateInstalling)
-
-	ctx := context.Background()
-	release, _ := updates.FetchLatestRelease(ctx, org, repo)
-	log.Println("tryInstall >", release)
 
 	asset := getAssetName()
 	for _, v := range release.Assets {
@@ -127,18 +125,19 @@ func (c *Controller) tryInstall() bool {
 			}
 		})
 		if err != nil {
-			c.lg.Println("err>", err)
+			c.lg.Println("download>", err)
+			return err
 		}
 		if err = extractNodeBinary(fullPath, c.runner.binpath); err != nil {
-			c.lg.Println(err)
+			c.lg.Println("extractNodeBinary", err)
+			return err
 		}
 		break
 	}
 
 	ui := c.a.GetUI()
 	tryInstallFirewallRules(ui)
-
-	return false
+	return nil
 }
 
 var once sync.Once
