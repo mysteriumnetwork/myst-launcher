@@ -29,7 +29,6 @@ jobs:
       run: |
         go run cmd/resource/resource.go
         go build -v -trimpath -ldflags "-s -w -H windowsgui" -o  bin/myst-launcher-amd64.exe github.com/mysteriumnetwork/myst-launcher/cmd/app
-        go build -v -trimpath -ldflags "-s -w -H windowsgui" -o  bin/myst-launcher-updater.exe github.com/mysteriumnetwork/myst-launcher/cmd/updater
       env:
         GOARCH: amd64
         GOOS: windows
@@ -69,7 +68,6 @@ jobs:
       with:
         prerelease: true
         files: |
-          bin/myst-launcher-updater.exe
           installer/myst-launcher-x64.msi
 
       env:
