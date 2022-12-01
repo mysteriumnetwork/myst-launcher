@@ -114,12 +114,10 @@ func CheckLauncherUpdates(model *model.UIModel) {
 			return
 		}
 
-		//time.Sleep(time.Hour * 24)
-		time.Sleep(time.Second * 360)
+		time.Sleep(time.Hour * 12)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
 func CheckLauncherUpdatesCli() {
 	checkLauncherUpdates(nil)
 }

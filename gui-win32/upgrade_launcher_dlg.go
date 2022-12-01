@@ -83,8 +83,8 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 					},
 
 					PushButton{
-						AssignTo:    &acceptPB,
-						Text:        "Download and install update",
+						AssignTo: &acceptPB,
+						Text:     "Download and install update",
 						// ToolTipText: "",
 						OnClicked: func() {
 							g.model.Publish("launcher-update-ok", int(2))
@@ -100,7 +100,11 @@ func (g *Gui) OpenUpgradeLauncherDlg() {
 		return
 	}
 	dialog.Activating().Once(func() {
-		dialog.SetX(g.dlg.X() + 300)
+		x := g.dlg.X()
+		if x < 0 {
+			x = 0
+		}
+		dialog.SetX(x + 300)
 		refresh()
 		g.model.UIBus.Subscribe("model-change", refresh)
 		g.model.UIBus.Subscribe("launcher-update-download", setProgress)
