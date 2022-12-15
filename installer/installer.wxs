@@ -118,11 +118,11 @@
                     </Component>
 
                     <!-- Auto-start via Registry -->
-                    <Component Id="LauncherAutostart" Guid="*">
+                    <Component Id="LauncherAutostart" Guid="ec2574e2-7d7a-468d-be52-d877d7122d4d">
                         <RegistryValue Id="LauncherAutostart" Root="HKMU" Action="write"
                                        Key="Software\Microsoft\Windows\CurrentVersion\Run"
-                                       Name="Mysterium Node Launcher"
-                                       Value="[INSTALLDIR]myst-launcher-amd64.exe"
+                                       Name="Mysterium Node Launcher_"
+                                       Value='"[INSTALLDIR]myst-launcher-amd64.exe" -autorun'
                                        Type="string" />
                         <Condition>ASSISTANCE_START_VIA_REGISTRY</Condition>
                     </Component>
