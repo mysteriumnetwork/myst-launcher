@@ -91,7 +91,8 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 	launcherUpgrade.SetText("Launcher update available")
 	launcherUpgrade.SetVisible(false)
 	launcherUpgrade.Triggered().Attach(func() {
-		g.OpenUpgradeLauncherDlg()
+
+		g.model.Publish("launcher-trigger-update")
 	})
 	g.model.UIBus.Subscribe("model-change", func() {
 		launcherUpgrade.SetVisible(g.model.LauncherHasUpdate)

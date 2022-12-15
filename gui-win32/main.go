@@ -304,11 +304,6 @@ func (g *Gui) Run() {
 }
 
 func (g *Gui) OpenDialogue(id int) {
-	if id == 1 {
-		g.dlg.Synchronize(func() {
-			g.OpenUpgradeLauncherDlg()
-		})
-	}
 }
 
 // returns false, if dialogue was terminated

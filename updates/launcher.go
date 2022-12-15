@@ -23,9 +23,6 @@ var (
 // FetchLatestRelease fetches meta-data about the latest release from GitHub
 func FetchLatestRelease(ctx context.Context, githubOrg, githubRepo string) (Release, error) {
 	log.Println("FetchLatestRelease>")
-	// if githubRepo == "node" {
-	// 	baseURL = "https://api.github.com/repos/%s/%s/releases/tags/1.19.1"
-	// }
 
 	ctx, cancel := context.WithTimeout(ctx, apiTimeout)
 	defer cancel()
@@ -49,11 +46,6 @@ func FetchLatestRelease(ctx context.Context, githubOrg, githubRepo string) (Rele
 	if resp.StatusCode != http.StatusOK {
 		return Release{}, fmt.Errorf("request faild with %v (%v)", resp.StatusCode, resp.Status)
 	}
-
-	// simulate request: copy
-	//io.Copy(out, resp.Body)
-	// simulate request: result
-	// out, _ := os.Open("release_" + githubRepo + ".txt")
 
 	var rs Release
 	if err := json.NewDecoder(resp.Body).Decode(&rs); err != nil {

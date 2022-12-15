@@ -17,7 +17,7 @@ const (
 	gitHubRepo = "myst-launcher"
 )
 
-func downloadAndInstall(release updates.Release, model *model.UIModel) {
+func downloadAndInstall(release updates.Release, model *model.UIModel) error {
 	url, name := "", ""
 	for _, v := range release.Assets {
 		if v.Name == "myst-launcher-x64.msi" {
@@ -26,7 +26,7 @@ func downloadAndInstall(release updates.Release, model *model.UIModel) {
 		}
 	}
 	if url == "" {
-		return
+		return nil
 	}
 	fmt.Println("Downloading update:", url)
 
@@ -45,16 +45,17 @@ func downloadAndInstall(release updates.Release, model *model.UIModel) {
 	if err != nil {
 		fmt.Println("Download error:", err)
 		model.Publish("launcher-update-download", -1)
-		return
+		return err
 	}
 
 	gowin32.SetInstallerInternalUI(gowin32.InstallUILevelFull)
 	if err := gowin32.InstallProduct(msiPath, `ACTION=INSTALL`); err != nil {
 		fmt.Println("InstallProduct err>", err)
 		model.Publish("launcher-update-download", -1)
-		return
+		return err
 	}
 	fmt.Println("Update successfully completed!")
+	return nil
 }
 
 // bool - exit
@@ -97,12 +98,12 @@ func checkLauncherUpdates(model *model.UIModel) bool {
 		})
 
 		if <-dlgOK == 2 {
-			downloadAndInstall(release, model)
-			return true
+			err := downloadAndInstall(release, model)
+			return err == nil
 		}
 	} else {
-		downloadAndInstall(release, model)
-		return true
+		err := downloadAndInstall(release, model)
+		return err == nil
 	}
 
 	return false
@@ -110,11 +111,15 @@ func checkLauncherUpdates(model *model.UIModel) bool {
 
 func CheckLauncherUpdates(model *model.UIModel) {
 	for {
-		if checkLauncherUpdates(model) == true {
+		if checkLauncherUpdates(model) {
 			return
 		}
 
-		time.Sleep(time.Hour * 12)
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Hour*12)
+		model.UIBus.SubscribeOnce("launcher-trigger-update", func() {
+			cancel()
+		})
+		<-ctxTimeout.Done()
 	}
 }
 
