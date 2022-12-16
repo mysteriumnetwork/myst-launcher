@@ -27,7 +27,8 @@ func (g *Gui) menu() []MenuItem {
 					Text:     "Launcher update available",
 					AssignTo: &g.actionLauncherUpgrade,
 					OnTriggered: func() {
-						g.OpenUpgradeLauncherDlg()
+
+						g.model.Publish("launcher-trigger-update")
 					},
 				},
 

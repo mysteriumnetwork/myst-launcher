@@ -13,8 +13,6 @@ import (
 	"strings"
 
 	"github.com/asaskevich/EventBus"
-
-	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 type UIModel struct {
@@ -221,11 +219,6 @@ func (m *UIModel) TriggerAutostartAction() {
 	m.Config.AutoStart = !m.Config.AutoStart
 	m.Config.Save()
 	m.UIBus.Publish("model-change")
-
-	utils.EnableAutorun(m.Config.AutoStart)
-	if m.Config.AutoStart {
-		utils.CheckAndInstallExe()
-	}
 }
 
 func (m *UIModel) TriggerNodeEnableAction() {

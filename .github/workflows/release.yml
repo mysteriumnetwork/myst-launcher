@@ -34,14 +34,14 @@ jobs:
         GOOS: windows
 
     - name: Sign
-      uses: mysteriumnetwork/code-sign-action@v7
-      with:
-        certificate: '${{ secrets.WINDOWS_CERTS }}'
-        password: '${{ secrets.WINDOWS_CERTS_PASSWORD }}'
-        certificatesha1: '${{ secrets.WINDOWS_CERTS_THUMBPRINT }}'
-        certificatename: '${{ secrets.WINDOWS_CERTS_NAME }}'
-        folder: 'bin'
-        recursive: true
+      env:
+        CODE_SIGNING_PFX: ${{ secrets.WINDOWS_CERTS }}
+        CODE_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
+        SIGNTOOL: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
+      run: |
+        Set-Content -Path bundle.txt -Value $env:CODE_SIGNING_PFX
+        certutil -decode bundle.txt bundle.pfx
+        & $env:SIGNTOOL sign /fd SHA256 /f bundle.pfx /p "$env:CODE_SIGNING_PFX_PASSWORD" /tr "http://timestamp.digicert.com" /td SHA256 /d "Mysterium Launcher" bin/myst-launcher-amd64.exe
 
     - name: Build
       run: |
@@ -53,14 +53,14 @@ jobs:
         light installer\installer.wixobj installer\licenseDialogue.wixobj -dcl:high -ext WixUIExtension.dll -ext WixUtilExtension.dll -out installer\myst-launcher-x64.msi
 
     - name: Sign
-      uses: mysteriumnetwork/code-sign-action@v7
-      with:
-        certificate: '${{ secrets.WINDOWS_CERTS }}'
-        password: '${{ secrets.WINDOWS_CERTS_PASSWORD }}'
-        certificatesha1: '${{ secrets.WINDOWS_CERTS_THUMBPRINT }}'
-        certificatename: '${{ secrets.WINDOWS_CERTS_NAME }}'
-        folder: 'installer'
-        recursive: true
+      env:
+        CODE_SIGNING_PFX: ${{ secrets.WINDOWS_CERTS }}
+        CODE_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
+        SIGNTOOL: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
+      run: |
+        Set-Content -Path bundle.txt -Value $env:CODE_SIGNING_PFX
+        certutil -decode bundle.txt bundle.pfx
+        & $env:SIGNTOOL sign /fd SHA256 /f bundle.pfx /p "$env:CODE_SIGNING_PFX_PASSWORD" /tr "http://timestamp.digicert.com" /td SHA256 /d "Mysterium Launcher" installer/myst-launcher-x64.msi
 
     - name: Upload
       uses: softprops/action-gh-release@v1

@@ -33,6 +33,8 @@ func main() {
 
 	cmd := ""
 	debugMode := false
+	flagAutorun := false
+
 	for _, v := range os.Args {
 		switch v {
 		case _const.FlagInstall,
@@ -42,6 +44,8 @@ func main() {
 			cmd = v
 		case _const.FlagDebug:
 			debugMode = true
+		case _const.FlagAutorun:
+			flagAutorun = true
 		}
 	}
 	if debugMode {
@@ -83,6 +87,9 @@ func main() {
 	}
 
 	mod := model.NewUIModel()
+	if flagAutorun && !mod.Config.AutoStart {
+		return
+	}
 	mod.SetApp(ap)
 	mod.DuplicateLogToConsole = true
 
@@ -93,8 +100,6 @@ func main() {
 			return
 		}
 	}
-	err := utils.EnableAutorun(mod.Config.AutoStart)
-	fmt.Println("utils.EnableAutorun", err)
 
 	prodVersion, _ := utils.GetProductVersion()
 	mod.SetProductVersion(prodVersion)

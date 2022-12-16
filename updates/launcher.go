@@ -29,11 +29,11 @@ func FetchLatestRelease(ctx context.Context, githubOrg, githubRepo string) (Rele
 
 	url := fmt.Sprintf(baseURL, githubOrg, githubRepo)
 	log.Println("FetchLatestRelease>", url)
+
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return Release{}, nil
 	}
-
 	// pin to API version 3 to avoid breaking our structs
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 

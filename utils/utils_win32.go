@@ -157,23 +157,6 @@ func RunWithArgsNoWait(cmdArgs string) error {
 
 func EnableAutorun(en bool) error {
 	return nil
-
-	// re-create
-	err := CreateAutostartShortcut("")
-	if err != nil {
-		return err
-	}
-
-	k, _, err := registry.CreateKey(registry.CURRENT_USER, `SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder`, registry.ALL_ACCESS)
-	if err != nil {
-		return err
-	}
-	defer k.Close()
-
-	if en {
-		return k.SetBinaryValue(launcherLnk, []byte{2, 0, 0})
-	}
-	return k.SetBinaryValue(launcherLnk, []byte{3, 0, 0})
 }
 
 // should be executed with admin's privileges

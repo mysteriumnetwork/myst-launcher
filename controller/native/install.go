@@ -52,9 +52,14 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 		cfg.NodeExeVersion = ""
 		cfg.Save()
 	}
-	log.Println("CheckAndUpgradeNodeExe >", cfg, cfg.NodeExeVersion, cfg.NeedToCheckUpgrade(), forceUpgrade)
 
-	if cfg.NodeExeVersion == "" || cfg.NeedToCheckUpgrade() || forceUpgrade {
+	doRefresh := (cfg.NodeLatestTag != cfg.NodeExeVersion && cfg.AutoUpgrade) ||
+		cfg.NodeExeVersion == "" ||
+		cfg.NeedToCheckUpgrade() ||
+		forceUpgrade
+
+	log.Println("CheckAndUpgradeNodeExe doRefresh>", doRefresh)
+	if doRefresh {
 		ctx := context.Background()
 		release, err := updates.FetchLatestRelease(ctx, org, repo)
 		if err != nil {
@@ -66,17 +71,19 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 		mdl.ImageInfo.VersionLatest = tagLatest
 		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
 		mdl.ImageInfo.HasUpdate = tagLatest != cfg.NodeExeVersion
-		
+		mdl.Update()
+
 		cfg.NodeLatestTag = tagLatest
-		
+
 		defer func() {
 			cfg.RefreshLastUpgradeCheck()
 			cfg.Save()
 		}()
 
-		if cfg.NodeExeVersion != tagLatest {
-			c.lg.Println("Mysterium Node is not up to date")
-
+		// log.Println("cfg.NodeExeVersion != tagLatest >", cfg.NodeExeVersion, tagLatest, cfg.AutoUpgrade)
+		doUpgrade := (cfg.NodeExeVersion != tagLatest && cfg.AutoUpgrade) || cfg.NodeExeVersion == ""
+		log.Println("CheckAndUpgradeNodeExe doUpgrade>", doUpgrade)
+		if doUpgrade {
 			fullpath := path.Join(c.runner.binpath, exename)
 			fullpath = utils.MakeCanonicalPath(fullpath)
 			p, _ := utils.IsProcessRunningExt(exename, fullpath)
@@ -84,20 +91,19 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 				utils.TerminateProcess(p, 0)
 			}
 
-			if cfg.AutoUpgrade || sha256 == "" {
-				err := c.tryInstall(release)
-				if err != nil {
-					c.lg.Println("tryInstall >", err)
-					return false
-				}
-
-				sha256, _ := checksum.SHA256sum(fullpath)
-				cfg.NodeExeVersion = tagLatest
-				cfg.NodeExeDigest = sha256				
+			err := c.tryInstall(release)
+			if err != nil {
+				c.lg.Println("tryInstall >", err)
+				return false
 			}
+
+			sha256, _ := checksum.SHA256sum(fullpath)
+			cfg.NodeExeVersion = tagLatest
+			cfg.NodeExeDigest = sha256
+
 			return true
 		}
-		
+
 		return false
 	}
 

@@ -107,8 +107,8 @@
                     <!-- Exe -->
                     <Component Id="ApplicationFiles" Guid="*" Win64="$(var.Win64)">
                         <File Id="LauncherExe" Source="bin\myst-launcher-amd64.exe" Name="myst-launcher-amd64.exe" KeyPath='yes'>
-                            <Shortcut Id="ProgramMenuLink" Name="Mysterium Node Launcher_" Directory="ProgramMenuFolder" Icon="ProductIcon.ico" Advertise="yes" />
-                            <Shortcut Id="DesktopLink" Name="Mysterium Node Launcher_" Directory="DesktopFolder" Icon="ProductIcon.ico" Advertise="yes" />
+                            <Shortcut Id="ProgramMenuLink" Name="Mysterium Node Launcher" Directory="ProgramMenuFolder" Icon="ProductIcon.ico" Advertise="yes" />
+                            <Shortcut Id="DesktopLink" Name="Mysterium Node Launcher" Directory="DesktopFolder" Icon="ProductIcon.ico" Advertise="yes" />
                         </File>
                     </Component>
 
@@ -118,11 +118,11 @@
                     </Component>
 
                     <!-- Auto-start via Registry -->
-                    <Component Id="LauncherAutostart" Guid="*">
+                    <Component Id="LauncherAutostart" Guid="ec2574e2-7d7a-468d-be52-d877d7122d4d">
                         <RegistryValue Id="LauncherAutostart" Root="HKMU" Action="write"
                                        Key="Software\Microsoft\Windows\CurrentVersion\Run"
                                        Name="Mysterium Node Launcher_"
-                                       Value="[INSTALLDIR]myst-launcher-amd64.exe"
+                                       Value='"[INSTALLDIR]myst-launcher-amd64.exe" -autorun'
                                        Type="string" />
                         <Condition>ASSISTANCE_START_VIA_REGISTRY</Condition>
                     </Component>
