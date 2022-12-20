@@ -10,12 +10,28 @@ package utils
 /*
 #include <stdlib.h>
 #include "libproc.h"
+#include <unistd.h>
 */
 import "C"
+
 import (
 	"errors"
 	"unsafe"
 )
+
+// kill process by name except current process
+func KillProcessByName(exeName string) error {
+	pid := C.getpid()
+	pids := ps()
+	for _, p := range pids {
+		if procName(p) == exeName && p!= pid {
+			if err := TerminateProcess(uint32(p), 0); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
 
 func TerminateProcess(pid uint32, exitcode int) error {
   sig := C.int(2) //9-kill
