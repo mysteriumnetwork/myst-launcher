@@ -12,7 +12,6 @@ package docker
 
 import (
 	"bytes"
-	"fmt"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"

@@ -3,60 +3,11 @@ package controller
 import (
 	"context"
 	"fmt"
-	"path"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
-	"github.com/mysteriumnetwork/myst-launcher/utils"
-	"github.com/winlabs/gowin32"
 )
-
-const (
-	gitHubOrg  = "mysteriumnetwork"
-	gitHubRepo = "myst-launcher"
-)
-
-func downloadAndInstall(release updates.Release, model *model.UIModel) error {
-	url, name := "", ""
-	for _, v := range release.Assets {
-		if v.Name == "myst-launcher-x64.msi" {
-			url, name = v.URL, v.Name
-			break
-		}
-	}
-	if url == "" {
-		return nil
-	}
-	fmt.Println("Downloading update:", url)
-
-	msiPath := path.Join(utils.GetTmpDir(), name)
-	msiPath = utils.MakeCanonicalPath(msiPath)
-	fmt.Println(msiPath)
-
-	err := utils.DownloadFile(msiPath, url, func(progress int) {
-		if model != nil {
-			model.Publish("launcher-update-download", progress)
-		}
-		if progress%10 == 0 {
-			fmt.Printf("%s - %d%%\n", name, progress)
-		}
-	})
-	if err != nil {
-		fmt.Println("Download error:", err)
-		model.Publish("launcher-update-download", -1)
-		return err
-	}
-
-	gowin32.SetInstallerInternalUI(gowin32.InstallUILevelFull)
-	if err := gowin32.InstallProduct(msiPath, `ACTION=INSTALL`); err != nil {
-		fmt.Println("InstallProduct err>", err)
-		model.Publish("launcher-update-download", -1)
-		return err
-	}
-	fmt.Println("Update successfully completed!")
-	return nil
-}
 
 // bool - exit
 func checkLauncherUpdates(model *model.UIModel) bool {
@@ -78,7 +29,8 @@ func checkLauncherUpdates(model *model.UIModel) bool {
 
 	latest := release.Version.String()
 	currentVer := ""
-	hasUpdate, _ := utils.LauncherMSIHasUpdateOrPkgNI(latest, &currentVer)
+
+	hasUpdate := launcherHasUpdate(&release, latest, &currentVer, model)
 	if !hasUpdate {
 		fmt.Println("Mysterium Launcher is up to date")
 		return false
@@ -88,6 +40,8 @@ func checkLauncherUpdates(model *model.UIModel) bool {
 	fmt.Println("Latest version:", latest)
 
 	if model != nil {
+		model.ProductVersionLatestUrl = release.Assets[0].URL
+		model.ProductVersionLatest = release.Version.String()
 		model.LauncherHasUpdate = true
 		model.Update()
 		model.Publish("launcher-update")
