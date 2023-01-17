@@ -70,7 +70,7 @@ func (c *Config) GetFullImageName() string {
 	if c.Backend == "docker" {
 		return _const.ImageNamePrefix + ":" + c.GetLatestImageTag()
 	} else {
-		return "http://github.com/mysteriumnetwork/node/"
+		return "https://github.com/mysteriumnetwork/node/"
 	}
 }
 
