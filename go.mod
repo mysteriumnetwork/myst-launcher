@@ -4,12 +4,12 @@ go 1.16
 
 require (
 	code.cloudfoundry.org/archiver v0.0.0-20220328120804-99329f9bbb8b
-	github.com/Microsoft/go-winio v0.5.1
+	github.com/Microsoft/go-winio v0.5.2
 	github.com/artdarek/go-unzip v1.0.0
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/blang/semver/v4 v4.0.0
 	github.com/codingsince1985/checksum v1.2.4
-	github.com/containerd/containerd v1.5.8 // indirect
+	github.com/containerd/containerd v1.5.18 // indirect
 	github.com/docker/docker v20.10.10+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/gabriel-samfira/go-wmi v0.0.0-20200311221200-7c023ba1e6b4
@@ -25,7 +25,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mysteriumnetwork/go-fileversion v1.0.0-fix1
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
-	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/scjalliance/comshim v0.0.0-20190308082608-cf06d2532c4e
 	github.com/stretchr/testify v1.7.0
