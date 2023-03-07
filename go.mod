@@ -33,8 +33,8 @@ require (
 	github.com/tryor/gdiplus v0.0.0-20200830101413-c570de9579b3
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
 	github.com/winlabs/gowin32 v0.0.0-20210302152218-c9e40aa88058
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
-	golang.org/x/sys v0.0.0-20220909162455-aba9fc2a8ff2
+	golang.org/x/net v0.7.0
+	golang.org/x/sys v0.5.0
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/genproto v0.0.0-20211118181313-81c1377c94b1 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
