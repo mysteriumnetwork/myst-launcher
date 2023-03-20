@@ -146,9 +146,14 @@ func (c *Config) Read() {
 		c.Save()
 		return
 	}
+    _,err = utils.HideFile(f, false)
+	if err != nil {
+		log.Println("!HideFile", err)
+	}
 
 	file, err := os.Open(f)
 	if err != nil {
+		log.Println("Config !Read", err)
 		return
 	}
 
@@ -161,7 +166,7 @@ func (c *Config) Save() {
 	f := utils.GetUserProfileDir() + "/.myst_node_launcher"
 	file, err := os.Create(f)
 	if err != nil {
-		log.Println(err)
+		log.Println("Config !Save", err)
 		return
 	}
 	defer file.Close()

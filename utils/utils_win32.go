@@ -644,3 +644,19 @@ func FreeConsole() error {
 	proc.Call()
 	return nil
 }
+
+func HideFile(path string, hide bool) (string, error) {
+	p, err := syscall.UTF16PtrFromString(path)
+	if err != nil {
+		return "", err
+	}
+	flags := uint32(0)
+	if hide {
+	    flags |= syscall.FILE_ATTRIBUTE_HIDDEN
+	}
+	err = syscall.SetFileAttributes(p, flags)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
