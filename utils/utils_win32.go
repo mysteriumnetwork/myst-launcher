@@ -660,3 +660,25 @@ func HideFile(path string, hide bool) (string, error) {
 	}
 	return path, nil
 }
+
+func RunMsi(msi string) error {
+	system32, err := windows.GetSystemDirectory()
+	if err != nil {
+		return err
+	}
+	devNull, err := os.OpenFile(os.DevNull, os.O_RDWR, 0)
+	if err != nil {
+		return err
+	}
+	defer devNull.Close()
+
+	attr := &os.ProcAttr{
+		Sys: &syscall.SysProcAttr{},
+		Files: []*os.File{devNull, devNull, devNull},
+		Dir:   filepath.Dir(msi),
+	}
+	msiexec := filepath.Join(system32, "msiexec.exe")
+	
+	_, err = os.StartProcess(msiexec, []string{msiexec, "/qb!-", "/i", filepath.Base(msi), `RUNAFTER=1`}, attr)
+	return err
+}
