@@ -22,11 +22,11 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/bi-zone/go-fileversion"
 	"github.com/blang/semver/v4"
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 	"github.com/gonutz/w32"
-	"github.com/mysteriumnetwork/go-fileversion"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 	"github.com/pkg/errors"
 	"github.com/scjalliance/comshim"
