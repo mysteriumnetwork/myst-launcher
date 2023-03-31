@@ -102,8 +102,8 @@
                      <RemoveFile Id="RemoveFilesFromAppDirectory" Name="*.*" On="uninstall" />
                     </Component>
 
-                    <!-- Exe; use * to make component upgradable -->
-                    <Component Id="ApplicationFiles" Guid="*" Win64="$(var.Win64)">
+                    <!-- Exe; make component upgradable - set a new Guid for each release -->
+                    <Component Id="ApplicationFiles" Guid="3e4502c1-874b-4603-adf5-969672a5b10a" Win64="$(var.Win64)">
                         <File Id="LauncherExe" Source="bin\myst-launcher-amd64.exe" Name="myst-launcher-amd64.exe" KeyPath='yes'>
                             <Shortcut Id="ProgramMenuLink" Name="Mysterium Node Launcher" Directory="ProgramMenuFolder" Icon="ProductIcon.ico" Advertise="yes" />
                             <Shortcut Id="DesktopLink" Name="Mysterium Node Launcher" Directory="DesktopFolder" Icon="ProductIcon.ico" Advertise="yes" />
