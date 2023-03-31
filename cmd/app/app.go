@@ -79,7 +79,7 @@ func main() {
 			ipc.SendStopApp()
 			// wait for main process to finish, this is important for MSI to finish
 			// 10 sec -- for docker container to stop
-            // TODO: modify IPC proto to get rid of this sleep
+			// TODO: modify IPC proto to get rid of this sleep
 			time.Sleep(10 * time.Second)
 			return
 
@@ -95,6 +95,7 @@ func main() {
 	}
 	mod.SetApp(ap)
 	mod.DuplicateLogToConsole = true
+	mod.FlagAutorun = flagAutorun
 
 	// in case of installation restart elevated
 	if mod.Config.InitialState == model.InitialStateStage1 || mod.Config.InitialState == model.InitialStateStage2 {

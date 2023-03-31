@@ -102,5 +102,5 @@ func (s *AppState) TriggerAction(action string) {
 }
 
 func (s *AppState) GetInTray() bool {
-	return s.model.Config.InitialState == model.InitialStateNormalRun
+	return s.model.Config.InitialState == model.InitialStateNormalRun && s.model.FlagAutorun
 }
