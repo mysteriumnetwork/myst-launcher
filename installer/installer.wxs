@@ -72,8 +72,6 @@
             <ComponentRef Id="RegistrySettings" />
             <ComponentRef Id="LauncherAutostart" />
             <ComponentRef Id="INSTALLDIR_comp" />
-
-<!--             <ComponentRef Id="TargetProgram" /> -->
         </Feature>
 
         <?if $(sys.BUILDARCH) = x86 ?>
@@ -104,21 +102,22 @@
                      <RemoveFile Id="RemoveFilesFromAppDirectory" Name="*.*" On="uninstall" />
                     </Component>
 
-                    <!-- Exe -->
+                    <!-- Exe; use * to make component upgradable -->
                     <Component Id="ApplicationFiles" Guid="*" Win64="$(var.Win64)">
                         <File Id="LauncherExe" Source="bin\myst-launcher-amd64.exe" Name="myst-launcher-amd64.exe" KeyPath='yes'>
                             <Shortcut Id="ProgramMenuLink" Name="Mysterium Node Launcher" Directory="ProgramMenuFolder" Icon="ProductIcon.ico" Advertise="yes" />
                             <Shortcut Id="DesktopLink" Name="Mysterium Node Launcher" Directory="DesktopFolder" Icon="ProductIcon.ico" Advertise="yes" />
                         </File>
+                        <RemoveFile Id="RemoveLauncherExe" Name="*.*" On="uninstall" />
                     </Component>
 
                     <!-- Form data -->
-                    <Component Id="RegistrySettings" Guid="*" Win64="$(var.Win64)" Permanent="yes">
+                    <Component Id="RegistrySettings" Guid="41B9D66E-CCC6-5E46-9482-1D0D986D45D6" Win64="$(var.Win64)" Permanent="yes">
                         <RegistryValue Root="HKLM" Key="Software\MysteriumNodeLauncher" Name="LicenseAccepted" Type="string" Value="[LIC_ACCEPT]" KeyPath="yes" />
                     </Component>
 
                     <!-- Auto-start via Registry -->
-                    <Component Id="LauncherAutostart" Guid="ec2574e2-7d7a-468d-be52-d877d7122d4d">
+                    <Component Id="LauncherAutostart" Guid="EC2574E2-7D7A-468D-BE52-D877D7122D4D">
                         <RegistryValue Id="LauncherAutostart" Root="HKMU" Action="write"
                                        Key="Software\Microsoft\Windows\CurrentVersion\Run"
                                        Name="Mysterium Node Launcher_"
@@ -183,22 +182,35 @@
 
         </UI>
 
-
         <SetProperty Id="LIC_ACCEPT" After="AppSearch" Value="1">
             <![CDATA[LIC_ACCEPT_VAL="1"]]>
         </SetProperty>
 
         <InstallExecuteSequence>
-                <Custom Action="BeforeUninstall" Before="InstallValidate"> (REMOVE = "ALL") </Custom>
-                <Custom Action="Install" After="InstallFiles">(NOT Installed) AND (NOT REMOVE)</Custom>
+            <!-- before upgrade / remove -->
+            <Custom Action="StopLauncher_" Before="InstallValidate"></Custom>
 
-                <RemoveExistingProducts After="InstallInitialize" />
+<!--        <Custom Action="BeforeUninstall" Before="InstallValidate"> (REMOVE = "ALL") </Custom> -->
+
+            <!--  uninstall legacy -->
+            <Custom Action="UninstallLegacy" After="InstallFiles">(NOT Installed) AND (NOT REMOVE)</Custom>
+
+            <Custom Action="SilentRunAsUser" After="InstallFiles">(RUNAFTER=1)</Custom>
+
+            <RemoveExistingProducts After="InstallInitialize" />
         </InstallExecuteSequence>
 
         <Property Id="WixShellExecTarget" Value="[#LauncherExe]" />
         <CustomAction Id="LaunchApp" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
-        <CustomAction Id="Install" Return="check" Impersonate="no" Execute="deferred" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -uninstall"/>
-        <CustomAction Id="BeforeUninstall" Return="ignore" Impersonate="yes" Execute="firstSequence" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -stop"/>
+        <CustomAction Id="UninstallLegacy" Return="check"       Impersonate="no" Execute="deferred" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -uninstall"/>
+        <CustomAction Id="SilentRunAsUser" Return="asyncNoWait" Impersonate="yes" Execute="deferred" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe"/>
+<!--         <CustomAction Id="BeforeUninstall" Return="ignore"      Impersonate="yes" Execute="firstSequence" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -stop"/> -->
+
+        <CustomAction Id="StopLauncher_"
+                    Return="ignore"
+                    Execute="immediate"
+                    Directory="INSTALLDIR"
+                    ExeCommand="[INSTALLDIR]myst-launcher-amd64.exe -stop" />
 
     </Fragment>
 

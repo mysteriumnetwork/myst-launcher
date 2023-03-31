@@ -72,12 +72,15 @@ func main() {
 			native.KillPreviousLauncher()
 			if err := docker.UninstallMystContainer(); err != nil {
 				fmt.Println("UninstallMystContainer failed:", err)
-				return
 			}
+            return
 
 		case _const.FlagStop:
 			ipc.SendStopApp()
-			time.Sleep(1 * time.Second) // wait for main process to finish, this is important for MSI to finish
+			// wait for main process to finish, this is important for MSI to finish
+			// 10 sec -- for docker container to stop
+			// TODO: modify IPC proto to get rid of this sleep
+			time.Sleep(10 * time.Second)
 			return
 
 		case _const.FlagInstallFirewall:
@@ -92,6 +95,7 @@ func main() {
 	}
 	mod.SetApp(ap)
 	mod.DuplicateLogToConsole = true
+	mod.FlagAutorun = flagAutorun
 
 	// in case of installation restart elevated
 	if mod.Config.InitialState == model.InitialStateStage1 || mod.Config.InitialState == model.InitialStateStage2 {

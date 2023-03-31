@@ -12,7 +12,6 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
-	"github.com/winlabs/gowin32"
 )
 
 const (
@@ -56,10 +55,9 @@ func downloadAndInstall(release updates.Release, model *model.UIModel) error {
 		model.Publish("launcher-update-download", -1)
 		return err
 	}
-
-	gowin32.SetInstallerInternalUI(gowin32.InstallUILevelFull)
-	if err := gowin32.InstallProduct(msiPath, `ACTION=INSTALL`); err != nil {
-		fmt.Println("InstallProduct err>", err)
+    err = utils.RunMsi(msiPath)
+	if err != nil {
+		fmt.Println("RunMsi err>", err)
 		model.Publish("launcher-update-download", -1)
 		return err
 	}

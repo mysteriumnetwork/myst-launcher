@@ -22,11 +22,11 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/bi-zone/go-fileversion"
 	"github.com/blang/semver/v4"
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 	"github.com/gonutz/w32"
-	"github.com/mysteriumnetwork/go-fileversion"
 	"github.com/mysteriumnetwork/myst-launcher/native"
 	"github.com/pkg/errors"
 	"github.com/scjalliance/comshim"
@@ -643,4 +643,42 @@ func FreeConsole() error {
 	}
 	proc.Call()
 	return nil
+}
+
+func HideFile(path string, hide bool) (string, error) {
+	p, err := syscall.UTF16PtrFromString(path)
+	if err != nil {
+		return "", err
+	}
+	flags := uint32(0)
+	if hide {
+	    flags |= syscall.FILE_ATTRIBUTE_HIDDEN
+	}
+	err = syscall.SetFileAttributes(p, flags)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
+func RunMsi(msi string) error {
+	system32, err := windows.GetSystemDirectory()
+	if err != nil {
+		return err
+	}
+	devNull, err := os.OpenFile(os.DevNull, os.O_RDWR, 0)
+	if err != nil {
+		return err
+	}
+	defer devNull.Close()
+
+	attr := &os.ProcAttr{
+		Sys: &syscall.SysProcAttr{},
+		Files: []*os.File{devNull, devNull, devNull},
+		Dir:   filepath.Dir(msi),
+	}
+	msiexec := filepath.Join(system32, "msiexec.exe")
+	
+	_, err = os.StartProcess(msiexec, []string{msiexec, "/qb!-", "/i", filepath.Base(msi), `RUNAFTER=1`}, attr)
+	return err
 }

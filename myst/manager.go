@@ -37,7 +37,9 @@ const (
 	containerName             = "myst"
 	reportLauncherVersionFlag = "--launcher.ver"
 
-	operationTimeout = 10 * time.Second
+
+	operationTimeoutSec = 10
+	operationTimeout    = operationTimeoutSec * time.Second
 )
 
 var (
@@ -132,7 +134,7 @@ func (m *Manager) Restart() error {
 	if mystContainer != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
 		defer cancel()
-		err = m.dockerAPI.ContainerStop(ctx, mystContainer.ID, nil)
+		err = m.dockerAPI.ContainerStop(ctx, mystContainer.ID, container.StopOptions{})
 		if err != nil {
 			return errors2.Wrap(err, ErrCouldNotStop.Error())
 		}
@@ -205,8 +207,8 @@ func (m *Manager) Stop() error {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
-	defer cancel()
-	err = m.dockerAPI.ContainerStop(ctx, mystContainer.ID, m.timeout())
+	defer cancel()	
+	err = m.dockerAPI.ContainerStop(ctx, mystContainer.ID, container.StopOptions{ Timeout: m.timeoutSec() })
 	if err != nil {
 		return errors2.Wrap(err, ErrCouldNotStop.Error())
 	}
@@ -382,6 +384,11 @@ func (m *Manager) createMystContainer() error {
 
 func (m *Manager) timeout() *time.Duration {
 	t := operationTimeout
+	return &t
+}
+
+func (m *Manager) timeoutSec() *int {
+	t := operationTimeoutSec
 	return &t
 }
 
