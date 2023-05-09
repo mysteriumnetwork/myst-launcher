@@ -155,7 +155,10 @@ func tryInstallFirewallRules(ui model.Gui_) {
 		needFirewallSetup := checkFirewallRules()
 
 		if needFirewallSetup {
-			ret := ui.YesNoModal("Installation", "Firewall rule missing, addition is required. Press Yes to approve.")
+			ret := model.IDYES
+			if ui != nil {
+				ret = ui.YesNoModal("Installation", "Firewall rule missing, addition is required. Press Yes to approve.")
+			}
 			if ret == model.IDYES {
 				utils.RunasWithArgsAndWait(_const.FlagInstallFirewall)
 			}
