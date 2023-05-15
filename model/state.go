@@ -42,11 +42,12 @@ type Config struct {
 	InitialState InitialState `json:"state"`
 
 	// autoupgrade node
-	AutoUpgrade      bool   `json:"auto_upgrade"`
-	NodeExeDigest    string `json:"node_exe_digest"`
-	NodeExeVersion   string `json:"node_exe_version"`
-	NodeLatestTag    string `json:"node_latest_tag"`    // cache latest tag
-	LastUpgradeCheck int64  `json:"last_upgrade_check"` // node exe last check, once a day
+	AutoUpgrade      bool      `json:"auto_upgrade"`
+	NodeExeTimestamp time.Time `json:"-"`
+	NodeExeDigest    string    `json:"node_exe_digest"`
+	NodeExeVersion   string    `json:"node_exe_version"`
+	NodeLatestTag    string    `json:"node_latest_tag"`    // cache latest tag
+	LastUpgradeCheck int64     `json:"last_upgrade_check"` // node exe last check, once a day
 
 	Backend string `json:"backend"` // runner: docker | native
 
@@ -146,7 +147,7 @@ func (c *Config) Read() {
 		c.Save()
 		return
 	}
-    _,err = utils.HideFile(f, false)
+	_, err = utils.HideFile(f, false)
 	if err != nil {
 		log.Println("!HideFile", err)
 	}

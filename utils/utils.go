@@ -80,9 +80,9 @@ func Retry(attempts int, sleep time.Duration, fn func() error) error {
 }
 
 func PanicHandler(threadName string) {
-	if err := recover(); err != nil {
+	if err0 := recover(); err0 != nil {
 
-		fmt.Printf("Panic: %s\n", err)
+		fmt.Printf("Panic: %s\n", err0)
 		fmt.Printf("Stacktrace %s: %s\n", threadName, debug.Stack())
 		fname := fmt.Sprintf("%s/launcher_trace_%d.txt", GetUserProfileDir(), time.Now().Unix())
 		f, err := os.Create(fname)
@@ -96,6 +96,7 @@ func PanicHandler(threadName string) {
 
 		v, _ := GetProductVersion()
 		bu.WriteString(fmt.Sprintf("Version %s: \n", v))
+		bu.WriteString(fmt.Sprintf("Panic: %v\n", err0))
 		bu.WriteString(fmt.Sprintf("Stacktrace %s: \n", threadName))
 		bu.Write(debug.Stack())
 		f.Write(bu.Bytes())

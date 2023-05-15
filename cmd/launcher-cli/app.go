@@ -43,6 +43,7 @@ func main() {
 	}()
 
 	if cmd == _const.FlagInstallFirewall {
+		log.Println("Setting firewall rules")
 		native.CheckAndInstallFirewallRules()
 		return
 	}

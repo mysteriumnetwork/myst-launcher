@@ -111,6 +111,7 @@ func KillPreviousLauncher() {
 }
 
 func (r *NodeRunner) startNode() error {
+	log.Println("!startNode")
 	fullExePath := getNodeExePath()
 
 	versionArg := fmt.Sprintf("--launcher.ver=%s", r.mod.GetProductVersionString())
