@@ -7,6 +7,7 @@ import (
 	"path"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/codingsince1985/checksum"
 
@@ -42,26 +43,27 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 
 	file, err := os.Stat(fullpath)
 	if err != nil {
-		return false
-	}
+		cfg.NodeExeVersion = ""
+		cfg.NodeExeTimestamp = time.Time{}
+	} else {
+		modTime := file.ModTime()
+		if !modTime.Equal(cfg.NodeExeTimestamp) {
+			log.Println("CheckAndUpgradeNodeExe>", fullpath)
 
-	modTime := file.ModTime()
-	if !modTime.Equal(cfg.NodeExeTimestamp) {
-		log.Println("CheckAndUpgradeNodeExe>", fullpath)
+			sha256, _ := checksum.SHA256sum(fullpath)
+			log.Println("CheckAndUpgradeNodeExe>", cfg.NodeExeDigest, sha256, cfg.NodeExeDigest == sha256)
 
-		sha256, _ := checksum.SHA256sum(fullpath)
-		log.Println("CheckAndUpgradeNodeExe>", cfg.NodeExeDigest, sha256, cfg.NodeExeDigest == sha256)
-
-		if cfg.NodeExeDigest == sha256 {
-			mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
-			mdl.Update()
+			if cfg.NodeExeDigest == sha256 {
+				mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
+				mdl.Update()
+			}
+			if cfg.NodeExeDigest != sha256 || sha256 == "" {
+				cfg.NodeExeDigest = sha256
+				cfg.NodeExeVersion = ""
+				cfg.Save()
+			}
+			cfg.NodeExeTimestamp = modTime
 		}
-		if cfg.NodeExeDigest != sha256 || sha256 == "" {
-			cfg.NodeExeDigest = sha256
-			cfg.NodeExeVersion = ""
-			cfg.Save()
-		}
-		cfg.NodeExeTimestamp = modTime
 	}
 
 	doRefresh := (cfg.NodeLatestTag != cfg.NodeExeVersion && cfg.AutoUpgrade) ||
