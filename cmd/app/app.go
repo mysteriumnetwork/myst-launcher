@@ -9,6 +9,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -28,74 +29,64 @@ import (
 )
 
 func main() {
+	installFirewall := flag.Bool(_const.FlagInstallFirewall, false, "setup firewall rules")
+	nodeArgsFlags := flag.String(_const.FlagNodeArgs, "", "pass args to node")
+	installFlag := flag.Bool(_const.FlagInstall, false, "install")
+	uninstallFlag := flag.Bool(_const.FlagUninstall, false, "uninstall")
+	stopFlag := flag.Bool(_const.FlagStop, false, "stop all instances of app")
+	debugMode := flag.Bool(_const.FlagDebug, false, "debug mode")
+	flagAutorun := flag.Bool(_const.FlagAutorun, false, "app is started by means of autorun")
+	flag.Parse()
+
 	ap := app.NewApp()
 	ipc := ipc_.NewHandler()
 
-	cmd := ""
-	debugMode := false
-	flagAutorun := false
-
-	for _, v := range os.Args {
-		switch v {
-		case _const.FlagInstall,
-			_const.FlagUninstall,
-			_const.FlagInstallFirewall,
-			_const.FlagStop:
-			cmd = v
-		case _const.FlagDebug:
-			debugMode = true
-		case _const.FlagAutorun:
-			flagAutorun = true
-		}
-	}
-	if debugMode {
+	if *debugMode {
 		utils.AllocConsole(false)
 		defer func() {
 			fmt.Println("Press 'Enter' to continue...")
 			bufio.NewReader(os.Stdin).ReadBytes('\n')
 		}()
 	}
+	if *installFlag {
+		utils.InstallExe()
+		return
+	}
+	if *uninstallFlag {
+		ipc.SendStopApp()
+		utils.UninstallExe()
 
-	if cmd != "" {
-		switch cmd {
-		case _const.FlagInstall:
-			utils.InstallExe()
-			return
+		// for older versions e.g <=1.0.30
+		// it should be shutdown forcefully with a related docker container
 
-		case _const.FlagUninstall:
-			ipc.SendStopApp()
-			utils.UninstallExe()
-
-			// for older versions e.g <=1.0.30
-			// it should be shutdown forcefully with a related docker container
-
-			native.KillPreviousLauncher()
-			if err := docker.UninstallMystContainer(); err != nil {
-				fmt.Println("UninstallMystContainer failed:", err)
-			}
-            return
-
-		case _const.FlagStop:
-			ipc.SendStopApp()
-			// wait for main process to finish, this is important for MSI to finish
-			// 10 sec -- for docker container to stop
-			// TODO: modify IPC proto to get rid of this sleep
-			time.Sleep(10 * time.Second)
-			return
-
-		case _const.FlagInstallFirewall:
-			native.CheckAndInstallFirewallRules()
-			return
+		native.KillPreviousLauncher()
+		if err := docker.UninstallMystContainer(); err != nil {
+			fmt.Println("UninstallMystContainer failed:", err)
 		}
+		return
+	}
+	if *stopFlag {
+		ipc.SendStopApp()
+		// wait for main process to finish, this is important for MSI to finish
+		// 10 sec -- for docker container to stop
+		// TODO: modify IPC proto to get rid of this sleep
+		time.Sleep(10 * time.Second)
+		return
+	}
+	if *installFirewall {
+		log.Println("Setting firewall rules")
+		native.CheckAndInstallFirewallRules()
+		return
 	}
 
 	mod := model.NewUIModel()
-	if flagAutorun && !mod.Config.AutoStart {
+	if *flagAutorun && !mod.Config.AutoStart {
 		return
 	}
 	mod.SetApp(ap)
 	mod.DuplicateLogToConsole = true
-	mod.FlagAutorun = flagAutorun
+	mod.FlagAutorun = *flagAutorun
+	mod.NodeFlags = *nodeArgsFlags
 
 	// in case of installation restart elevated
 	if mod.Config.InitialState == model.InitialStateStage1 || mod.Config.InitialState == model.InitialStateStage2 {
@@ -107,7 +98,7 @@ func main() {
 
 	prodVersion, _ := utils.GetProductVersion()
 	mod.SetProductVersion(prodVersion)
-	if debugMode {
+	if *debugMode {
 		log.Println("Product version:", prodVersion)
 	}
 
@@ -139,5 +130,4 @@ func main() {
 	ui.Run()
 	gui_win32.ShutdownGDIPlus()
 	ap.StopAppController()
-
 }

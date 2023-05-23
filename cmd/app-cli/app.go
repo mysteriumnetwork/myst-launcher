@@ -9,6 +9,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -19,30 +20,20 @@ import (
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/controller/native"
 	"github.com/mysteriumnetwork/myst-launcher/model"
+	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 func main() {
-
-	cmd := ""
-	for i, v := range os.Args {
-		if i == 0 {
-			continue
-		}
-		switch v {
-		case _const.FlagInstallFirewall:
-			cmd = v
-		default:
-			log.Println("Unknown arg")
-			return
-		}
-	}
+	installFirewall := flag.Bool(_const.FlagInstallFirewall, false, "setup firewall rules")
+	nodeFlags := flag.String("node-flags", "", "pass flags to node")
+	flag.Parse()
 
 	defer func() {
 		fmt.Println("Press Enter to exit ..")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}()
 
-	if cmd == _const.FlagInstallFirewall {
+	if *installFirewall {
 		log.Println("Setting firewall rules")
 		native.CheckAndInstallFirewallRules()
 		return
@@ -53,6 +44,11 @@ func main() {
 	mod := model.NewUIModel()
 	mod.SetApp(ap)
 	mod.DuplicateLogToConsole = true
+	mod.NodeFlags = *nodeFlags
+
+	prodVersion, _ := utils.GetProductVersion()
+	mod.SetProductVersion(prodVersion)
+	log.Println("Launcher version:", prodVersion)
 
 	ap.SetModel(mod)
 	log.SetOutput(ap)

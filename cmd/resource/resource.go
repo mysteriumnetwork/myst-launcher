@@ -77,15 +77,18 @@ func main() {
 	rs.Set(winres.RT_RCDATA, winres.Name("SPINNER"), 0, b)
 
 	// Create an object file for amd64
-	out, err := os.Create("cmd/app/resource.syso")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer out.Close()
+	writeResFile := func(path string) {
+		out, err := os.Create(path)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer out.Close()
 
-	err = rs.WriteObject(out, winres.ArchAMD64)
-	if err != nil {
-		log.Fatalln(err)
-
+		err = rs.WriteObject(out, winres.ArchAMD64)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
+	writeResFile("cmd/app/resource.syso")
+	writeResFile("cmd/app-cli/resource.syso")
 }

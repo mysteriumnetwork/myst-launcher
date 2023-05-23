@@ -8,10 +8,11 @@
 package _const
 
 const (
-	FlagInstall         = "-install-binary"
-	FlagUninstall       = "-uninstall"
-	FlagInstallFirewall = "-install-fw"
-	FlagDebug           = "-debug"
-	FlagAutorun         = "-autorun"
-	FlagStop            = "-stop" //v1.0.36+
+	FlagInstall         = "install-binary"
+	FlagUninstall       = "uninstall"
+	FlagInstallFirewall = "install-fw"
+	FlagDebug           = "debug"
+	FlagAutorun         = "autorun"
+	FlagStop            = "stop" //v1.0.36+
+	FlagNodeArgs        = "node-args"
 )

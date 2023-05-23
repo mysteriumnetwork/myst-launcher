@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path"
 	"runtime"
+	"strings"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
@@ -119,7 +120,17 @@ func (r *NodeRunner) startNode() error {
 	dataDirArg := fmt.Sprintf("--data-dir=%s", r.configpath)
 	userspaceArg := "--userspace"
 
-	args := []string{userspaceArg, versionArg, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions"}
+	args2 := make([]string, 0)
+	if r.mod.NodeFlags != "" {
+		args2 = strings.Split(r.mod.NodeFlags, " ")
+	}
+
+	args := []string{userspaceArg, versionArg}
+	if len(args2) > 0 {
+		args = append(args, args2...)
+	} else {
+		args = append(args, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions")
+	}
 
 	switch runtime.GOOS {
 	case "windows", "darwin":
