@@ -63,7 +63,6 @@ type Gui struct {
 	model              *model2.UIModel
 	lastNotificationID NotificationTypeID
 
-	waitClick chan int
 	bus       EventBus.Bus
 }
 
@@ -91,7 +90,6 @@ func NewGui(m *model2.UIModel) *Gui {
 	MustRegisterCondition("isAutostartEnabled", g.isAutostartEnabled)
 	MustRegisterCondition("isNodeEnabled", g.isNodeEnabled)
 
-	g.waitClick = make(chan int)
 	g.bus = EventBus.New()
 	return g
 }
@@ -177,7 +175,7 @@ func (g *Gui) CreateMainWindow() {
 		if g.model.WantExit {
 			g.CloseUI()
 		}
-		g.DialogueComplete()
+		g.DialogueComplete(model2.DLG_OK)
 	})
 
 }
@@ -208,6 +206,9 @@ func (g *Gui) changeView(state model2.UIState) {
 	case frameState:
 		g.frame = NewStateFrame(g.frameWidget, g.model)
 	}
+
+	// force ui properties update
+	g.model.Update()
 }
 
 func (g *Gui) refresh() {
@@ -307,20 +308,21 @@ func (g *Gui) OpenDialogue(id int) {
 }
 
 // returns false, if dialogue was terminated
-func (g *Gui) WaitDialogueComplete() bool {
-	_, ok := <-g.waitClick
-	return ok
+func (g *Gui) WaitDialogueComplete() int {
+	action := make(chan int)
+
+	g.bus.SubscribeOnce("dlg-exit", func(id int) {
+		action <- id
+	})
+	return <-action
 }
 
 func (g *Gui) TerminateWaitDialogueComplete() {
-	close(g.waitClick)
+	g.bus.Publish("dlg-exit", model2.DLG_TERM)
 }
 
-func (g *Gui) DialogueComplete() {
-	select {
-	case g.waitClick <- 0:
-	default:
-	}
+func (g *Gui) DialogueComplete(action int) {
+	g.bus.Publish("dlg-exit", action)
 }
 
 func (g *Gui) CloseUI() {

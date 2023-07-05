@@ -55,7 +55,9 @@ func (s *AppState) StartAppController() {
 
 func (s *AppState) setAppController(c model.Controller) {
 	if s.ctrApp != nil {
-		s.action <- model.ActionStopRunner // wait prev. controller to finish
+		s.GetUI().TerminateWaitDialogueComplete()
+
+		s.ctrApp.Shutdown() // wait prev. controller to finish
 	}
 
 	s.ctrApp = c
