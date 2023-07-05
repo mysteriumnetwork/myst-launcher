@@ -139,7 +139,7 @@ func (c *Controller) stop() {
 }
 
 func (c *Controller) upgradeContainer(refreshVersionCache bool) {
-	c.lg.Println("!up")
+	//c.lg.Println("!upgradeContainer")
 	// model := c.a.GetModel()
 	// if !model.ImageInfo.HasUpdate {
 	// 	return
@@ -151,7 +151,7 @@ func (c *Controller) upgradeContainer(refreshVersionCache bool) {
 
 // check for image updates before starting container, offer upgrade interactively
 func (c *Controller) startContainer() {
-	c.lg.Println("!run")
+	//c.lg.Println("!run")
 	model := c.a.GetModel()
 
 	if !model.Config.Enabled {
@@ -174,7 +174,11 @@ func (c *Controller) startContainer() {
 		case model_.InitialStateFirstRunAfterInstall, model_.InitialStateUndefined:
 			cfg.InitialState = model_.InitialStateNormalRun
 			cfg.Save()
-			ui.ShowNotificationInstalled()
+			if ui != nil {
+				ui.ShowNotificationInstalled()
+			} else {
+				c.lg.Println("node installed!")
+			}
 		}
 	}
 }

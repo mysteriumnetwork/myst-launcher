@@ -12,6 +12,7 @@ package utils
 
 import (
 	"log"
+	"os"
 	"syscall"
 )
 
@@ -57,4 +58,8 @@ func RunasWithArgsAndWait(cmdArgs string) error {
 
 func EnableAutorun(en bool) error {
     return nil
+}
+
+func IsAdmin() bool {
+    return os.Getuid() == 0
 }

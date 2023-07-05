@@ -3,9 +3,11 @@ package native
 import (
 	"context"
 	"log"
+	"os"
 	"path"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/codingsince1985/checksum"
 
@@ -32,25 +34,36 @@ func getAssetName() string {
 }
 
 func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
-	cfg := &c.a.GetModel().Config
 	mdl := c.a.GetModel()
+	cfg := &mdl.Config
 
 	exename := getNodeProcessName()
 	fullpath := path.Join(c.runner.binpath, exename)
 	fullpath = utils.MakeCanonicalPath(fullpath)
-	log.Println("CheckAndUpgradeNodeExe>", fullpath)
 
-	sha256, _ := checksum.SHA256sum(fullpath)
-	log.Println("CheckAndUpgradeNodeExe>", cfg.NodeExeDigest, sha256, cfg.NodeExeDigest == sha256)
-
-	if cfg.NodeExeDigest == sha256 {
-		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
-		mdl.Update()
-	}
-	if cfg.NodeExeDigest != sha256 || sha256 == "" {
-		cfg.NodeExeDigest = sha256
+	file, err := os.Stat(fullpath)
+	if err != nil {
 		cfg.NodeExeVersion = ""
-		cfg.Save()
+		cfg.NodeExeTimestamp = time.Time{}
+	} else {
+		modTime := file.ModTime()
+		if !modTime.Equal(cfg.NodeExeTimestamp) {
+			log.Println("CheckAndUpgradeNodeExe>", fullpath)
+
+			sha256, _ := checksum.SHA256sum(fullpath)
+			log.Println("CheckAndUpgradeNodeExe>", cfg.NodeExeDigest, sha256, cfg.NodeExeDigest == sha256)
+
+			if cfg.NodeExeDigest == sha256 {
+				mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
+				mdl.Update()
+			}
+			if cfg.NodeExeDigest != sha256 || sha256 == "" {
+				cfg.NodeExeDigest = sha256
+				cfg.NodeExeVersion = ""
+				cfg.Save()
+			}
+			cfg.NodeExeTimestamp = modTime
+		}
 	}
 
 	doRefresh := (cfg.NodeLatestTag != cfg.NodeExeVersion && cfg.AutoUpgrade) ||
@@ -58,8 +71,9 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 		cfg.NeedToCheckUpgrade() ||
 		forceUpgrade
 
-	log.Println("CheckAndUpgradeNodeExe doRefresh>", doRefresh)
 	if doRefresh {
+		log.Println("CheckAndUpgradeNodeExe doRefresh>")
+
 		ctx := context.Background()
 		release, err := updates.FetchLatestRelease(ctx, org, repo)
 		if err != nil {
@@ -155,9 +169,16 @@ func tryInstallFirewallRules(ui model.Gui_) {
 		needFirewallSetup := checkFirewallRules()
 
 		if needFirewallSetup {
-			ret := ui.YesNoModal("Installation", "Firewall rule missing, addition is required. Press Yes to approve.")
+			ret := model.IDYES
+			if ui != nil {
+				ret = ui.YesNoModal("Installation", "Firewall rule missing, addition is required. Press Yes to approve.")
+			}
 			if ret == model.IDYES {
-				utils.RunasWithArgsAndWait(_const.FlagInstallFirewall)
+				if utils.IsAdmin() {
+					CheckAndInstallFirewallRules()
+				} else {
+					utils.RunasWithArgsAndWait(_const.FlagInstallFirewall)
+				}
 			}
 		}
 	})

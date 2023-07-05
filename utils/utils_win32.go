@@ -682,3 +682,7 @@ func RunMsi(msi string) error {
 	_, err = os.StartProcess(msiexec, []string{msiexec, "/qb!-", "/i", filepath.Base(msi), `RUNAFTER=1`}, attr)
 	return err
 }
+
+func IsAdmin() bool {
+    return w32.SHIsUserAnAdmin()
+}

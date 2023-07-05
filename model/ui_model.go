@@ -49,6 +49,7 @@ type UIModel struct {
 	CurrentImgHasReportVersionOption bool
 	DuplicateLogToConsole            bool
 	FlagAutorun                      bool
+	NodeFlags                        string
 
 	// launcher update
 	LauncherHasUpdate       bool
