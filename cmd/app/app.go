@@ -38,16 +38,20 @@ func main() {
 	flagAutorun := flag.Bool(_const.FlagAutorun, false, "app is started by means of autorun")
 	flag.Parse()
 
-	ap := app.NewApp()
-	ipc := ipc_.NewHandler()
-
 	if *debugMode {
 		utils.AllocConsole(false)
-		defer func() {
+	}
+	ap := app.NewApp()
+	ipc := ipc_.NewHandler()
+	defer func() {
+		ipc.Close()
+
+		if *debugMode {
 			fmt.Println("Press 'Enter' to continue...")
 			bufio.NewReader(os.Stdin).ReadBytes('\n')
-		}()
-	}
+		}
+	}()
+
 	if *installFlag {
 		utils.InstallExe()
 		return

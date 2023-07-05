@@ -41,6 +41,12 @@ func (p *Handler) OpenPipe() {
 	p.pipe = l
 }
 
+func (p *Handler) Close() {
+	if p.pipe != nil {
+		p.pipe.Close()
+	}
+}
+
 func (p *Handler) SendPopupApp() bool {
 	pipe, err := winio.DialPipe(launcherPipeName, nil)
 	if err == nil {
