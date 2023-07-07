@@ -17,14 +17,15 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
-// returns exit mode: true means exit
-func (c *Controller) tryInstallDocker() bool {
+func (c *Controller) tryInstallDocker() {
 	mdl := c.a.GetModel()
 	ui := c.a.GetUI()
 
 	mdl.SwitchState(model.UIStateInstallNeeded)
-	if !ui.WaitDialogueComplete() {
-		return true
+	ok := ui.WaitDialogueComplete()
+	if ok == model.DLG_TERM {
+		c.wantExitCtl = true
+		return
 	}
 	mdl.SwitchState(model.UIStateInstallInProgress)
 
@@ -34,12 +35,14 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Failed to query feature:", err)
 		mdl.SwitchState(model.UIStateInstallError)
 		mdl.UpdateProperties(model.UIProps{"CheckVTx": model.StepFailed})
-		return true
+		c.wantExit = true
+		return
 	}
 	if !featuresOK {
 		c.lg.Println("Virtualization is not supported !")
 		mdl.SwitchState(model.UIStateInstallError)
-		return true
+		c.wantExit = true
+		return
 	}
 	mdl.UpdateProperties(model.UIProps{"CheckVTx": model.StepFinished})
 
@@ -49,18 +52,20 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Failed to check Docker:", err)
 		mdl.SwitchState(model.UIStateInstallError)
 		mdl.UpdateProperties(model.UIProps{"CheckDocker": model.StepFailed})
-		return true
+		c.wantExit = true
+		return
 	}
 	mdl.UpdateProperties(model.UIProps{"CheckDocker": model.StepFinished})
 
 	if hasDocker {
 		mdl.SwitchState(model.UIStateInstallFinished)
 		ok := ui.WaitDialogueComplete()
-		if !ok {
-			return true
+		if ok == model.DLG_TERM {
+			c.wantExitCtl = true
+			return
 		}
 		mdl.SwitchState(model.UIStateInitial)
-		return false
+		return
 	}
 
 	mdl.UpdateProperties(model.UIProps{"DownloadFiles": model.StepInProgress})
@@ -69,7 +74,8 @@ func (c *Controller) tryInstallDocker() bool {
 	if err != nil {
 		c.lg.Println("Couldn't get Docker Desktop link")
 		mdl.SwitchState(model.UIStateInstallError)
-		return true
+		c.wantExit = true
+		return
 	}
 	c.lg.Println("Downloading Docker desktop: ", url)
 	err = utils.DownloadFile(utils.GetTmpDir()+name, url, func(progress int) {
@@ -81,7 +87,8 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Couldn't get Docker Desktop")
 		mdl.SwitchState(model.UIStateInstallError)
 		mdl.UpdateProperties(model.UIProps{"DownloadFiles": model.StepFailed})
-		return true
+		c.wantExit = true
+		return
 	}
 	mdl.UpdateProperties(model.UIProps{"DownloadFiles": model.StepFinished})
 
@@ -92,7 +99,8 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Failed to run command:", err)
 		mdl.SwitchState(model.UIStateInstallError)
 		mdl.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
-		return true
+		c.wantExit = true
+		return
 	}
 	buf.Reset()
 
@@ -101,7 +109,8 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Failed to run command:", err)
 		mdl.SwitchState(model.UIStateInstallError)
 		mdl.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
-		return true
+		c.wantExit = true
+		return
 	}
 	buf.Reset()
 
@@ -111,7 +120,8 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Failed to run command:", err)
 		mdl.SwitchState(model.UIStateInstallError)
 		mdl.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
-		return true
+		c.wantExit = true
+		return
 	}
 	buf.Reset()
 
@@ -121,7 +131,8 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Failed to run command:", err)
 		mdl.SwitchState(model.UIStateInstallError)
 		mdl.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
-		return true
+		c.wantExit = true
+		return
 	}
 	buf.Reset()
 
@@ -130,7 +141,8 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Failed to run command:", err)
 		mdl.SwitchState(model.UIStateInstallError)
 		mdl.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
-		return true
+		c.wantExit = true
+		return
 	}
 	buf.Reset()
 
@@ -140,7 +152,8 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Failed to run command:", err)
 		mdl.SwitchState(model.UIStateInstallError)
 		mdl.UpdateProperties(model.UIProps{"InstallDocker": model.StepFailed})
-		return true
+		c.wantExit = true
+		return
 	}
 	buf.Reset()
 
@@ -148,9 +161,11 @@ func (c *Controller) tryInstallDocker() bool {
 	c.lg.Println("Installation succeeded")
 
 	mdl.SwitchState(model.UIStateInstallFinished)
-	if !ui.WaitDialogueComplete() {
-		return true
+	ok := ui.WaitDialogueComplete()
+	if ok == model.DLG_TERM {
+		c.wantExitCtl = true
+		return
 	}
 	mdl.SwitchState(model.UIStateInitial)
-	return false
+	return
 }

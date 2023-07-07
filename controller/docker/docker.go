@@ -27,6 +27,9 @@ type Controller struct {
 	mgr         model_.PlatformManager
 	mystManager *myst.Manager
 	lg          *log.Logger
+
+	wantExit    bool // exit app
+	wantExitCtl bool // exit from controller
 }
 
 func NewController() *Controller {
@@ -44,6 +47,14 @@ func (c *Controller) SetApp(a model_.AppState) {
 
 func (c *Controller) setFinished() {
 	c.finished = true
+
+	// read any left messages
+	select {
+	case <-c.a.GetAction():
+		//
+
+	default:
+	}
 	c.wg.Done()
 }
 
@@ -82,8 +93,12 @@ func (c *Controller) Start() {
 
 	t1 := time.NewTicker(15 * time.Second)
 	for {
-		if wantExit := c.tryStartOrInstallDocker(docker); wantExit {
+		c.tryStartOrInstallDocker(docker)
+		if c.wantExit {
 			ui.CloseUI()
+			return
+		}
+		if c.wantExitCtl {
 			return
 		}
 		mdl.SwitchState(model_.UIStateInitial)
@@ -136,18 +151,19 @@ func (c *Controller) Start() {
 }
 
 // returns: will exit, if tryInstallDocker requests it
-func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
+func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) {
 	c.lg.Println("tryStartOrInstallDocker")
 	mdl := c.a.GetModel()
 	ui := c.a.GetUI()
 
 	if mdl.Config.InitialState == model_.InitialStateStage1 {
-		return c.tryInstallDocker()
+		c.tryInstallDocker()
+		return
 	}
 
 	if docker.IsRunning() {
 		mdl.SetStateDocker(model_.RunnableStateRunning)
-		return false
+		return
 	}
 
 	// In case of suspend/resume some APIs may return unexpected error, so we need to retry it
@@ -175,35 +191,41 @@ func (c *Controller) tryStartOrInstallDocker(docker *DockerRunner) bool {
 	if err != nil {
 		c.lg.Println("error", err)
 		ui.ErrorModal("Application error", err.Error())
-		return true
+
+		c.wantExit = true
+		return
 	}
 
 	if isUnderVM && !mdl.Config.CheckVMSettingsConfirm {
 		ret := ui.YesNoModal("Requirements checker", "VM has been detected.\r\nPlease ensure that VT-x / EPT / IOMMU \r\nare enabled for this VM.\r\nRefer to VM settings.\r\n\r\nContinue ?")
 		if ret == model_.IDNO {
 			ui.TerminateWaitDialogueComplete()
-			return true
+			c.wantExit = true
+			return
 		}
 		mdl.Config.CheckVMSettingsConfirm = true
 		mdl.Config.Save()
 	}
 
 	if needSetup {
-		return c.tryInstallDocker()
+		c.tryInstallDocker()
+		return
 	}
 
 	isRunning, couldNotStart := docker.IsRunningOrTryStart()
 	if isRunning {
 		mdl.SetStateDocker(model_.RunnableStateRunning)
-		return false
+		return
 	}
 	mdl.SetStateDocker(model_.RunnableStateStarting)
 	if couldNotStart {
 		mdl.SetStateDocker(model_.RunnableStateUnknown)
-		return c.tryInstallDocker()
+
+		c.tryInstallDocker()
+		return
 	}
 
-	return false
+	return
 }
 
 func (c *Controller) restartContainer() {

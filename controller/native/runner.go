@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"path"
 	"runtime"
@@ -33,8 +34,10 @@ func NewRunner(mod *model.UIModel) *NodeRunner {
 	binpath := getNodeBinDirPath()
 	utils.MakeDirectoryIfNotExists(binpath)
 
-	configpath := path.Join(utils.GetUserProfileDir(), `.mysterium`)
-	configpath = utils.MakeCanonicalPath(configpath)
+	configpath := getNodeDirPath(`.mysterium`)
+	if _, err := os.Stat(configpath); os.IsNotExist(err) {
+		configpath = getNodeDirPath(`.mysterium-node`)
+	}
 	utils.MakeDirectoryIfNotExists(configpath)
 
 	return &NodeRunner{
@@ -44,10 +47,14 @@ func NewRunner(mod *model.UIModel) *NodeRunner {
 	}
 }
 
+func getNodeDirPath(profileDir string) string {
+	path := path.Join(utils.GetUserProfileDir(), profileDir)
+	path = utils.MakeCanonicalPath(path)
+	return path
+}
+
 func getNodeBinDirPath() string {
-	binpath := path.Join(utils.GetUserProfileDir(), `.mysterium-bin`)
-	binpath = utils.MakeCanonicalPath(binpath)
-	return binpath
+	return getNodeDirPath(`.mysterium-bin`)
 }
 
 func getNodeExePath() string {
@@ -118,6 +125,9 @@ func (r *NodeRunner) startNode() error {
 	versionArg := fmt.Sprintf("--launcher.ver=%s", r.mod.GetProductVersionString())
 	configDirArg := fmt.Sprintf("--config-dir=%s", r.configpath)
 	dataDirArg := fmt.Sprintf("--data-dir=%s", r.configpath)
+	logDirArg := fmt.Sprintf("--log-dir=%s", r.configpath)
+	nodeuiDirArg := fmt.Sprintf("--node-ui-dir=%s", r.configpath)
+
 	userspaceArg := "--userspace"
 
 	args2 := make([]string, 0)
@@ -129,7 +139,7 @@ func (r *NodeRunner) startNode() error {
 	if len(args2) > 0 {
 		args = append(args, args2...)
 	} else {
-		args = append(args, configDirArg, dataDirArg, "service", "--agreed-terms-and-conditions")
+		args = append(args, configDirArg, dataDirArg, logDirArg, nodeuiDirArg, "service", "--agreed-terms-and-conditions")
 	}
 
 	switch runtime.GOOS {

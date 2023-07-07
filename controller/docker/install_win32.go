@@ -29,19 +29,19 @@ import (
 const dockerUsersGroup = "docker-users"
 
 // returns: will exit
-func (c *Controller) tryInstallDocker() bool {
+func (c *Controller) tryInstallDocker() {
 	mgr := c.mgr.(*platform.Manager)
 	mdl := c.a.GetModel()
 	ui := c.a.GetUI()
-	// action := c.a.GetAction()
 
 	mdl.ResetProperties()
 	mdl.SwitchState(model.UIStateInstallNeeded)
 
 	if mdl.Config.InitialState != model.InitialStateStage1 && mdl.Config.InitialState != model.InitialStateStage2 {
 		ok := ui.WaitDialogueComplete()
-		if !ok {
-			return true
+		if ok == model.DLG_TERM {
+			c.wantExitCtl = true
+			return
 		}
 	}
 
@@ -51,7 +51,8 @@ func (c *Controller) tryInstallDocker() bool {
 			mdl.Config.Save()
 		}
 		utils.RunasWithArgsNoWait("")
-		return true
+		c.wantExit = true
+		return
 	}
 
 	mdl.SwitchState(model.UIStateInstallInProgress)
@@ -242,11 +243,10 @@ func (c *Controller) tryInstallDocker() bool {
 		return true
 	})
 
-	wantExit := false
 	if !executor.Run() {
 		mdl.SwitchState(model.UIStateInstallError)
 		c.lg.Println("Installation have stopped")
-		wantExit = true
+		c.wantExit = true
 	} else {
 		// TODO: unelevate rights
 
@@ -255,10 +255,9 @@ func (c *Controller) tryInstallDocker() bool {
 		c.lg.Println("Installation succeeded")
 	}
 
-	// mdl.SetWantExit()
 	ok := ui.WaitDialogueComplete()
-	if !ok {
-		return true
+	if ok == model.DLG_TERM {
+		c.wantExitCtl = true
+		return
 	}
-	return wantExit
 }

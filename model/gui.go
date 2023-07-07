@@ -11,8 +11,8 @@ type Gui_ interface {
 	CloseUI()
 
 	OpenDialogue(id int)
-	DialogueComplete()
-	WaitDialogueComplete() bool
+	DialogueComplete(action int)
+	WaitDialogueComplete() int
 	TerminateWaitDialogueComplete()
 
 	PopupMain()
@@ -25,3 +25,9 @@ type Gui_ interface {
 	ErrorModal(title, message string) int
 	SetModalReturnCode(rc int)
 }
+
+const (
+	DLG_OK = 0
+	DLG_CANCEL = 1
+	DLG_TERM = 2
+)
