@@ -28,6 +28,14 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
+func pressAnyKey(do bool) {
+	if !do {
+		return
+	}
+	fmt.Println("Press 'Enter' to continue...")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
+}
+
 func main() {
 	installFirewall := flag.Bool(_const.FlagInstallFirewall, false, "setup firewall rules")
 	nodeArgsFlags := flag.String(_const.FlagNodeArgs, "", "pass args to node")
@@ -41,21 +49,28 @@ func main() {
 	if *debugMode {
 		utils.AllocConsole(false)
 	}
+	fmt.Println(*debugMode, *installFirewall, os.Args)
+
 	ap := app.NewApp()
+
+	if *installFirewall {
+		log.Println("Setting firewall rules")
+		native.CheckAndInstallFirewallRules()
+		pressAnyKey(*debugMode)
+		return
+	}
+	if *installFlag {
+		utils.InstallExe()
+		pressAnyKey(*debugMode)
+		return
+	}
+
 	ipc := ipc_.NewHandler()
 	defer func() {
 		ipc.Close()
-
-		if *debugMode {
-			fmt.Println("Press 'Enter' to continue...")
-			bufio.NewReader(os.Stdin).ReadBytes('\n')
-		}
+		pressAnyKey(*debugMode)
 	}()
 
-	if *installFlag {
-		utils.InstallExe()
-		return
-	}
 	if *uninstallFlag {
 		ipc.SendStopApp()
 		utils.UninstallExe()
@@ -75,11 +90,6 @@ func main() {
 		// 10 sec -- for docker container to stop
 		// TODO: modify IPC proto to get rid of this sleep
 		time.Sleep(10 * time.Second)
-		return
-	}
-	if *installFirewall {
-		log.Println("Setting firewall rules")
-		native.CheckAndInstallFirewallRules()
 		return
 	}
 

@@ -177,7 +177,7 @@ func tryInstallFirewallRules(ui model.Gui_) {
 				if utils.IsAdmin() {
 					CheckAndInstallFirewallRules()
 				} else {
-					utils.RunasWithArgsAndWait(_const.FlagInstallFirewall)
+					utils.RunasWithArgsAndWait("-" + _const.FlagInstallFirewall)
 				}
 			}
 		}
