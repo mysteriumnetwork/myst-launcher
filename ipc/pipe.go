@@ -74,12 +74,19 @@ func (p *Handler) Listen(ui model.Gui_) {
 	handleCommand := func() (exit bool) {
 		c, err := p.pipe.Accept()
 		if err != nil {
-			panic(err)
+			fmt.Println("pipe > Listen !accept", err)
+			exit = true
+			return
 		}
 		defer c.Close()
 
 		rw := bufio.NewReadWriter(bufio.NewReader(c), bufio.NewWriter(c))
-		s, _ := rw.ReadString('\n')
+		s, err := rw.ReadString('\n')
+		if err != nil {
+			fmt.Println("pipe > Listen !accept", err)
+			exit = true
+			return
+		}
 		fmt.Println("pipe >", s)
 
 		switch s {
@@ -96,7 +103,7 @@ func (p *Handler) Listen(ui model.Gui_) {
 
 	go func() {
 		for {
-			if handleCommand() {
+			if handleCommand() == true {
 				p.pipe.Close()
 				break
 			}
