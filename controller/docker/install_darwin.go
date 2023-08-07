@@ -161,7 +161,7 @@ func (c *Controller) tryInstallDocker() {
 	c.lg.Println("Installation succeeded")
 
 	mdl.SwitchState(model.UIStateInstallFinished)
-	ok := ui.WaitDialogueComplete()
+	ok = ui.WaitDialogueComplete()
 	if ok == model.DLG_TERM {
 		c.wantExitCtl = true
 		return

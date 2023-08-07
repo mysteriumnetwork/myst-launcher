@@ -16,3 +16,5 @@ func CheckAndInstallFirewall() {}
 func checkFirewallRules() bool {
 	return false
 }
+
+func CheckAndInstallFirewallRules() {}

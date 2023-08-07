@@ -63,3 +63,7 @@ func EnableAutorun(en bool) error {
 func IsAdmin() bool {
     return os.Getuid() == 0
 }
+
+func HideFile(path string, hide bool) (string, error) {
+	return path, nil
+}
