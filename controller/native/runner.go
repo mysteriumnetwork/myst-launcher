@@ -126,7 +126,7 @@ func (r *NodeRunner) startNode() error {
 	configDirArg := fmt.Sprintf("--config-dir=%s", r.configpath)
 	dataDirArg := fmt.Sprintf("--data-dir=%s", r.configpath)
 	logDirArg := fmt.Sprintf("--log-dir=%s", r.configpath)
-	nodeuiDirArg := fmt.Sprintf("--node-ui-dir=%s", r.configpath)
+	nodeuiDirArg := fmt.Sprintf("--node-ui-dir=%s", path.Join(r.configpath, "nodeui"))
 
 	userspaceArg := "--userspace"
 
