@@ -12,6 +12,7 @@ import (
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
@@ -26,6 +27,7 @@ type StateFrame struct {
 	stDocker              *impl.StatusViewImpl
 	stContainer           *impl.StatusViewImpl
 	lbBackend             *walk.Label
+	lbVendorID            *walk.Label
 	lbDockerDesktopStatus *walk.Label
 	lbDocker              *walk.Label
 	lbContainer           *walk.Label
@@ -221,14 +223,25 @@ func NewStateFrame(parent walk.Container, mdl *model.UIModel) *StateFrame {
 						},
 					},
 					Label{
-						Text: "",
+						Text:     "",
 						AssignTo: &f.lbBackend,
 					},
+					Label{
+						Text: "Vendor Id",
+						Font: Font{
+							PointSize: 8,
+							Bold:      true,
+						},
+					},
+					Label{
+						Text:     "",
+						AssignTo: &f.lbVendorID,
+					},
+
 					Label{
 						Text:     "Status",
 						AssignTo: &f.lbDockerDesktopStatus,
 					},
-
 					Composite{
 						Layout: HBox{
 							MarginsZero: true,
@@ -318,6 +331,11 @@ func (f *StateFrame) handlerState() {
 				f.lbDockerDesktopStatus.SetVisible(!isNative)
 				f.stDocker.SetVisible(!isNative)
 				f.lbDocker.SetVisible(!isNative)
+			}
+
+			f.lbVendorID.SetText(_const.VendorID)
+			if f.lbVendorID.Text() == "" {
+				f.lbVendorID.SetText("-")
 			}
 
 			f.lbDocker.SetText(f.mdl.StateDocker.String())

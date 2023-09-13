@@ -11,3 +11,7 @@ package _const
 const (
 	ImageNamePrefix = "mysteriumnetwork/myst"
 )
+
+var (
+	VendorID string
+)

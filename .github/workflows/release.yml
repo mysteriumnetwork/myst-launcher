@@ -29,6 +29,7 @@ jobs:
       run: |
         go run cmd/resource/resource.go
         go build -v -trimpath -ldflags "-s -w -H windowsgui" -o  bin/myst-launcher-amd64.exe github.com/mysteriumnetwork/myst-launcher/cmd/app
+        go build -v -trimpath -ldflags "-s -w -H windowsgui -X github.com/mysteriumnetwork/myst-launcher/const.VendorID=Kryptex_AU" -o  bin/myst-launcher-kryptex-amd64.exe github.com/mysteriumnetwork/myst-launcher/cmd/app
         go build -v -trimpath -ldflags "-s -w" -o  bin/myst-launcher-cli.exe github.com/mysteriumnetwork/myst-launcher/cmd/app-cli
       env:
         GOARCH: amd64
@@ -43,6 +44,7 @@ jobs:
         Set-Content -Path bundle.txt -Value $env:CODE_SIGNING_PFX
         certutil -decode bundle.txt bundle.pfx
         & $env:SIGNTOOL sign /fd SHA256 /f bundle.pfx /p "$env:CODE_SIGNING_PFX_PASSWORD" /tr "http://timestamp.digicert.com" /td SHA256 /d "Mysterium Launcher" bin/myst-launcher-amd64.exe
+        & $env:SIGNTOOL sign /fd SHA256 /f bundle.pfx /p "$env:CODE_SIGNING_PFX_PASSWORD" /tr "http://timestamp.digicert.com" /td SHA256 /d "Mysterium Launcher" bin/myst-launcher-kryptex-amd64.exe
 
     - name: Build
       run: |
@@ -71,6 +73,6 @@ jobs:
         files: |
           installer/myst-launcher-x64.msi
           bin/myst-launcher-cli.exe
-
+          bin/myst-launcher-kryptex-amd64.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

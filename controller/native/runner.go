@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strings"
 
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -127,7 +128,7 @@ func (r *NodeRunner) startNode() error {
 	dataDirArg := fmt.Sprintf("--data-dir=%s", r.configpath)
 	logDirArg := fmt.Sprintf("--log-dir=%s", r.configpath)
 	nodeuiDirArg := fmt.Sprintf("--node-ui-dir=%s", path.Join(r.configpath, "nodeui"))
-
+	vendorArg := fmt.Sprintf("--vendor.id=%s", _const.VendorID)
 	userspaceArg := "--userspace"
 
 	args2 := make([]string, 0)
@@ -139,6 +140,9 @@ func (r *NodeRunner) startNode() error {
 	if len(args2) > 0 {
 		args = append(args, args2...)
 	} else {
+		if _const.VendorID != "" {
+			args = append(args, vendorArg)	
+		}
 		args = append(args, configDirArg, dataDirArg, logDirArg, nodeuiDirArg, "service", "--agreed-terms-and-conditions")
 	}
 
