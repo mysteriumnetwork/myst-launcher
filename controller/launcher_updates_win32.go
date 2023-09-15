@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"path"
 
+	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
+
 
 const (
 	gitHubOrg  = "mysteriumnetwork"
@@ -26,9 +28,14 @@ func launcherHasUpdate(release *updates.Release, latest string, currentVer *stri
 }
 
 func downloadAndInstall(release updates.Release, model *model.UIModel) error {
+	asset := "myst-launcher-x64.msi"
+	if _const.VendorID == "Kryptex_IU" {
+		asset = "myst-launcher-kryptex-x64.msi"
+	}
+
 	url, name := "", ""
 	for _, v := range release.Assets {
-		if v.Name == "myst-launcher-x64.msi" {
+		if v.Name == asset {
 			url, name = v.URL, v.Name
 			break
 		}
@@ -55,7 +62,7 @@ func downloadAndInstall(release updates.Release, model *model.UIModel) error {
 		model.Publish("launcher-update-download", -1)
 		return err
 	}
-    err = utils.RunMsi(msiPath)
+	err = utils.RunMsi(msiPath)
 	if err != nil {
 		fmt.Println("RunMsi err>", err)
 		model.Publish("launcher-update-download", -1)
