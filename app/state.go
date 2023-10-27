@@ -10,17 +10,14 @@ package app
 import (
 	"fmt"
 
-	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
-	"github.com/mysteriumnetwork/myst-launcher/controller/native"
+	"github.com/mysteriumnetwork/myst-launcher/controller"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 )
 
 type AppState struct {
 	action chan string
-
-	model *model.UIModel //gui.Model
-	ui    model.Gui_
-
+	model  *model.UIModel //gui.Model
+	ui     model.Gui_
 	ctrApp model.Controller
 }
 
@@ -37,14 +34,7 @@ func (s *AppState) StopAppController() {
 
 func (s *AppState) StartAppController() {
 	setUIController := func() {
-		var nc model.Controller
-
-		switch s.model.Config.Backend {
-		case "native":
-			nc = native.NewController()
-		case "docker":
-			nc = docker.NewController()
-		}
+		nc := controller.NewController(s.model.Config.Backend)
 		s.setAppController(nc)
 		go nc.Start()
 	}

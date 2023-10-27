@@ -109,6 +109,10 @@ func (m *UIModel) UpdateToMainnet() {
 }
 
 func (m *UIModel) SetProductVersion(v string) {
+    if len(v) == 0 {
+        return
+    }
+
 	m.ProductVersion = v
 	if v[0] == 'v' {
 		m.ProductVersion = v[1:]

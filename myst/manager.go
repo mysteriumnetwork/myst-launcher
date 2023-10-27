@@ -13,7 +13,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -36,7 +35,6 @@ import (
 const (
 	containerName             = "myst"
 	reportLauncherVersionFlag = "--launcher.ver"
-
 
 	operationTimeoutSec = 10
 	operationTimeout    = operationTimeoutSec * time.Second
@@ -207,8 +205,8 @@ func (m *Manager) Stop() error {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
-	defer cancel()	
-	err = m.dockerAPI.ContainerStop(ctx, mystContainer.ID, container.StopOptions{ Timeout: m.timeoutSec() })
+	defer cancel()
+	err = m.dockerAPI.ContainerStop(ctx, mystContainer.ID, container.StopOptions{Timeout: m.timeoutSec()})
 	if err != nil {
 		return errors2.Wrap(err, ErrCouldNotStop.Error())
 	}
@@ -230,7 +228,7 @@ func (m *Manager) Remove() error {
 	return nil
 }
 
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 func (m *Manager) startMystContainer() error {
 	m.lg.Println("!startMystContainer")
 
@@ -279,7 +277,7 @@ func (m *Manager) pullMystImage(image string) error {
 	}
 	defer out.Close()
 
-	_, err = io.Copy(ioutil.Discard, out)
+	_, err = io.Copy(io.Discard, out)
 	return err
 }
 
@@ -418,6 +416,16 @@ func (m *Manager) getCurrentImageDigest() {
 	}
 }
 
+func (m *Manager) PingDocker() bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := m.dockerAPI.Ping(ctx)
+	return err == nil
+}
+
+//////////////////////////////////////////////////////
+
 // extend Container with method
 type Container struct {
 	*types.Container
@@ -426,4 +434,3 @@ type Container struct {
 func (c *Container) isRunning() bool {
 	return c.State == "running"
 }
-

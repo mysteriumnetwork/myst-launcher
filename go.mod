@@ -32,7 +32,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/scjalliance/comshim v0.0.0-20230315213746-5e51f40bd3b9
-	github.com/stretchr/testify v1.8.2
+	github.com/shirou/gopsutil/v3 v3.23.9 // indirect
+	github.com/stretchr/testify v1.8.4
 	github.com/tc-hib/winres v0.1.6
 	github.com/tryor/gdiplus v0.0.0-20200830101413-c570de9579b3
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
@@ -40,7 +41,7 @@ require (
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/image v0.6.0 // indirect
 	golang.org/x/net v0.8.0
-	golang.org/x/sys v0.6.0
+	golang.org/x/sys v0.12.0
 	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect

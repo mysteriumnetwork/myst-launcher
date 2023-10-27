@@ -2,6 +2,7 @@ package native
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -24,13 +25,13 @@ const (
 )
 
 func getAssetName() string {
-	switch runtime.GOOS {
-	case "windows":
-		return "myst_windows_amd64.zip"
-	case "darwin":
-		return "myst_darwin_amd64.tar.gz"
+	os := runtime.GOOS
+	arch := runtime.GOARCH
+	f := "tar.gz"
+	if os == "windows" {
+		f = "zip"
 	}
-	return ""
+	return fmt.Sprintf("myst_%s_%s.%s", os, arch, f)
 }
 
 func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
@@ -164,7 +165,6 @@ var once sync.Once
 
 func tryInstallFirewallRules(ui model.Gui_) {
 	once.Do(func() {
-
 		// check firewall rules
 		needFirewallSetup := checkFirewallRules()
 

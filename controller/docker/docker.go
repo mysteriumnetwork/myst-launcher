@@ -86,7 +86,7 @@ func (c *Controller) Start() {
 		panic(err) // TODO handle gracefully
 	}
 	c.mystManager = mystManager
-	docker := NewDockerRunner(mystManager.GetDockerClient())
+	docker := NewDockerRunner(mystManager)
 
 	c.wg.Add(1)
 	defer c.setFinished()
