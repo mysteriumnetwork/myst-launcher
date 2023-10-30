@@ -281,6 +281,11 @@ func (c *Controller) startContainer() {
 		mdl.Config.InitialState = model_.InitialStateNormalRun
 		mdl.Config.Save()
 
-		ui.ShowNotificationInstalled()
+        if ui != nil {
+            ui.ShowNotificationInstalled()
+            ui.OpenNodeUI()
+        } else {
+            c.lg.Println("node installed!")
+        }
 	}
 }

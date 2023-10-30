@@ -108,6 +108,10 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 	g.ni.SetVisible(true)
 }
 
+func (g *Gui) OpenNodeUI() {
+    OpenNodeUI()
+}
+
 func (g *Gui) ShowNotificationInstalled() {
 	g.lastNotificationID = NotificationContainerStarted
 	if g.ni == nil {

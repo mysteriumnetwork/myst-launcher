@@ -19,6 +19,7 @@ type Gui_ interface {
 	ShowMain()
 	ShowNotificationInstalled()
 	ShowNotificationUpgrade()
+	OpenNodeUI()
 
 	ConfirmModal(title, message string) int
 	YesNoModal(title, message string) int
