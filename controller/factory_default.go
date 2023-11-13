@@ -9,12 +9,12 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/model"
 )
 
-func NewController(n string) model.Controller {
+func NewBackend(n string, m *model.UIModel, ui model.Gui_) model.RunnerController {
 	switch n {
 	case "native":
-		return native.NewController()
+		return native.NewSvc(m, ui)
 	case "docker":
-		return docker.NewController()
+		return docker.NewSvc(m, ui)
 	default:
 		return nil
 	}

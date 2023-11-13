@@ -94,7 +94,6 @@ func (p *Handler) Listen(ui model.Gui_) {
 			ui.PopupMain()
 
 		case "stop\n":
-			ui.TerminateWaitDialogueComplete()
 			ui.CloseUI()
 			exit = true
 		}

@@ -56,7 +56,6 @@ var (
 
 type Manager struct {
 	dockerAPI *client.Client
-	//launcherCfg *model.Config
 	model   *model.UIModel
 	dataDir string
 	lg      *log.Logger
@@ -308,6 +307,7 @@ func (m *Manager) pullMystLatestByDigestLatest() error {
 
 func (m *Manager) pullMystLatest() error {
 	image := m.model.Config.GetFullImageName()
+	m.lg.Println("pullMystLatest>", image)
 	return m.pullMystImage(image)
 }
 

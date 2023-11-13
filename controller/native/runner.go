@@ -122,7 +122,6 @@ func (r *NodeRunner) startNode() error {
 	log.Println("!startNode")
 	fullExePath := getNodeExePath()
 	c := r.mod.Config
-	log.Println("!startNode", c.EnablePortForwarding)
 
 	portsArg := ""
 	if c.EnablePortForwarding {
@@ -154,7 +153,7 @@ func (r *NodeRunner) startNode() error {
 
 	switch runtime.GOOS {
 	case "windows", "darwin", "linux":
-    	log.Println("!startNode", fullExePath, args)
+		log.Println("!startNode", fullExePath, args)
 
 		cmd, err := utils.CmdStart(fullExePath, args...)
 		if err != nil {

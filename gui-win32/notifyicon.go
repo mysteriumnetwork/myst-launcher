@@ -70,7 +70,6 @@ func (g *Gui) CreateNotifyIcon(ui *model.UIModel) {
 		log.Fatal(err)
 	}
 	exitAction.Triggered().Attach(func() {
-		g.TerminateWaitDialogueComplete()
 		g.CloseUI()
 	})
 

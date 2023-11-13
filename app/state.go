@@ -15,7 +15,6 @@ import (
 )
 
 type AppState struct {
-	action chan string
 	model  *model.UIModel //gui.Model
 	ui     model.Gui_
 	ctrApp model.Controller
@@ -23,8 +22,6 @@ type AppState struct {
 
 func NewApp() *AppState {
 	s := &AppState{}
-
-	s.action = make(chan string) // unbuffered, synchronous
 	return s
 }
 
@@ -33,26 +30,8 @@ func (s *AppState) StopAppController() {
 }
 
 func (s *AppState) StartAppController() {
-	setUIController := func() {
-		nc := controller.NewController(s.model.Config.Backend)
-		s.setAppController(nc)
-		go nc.Start()
-	}
-	setUIController()
-
-	s.model.Bus2.Subscribe("backend", setUIController)
-}
-
-func (s *AppState) setAppController(c model.Controller) {
-	if s.ctrApp != nil {
-		s.GetUI().TerminateWaitDialogueComplete()
-
-		s.ctrApp.Shutdown() // wait prev. controller to finish
-	}
-
-	s.ctrApp = c
-	s.model.Caps = c.GetCaps()
-	c.SetApp(s)
+	s.ctrApp = controller.NewController(s.model, s.ui, s)
+	s.ctrApp.Start()
 }
 
 func (s *AppState) SetModel(ui *model.UIModel) {
@@ -65,10 +44,6 @@ func (s *AppState) GetModel() *model.UIModel {
 
 func (s *AppState) GetUI() model.Gui_ {
 	return s.ui
-}
-
-func (s *AppState) GetAction() chan string {
-	return s.action
 }
 
 func (s *AppState) SetUI(ui model.Gui_) {
@@ -90,7 +65,7 @@ func (s *AppState) Write(b []byte) (int, error) {
 }
 
 func (s *AppState) TriggerAction(action string) {
-	s.action <- action
+	s.ctrApp.TriggerAction(action)
 }
 
 func (s *AppState) GetInTray() bool {

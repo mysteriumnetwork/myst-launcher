@@ -34,6 +34,10 @@ const (
 	InitialStateNormalRun            = InitialState(4)
 )
 
+func (s InitialState) Not1Not2() bool {
+	return s != InitialStateStage1 && s != InitialStateStage2
+}
+
 type Config struct {
 	AutoStart              bool `json:"auto_start"`
 	Enabled                bool `json:"enabled"`
