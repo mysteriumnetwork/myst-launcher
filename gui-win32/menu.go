@@ -45,8 +45,7 @@ func (g *Gui) menu() []MenuItem {
 				Action{
 					Text: "E&xit",
 					OnTriggered: func() {
-						g.TerminateWaitDialogueComplete()
-						g.CloseUI()
+						g.model.UIBus.Publish("dlg-exit")
 					},
 				},
 			},
@@ -81,8 +80,8 @@ func (g *Gui) menu() []MenuItem {
 
 				Separator{},
 				Action{
-					Enabled:  false,
-					Text:     "Select backend:",
+					Enabled: false,
+					Text:    "Select backend:",
 				},
 				Action{
 					Enabled:  true,

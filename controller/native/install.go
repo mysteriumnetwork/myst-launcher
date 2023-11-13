@@ -34,8 +34,8 @@ func getAssetName() string {
 	return fmt.Sprintf("myst_%s_%s.%s", os, arch, f)
 }
 
-func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
-	mdl := c.a.GetModel()
+func (c *Native_) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
+	mdl := c.model
 	cfg := &mdl.Config
 
 	exename := getNodeProcessName()
@@ -126,11 +126,10 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 }
 
 // returns: will exit
-func (c *Controller) tryInstall(release updates.Release) error {
+func (c *Native_) tryInstall(release updates.Release) error {
 	log.Println("tryInstall >")
 
-	model := c.a.GetModel()
-	model.SetStateContainer(model_.RunnableStateInstalling)
+	c.model.SetStateContainer(model_.RunnableStateInstalling)
 
 	asset := getAssetName()
 	for _, v := range release.Assets {
@@ -156,8 +155,7 @@ func (c *Controller) tryInstall(release updates.Release) error {
 		break
 	}
 
-	ui := c.a.GetUI()
-	tryInstallFirewallRules(ui)
+	tryInstallFirewallRules(c.ui)
 	return nil
 }
 

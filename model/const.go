@@ -12,10 +12,10 @@ type UIState int
 const (
 	// model
 	UIStateInitial           UIState = 0
-	UIStateInstallNeeded     UIState = -1
-	UIStateInstallInProgress UIState = -2
-	UIStateInstallFinished   UIState = -3
-	UIStateInstallError      UIState = -4
+	UIStateInstallNeeded     UIState = 1
+	UIStateInstallInProgress UIState = 2
+	UIStateInstallFinished   UIState = 3
+	UIStateInstallError      UIState = 4
 )
 
 type RunnableState int
