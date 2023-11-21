@@ -34,15 +34,15 @@ jobs:
         GOARCH: amd64
         GOOS: windows
 
-    - name: Sign
-      env:
-        CODE_SIGNING_PFX: ${{ secrets.WINDOWS_CERTS }}
-        CODE_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
-        SIGNTOOL: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
-      run: |
-        Set-Content -Path bundle.txt -Value $env:CODE_SIGNING_PFX
-        certutil -decode bundle.txt bundle.pfx
-        & $env:SIGNTOOL sign /fd SHA256 /f bundle.pfx /p "$env:CODE_SIGNING_PFX_PASSWORD" /tr "http://timestamp.digicert.com" /td SHA256 /d "Mysterium Launcher" bin/myst-launcher-amd64.exe
+#    - name: Sign
+#      env:
+#        CODE_SIGNING_PFX: ${{ secrets.WINDOWS_CERTS }}
+#        CODE_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
+#        SIGNTOOL: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
+#      run: |
+#        Set-Content -Path bundle.txt -Value $env:CODE_SIGNING_PFX
+#        certutil -decode bundle.txt bundle.pfx
+#        & $env:SIGNTOOL sign /fd SHA256 /f bundle.pfx /p "$env:CODE_SIGNING_PFX_PASSWORD" /tr "http://timestamp.digicert.com" /td SHA256 /d "Mysterium Launcher" bin/myst-launcher-amd64.exe
 
     - name: Build
       run: |
@@ -53,15 +53,15 @@ jobs:
         candle installer\installer.wxs installer\licenseDialogue.wxs  -arch x64 -out installer\
         light installer\installer.wixobj installer\licenseDialogue.wixobj -dcl:high -ext WixUIExtension.dll -ext WixUtilExtension.dll -out installer\myst-launcher-x64.msi
 
-    - name: Sign
-      env:
-        CODE_SIGNING_PFX: ${{ secrets.WINDOWS_CERTS }}
-        CODE_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
-        SIGNTOOL: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
-      run: |
-        Set-Content -Path bundle.txt -Value $env:CODE_SIGNING_PFX
-        certutil -decode bundle.txt bundle.pfx
-        & $env:SIGNTOOL sign /fd SHA256 /f bundle.pfx /p "$env:CODE_SIGNING_PFX_PASSWORD" /tr "http://timestamp.digicert.com" /td SHA256 /d "Mysterium Launcher" installer/myst-launcher-x64.msi bin/myst-launcher-cli.exe
+#    - name: Sign
+#      env:
+#        CODE_SIGNING_PFX: ${{ secrets.WINDOWS_CERTS }}
+#        CODE_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
+#        SIGNTOOL: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
+#      run: |
+#        Set-Content -Path bundle.txt -Value $env:CODE_SIGNING_PFX
+#        certutil -decode bundle.txt bundle.pfx
+#        & $env:SIGNTOOL sign /fd SHA256 /f bundle.pfx /p "$env:CODE_SIGNING_PFX_PASSWORD" /tr "http://timestamp.digicert.com" /td SHA256 /d "Mysterium Launcher" installer/myst-launcher-x64.msi bin/myst-launcher-cli.exe
 
     - name: Upload
       uses: softprops/action-gh-release@v1

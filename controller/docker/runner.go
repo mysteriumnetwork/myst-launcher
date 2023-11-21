@@ -84,7 +84,7 @@ func (r *DockerRunner) tryStartDockerDesktop() bool {
 
 func startDockerDesktop() error {
 	var cmd *exec.Cmd
-	// fmt.Println("Start Docker Desktop>", runtime.GOOS)
+	fmt.Println("Start Docker Desktop>", runtime.GOOS)
 
 	switch runtime.GOOS {
 	case "windows":
@@ -96,7 +96,7 @@ func startDockerDesktop() error {
 	default:
 		return errors.New("unsupported OS: " + runtime.GOOS)
 	}
-	// fmt.Println("Start Docker Desktop>", cmd)
+	fmt.Println("Start Docker Desktop>", cmd)
 
 	if err := cmd.Start(); err != nil {
 		fmt.Println("err>", err)
