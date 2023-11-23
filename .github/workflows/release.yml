@@ -10,6 +10,40 @@ on:
       - '*.*.*'
 
 jobs:
+  release-linux-armd64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19
+
+      - name: Install cross-compilation tools
+        run: |
+          set -ex
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build
+        run: |
+          go build -v -trimpath -ldflags "-s -w" -o  bin/myst-launcher-cli-arm64-linux github.com/mysteriumnetwork/myst-launcher/cmd/app-cli
+        env:
+          GOARCH: arm64
+          GOOS: linux
+          CC: aarch64-linux-gnu-gcc
+          CGO_ENABLED: 1
+          CC_FOR_TARGET: gcc-aarch64-linux-gnu
+
+      - name: Upload
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          prerelease: true
+          files: |
+            bin/myst-launcher-cli-arm64-linux
+
   release-windows-amd64:
     runs-on: windows-2019
     steps:
