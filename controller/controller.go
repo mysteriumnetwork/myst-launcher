@@ -130,6 +130,12 @@ func (c *Controller) startBackendControl() {
 				fmt.Println("<-", act)
 
 				switch act {
+                case model.ActionCheck:
+                    c.d.CheckCurrentVersionAndUpgrades(true)
+
+                case model.ActionUpgrade:
+                    c.d.UpgradeContainer(false)
+
 				case model.ActionInstall:
 					c.d.TryInstallRuntime()
 					return

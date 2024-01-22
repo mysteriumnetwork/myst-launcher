@@ -28,6 +28,7 @@ type RunnerController interface {
 	StopContainer()
 	RestartContainer()
 	UpgradeContainer(refreshVersionCache bool)
+	CheckCurrentVersionAndUpgrades(refreshVersionCache bool)
 }
 
 const (

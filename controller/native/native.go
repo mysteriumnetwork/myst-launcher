@@ -41,6 +41,8 @@ func (c *Native_) StartContainer() {
 	mdl := c.model
 	ui := c.ui
 
+	c.CheckAndUpgradeNodeExe(false)
+
 	if !mdl.Config.Enabled {
 		return
 	}
@@ -102,4 +104,8 @@ func (c *Native_) TryInstallRuntime_() {}
 
 func (c *Native_) TryInstallRuntime() bool {
 	return false
+}
+
+func (c *Native_) CheckCurrentVersionAndUpgrades(refreshVersionCache bool) {
+	//c.CheckCurrentVersionAndUpgrades(refreshVersionCache)
 }

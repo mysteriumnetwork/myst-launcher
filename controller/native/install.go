@@ -34,6 +34,10 @@ func getAssetName() string {
 	return fmt.Sprintf("myst_%s_%s.%s", os, arch, f)
 }
 
+func (c *Native_) CheckUpgrades(refreshVersionCache bool) bool {
+
+}
+
 func (c *Native_) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 	mdl := c.model
 	cfg := &mdl.Config
