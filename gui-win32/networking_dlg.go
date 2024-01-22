@@ -138,9 +138,11 @@ func (g *Gui) NetworkingDlg() {
 									walk.MsgBoxTopMost|walk.MsgBoxOK|walk.MsgBoxIconExclamation)
 								return
 							}
-							g.model.GetConfig().EnablePortForwarding = manualPortForwarding.Checked()
-							g.model.GetConfig().PortRangeBegin = portRangeBegin
-							g.model.GetConfig().PortRangeEnd = portRangeLen
+							cfg := g.model.GetConfig()
+							cfg.EnablePortForwarding = manualPortForwarding.Checked()
+							cfg.PortRangeBegin = portRangeBegin
+							cfg.PortRangeEnd = portRangeLen
+							cfg.Save()
 
 							dialog.Accept()
 							g.model.App.TriggerAction("restart")

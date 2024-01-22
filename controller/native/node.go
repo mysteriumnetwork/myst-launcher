@@ -37,7 +37,7 @@ func NewController() *Controller {
 }
 
 func (c *Controller) GetCaps() int {
-	return 0
+	return 1
 }
 
 func (c *Controller) SetApp(a model_.AppState) {

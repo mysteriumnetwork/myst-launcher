@@ -160,6 +160,7 @@ func (c *Config) Read() {
 
 	json.NewDecoder(file).Decode(&c) // for version check
 	c.getDefaultValues(false)
+	file.Seek(0, 0)
 	json.NewDecoder(file).Decode(&c)
 }
 
