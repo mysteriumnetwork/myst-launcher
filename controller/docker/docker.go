@@ -179,3 +179,7 @@ func (c *Docker_) UpgradeContainer(refreshVersionCache bool) {
 
 	c.mystManager.CheckCurrentVersionAndUpgrades(false)
 }
+
+func (c *Docker_) CheckCurrentVersionAndUpgrades(refreshVersionCache bool) {
+	c.mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
+}
