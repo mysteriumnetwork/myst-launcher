@@ -1,3 +1,6 @@
+//go:build darwin
+// +build darwin
+
 package platform
 
 import (
@@ -59,11 +62,7 @@ func (m *Manager) Features() (bool, error) {
 		}
 		return true
 	}()
-	if !hasHV {
-		return false, nil
-	}
-	return true, nil
-
+	return hasHV, nil
 }
 
 func (m *Manager) SystemUnderVm() (bool, error) {

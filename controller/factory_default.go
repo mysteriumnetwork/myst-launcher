@@ -1,0 +1,21 @@
+//go:build !linux
+// +build !linux
+
+package controller
+
+import (
+	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
+	"github.com/mysteriumnetwork/myst-launcher/controller/native"
+	"github.com/mysteriumnetwork/myst-launcher/model"
+)
+
+func NewController(n string) model.Controller {
+	switch n {
+	case "native":
+		return native.NewController()
+	case "docker":
+		return docker.NewController()
+	default:
+		return nil
+	}
+}

@@ -44,3 +44,7 @@ type PlatformManager interface {
 	Features() (bool, error)
 	SystemUnderVm() (bool, error)
 }
+
+type DockerManager interface {
+	PingDocker() (bool)
+}

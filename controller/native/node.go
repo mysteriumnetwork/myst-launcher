@@ -174,11 +174,13 @@ func (c *Controller) startContainer() {
 		case model_.InitialStateFirstRunAfterInstall, model_.InitialStateUndefined:
 			cfg.InitialState = model_.InitialStateNormalRun
 			cfg.Save()
-			if ui != nil {
-				ui.ShowNotificationInstalled()
-			} else {
-				c.lg.Println("node installed!")
-			}
+
+            if ui != nil {
+                ui.ShowNotificationInstalled()
+                ui.OpenNodeUI()
+            } else {
+                c.lg.Println("node installed!")
+            }
 		}
 	}
 }

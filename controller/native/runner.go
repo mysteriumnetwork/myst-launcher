@@ -69,9 +69,9 @@ func (r *NodeRunner) IsRunning() bool {
 }
 
 func getNodeProcessName() string {
-	exe := "myst.exe"
-	if runtime.GOOS == "darwin" {
-		exe = "myst"
+	exe := "myst"
+	if runtime.GOOS == "windows" {
+		exe = "myst.exe"
 	}
 	return exe
 }
@@ -143,7 +143,9 @@ func (r *NodeRunner) startNode() error {
 	}
 
 	switch runtime.GOOS {
-	case "windows", "darwin":
+	case "windows", "darwin", "linux":
+    	log.Println("!startNode", fullExePath, args)
+
 		cmd, err := utils.CmdStart(fullExePath, args...)
 		if err != nil {
 			log.Println("run node failed:", err)

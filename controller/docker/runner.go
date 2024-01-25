@@ -8,43 +8,30 @@
 package docker
 
 import (
-	"context"
 	"errors"
-
-	// "log"
 	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
-	"time"
 
-	"github.com/docker/docker/client"
-
+	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
 type DockerRunner struct {
 	tryStartCount int
-	dockerAPI     *client.Client
+	myst          model.DockerManager
 }
 
-func NewDockerRunner(docker *client.Client) *DockerRunner {
+func NewDockerRunner(myst model.DockerManager) *DockerRunner {
 	return &DockerRunner{
 		tryStartCount: 0,
-		dockerAPI:     docker,
+		myst:          myst,
 	}
 }
 
-func (r *DockerRunner) canPingDocker() bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err := r.dockerAPI.Ping(ctx)
-	return err == nil
-}
-
 func (r *DockerRunner) IsRunning() bool {
-	canPingDocker := r.canPingDocker()
+	canPingDocker := r.myst.PingDocker()
 	// defer log.Println("IsRunning >", canPingDocker)
 
 	if canPingDocker {
@@ -58,7 +45,7 @@ func (r *DockerRunner) IsRunningOrTryStart() (bool, bool) {
 	// fmt.Println("IsRunningOrTryStart >")
 	// defer fmt.Println("IsRunningOrTryStart >>>")
 
-	if !r.canPingDocker() {
+	if !r.myst.PingDocker() {
 		r.tryStartCount++
 
 		if !r.tryStartDockerDesktop() || r.tryStartCount >= 20 {
@@ -97,7 +84,7 @@ func (r *DockerRunner) tryStartDockerDesktop() bool {
 
 func startDockerDesktop() error {
 	var cmd *exec.Cmd
-	// fmt.Println("Start Docker Desktop>", runtime.GOOS)
+	fmt.Println("Start Docker Desktop>", runtime.GOOS)
 
 	switch runtime.GOOS {
 	case "windows":
@@ -109,7 +96,7 @@ func startDockerDesktop() error {
 	default:
 		return errors.New("unsupported OS: " + runtime.GOOS)
 	}
-	// fmt.Println("Start Docker Desktop>", cmd)
+	fmt.Println("Start Docker Desktop>", cmd)
 
 	if err := cmd.Start(); err != nil {
 		fmt.Println("err>", err)

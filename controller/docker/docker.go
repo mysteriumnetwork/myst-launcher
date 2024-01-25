@@ -86,7 +86,7 @@ func (c *Controller) Start() {
 		panic(err) // TODO handle gracefully
 	}
 	c.mystManager = mystManager
-	docker := NewDockerRunner(mystManager.GetDockerClient())
+	docker := NewDockerRunner(mystManager)
 
 	c.wg.Add(1)
 	defer c.setFinished()
@@ -281,6 +281,11 @@ func (c *Controller) startContainer() {
 		mdl.Config.InitialState = model_.InitialStateNormalRun
 		mdl.Config.Save()
 
-		ui.ShowNotificationInstalled()
+        if ui != nil {
+            ui.ShowNotificationInstalled()
+            ui.OpenNodeUI()
+        } else {
+            c.lg.Println("node installed!")
+        }
 	}
 }
