@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/controller/docker/myst"
+	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/platform"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -20,7 +20,7 @@ type Docker_ struct {
 }
 
 func NewSvc(m *model.UIModel, ui model.Gui_) *Docker_ {
-	lg := log.New(log.Writer(), "[docker_] ", log.Ldate|log.Ltime)
+	lg := log.New(log.Writer(), "[docker] ", log.Ldate|log.Ltime)
 
 	m.Caps = 1
 	m.UIBus.Publish("model-change")
@@ -164,13 +164,12 @@ func (c *Docker_) RestartContainer() {
 func (c *Docker_) UpgradeContainer(refreshVersionCache bool) {
 	mdl := c.model
 
-	if !mdl.ImageInfo.HasUpdate {
-		return
-	}
+	// if !mdl.ImageInfo.HasUpdate_ {
+	// 	return
+	// }
 
-	if refreshVersionCache {
-		c.mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
-	}
+	c.mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
+
 	mdl.SetStateContainer(model.RunnableStateInstalling)
 	err := c.mystManager.Update()
 	if err != nil {
@@ -180,6 +179,10 @@ func (c *Docker_) UpgradeContainer(refreshVersionCache bool) {
 	c.mystManager.CheckCurrentVersionAndUpgrades(false)
 }
 
-func (c *Docker_) CheckCurrentVersionAndUpgrades(refreshVersionCache bool) {
-	c.mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
+func (c *Docker_) CheckCurrentVersionAndUpgrades(refreshVersionCache bool) bool {
+	return c.mystManager.CheckCurrentVersionAndUpgrades(refreshVersionCache)
+}
+
+func (c *Docker_) IsRunning() bool {
+	return c.mystManager.IsRunning()
 }

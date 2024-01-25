@@ -10,9 +10,9 @@ package model
 import (
 	"log"
 	"runtime"
-	"strings"
 
 	"github.com/asaskevich/EventBus"
+	"github.com/mysteriumnetwork/myst-launcher/controller/shutdown"
 )
 
 type UIModel struct {
@@ -56,31 +56,19 @@ type UIModel struct {
 	ProductVersion          string
 	ProductVersionLatest    string
 	ProductVersionLatestUrl string
+
+	// controllers
+	Sh *shutdown.ShutdownController
 }
 
 type ImageInfo struct {
 	// used by pullLatest for the case of multi-arch image with 2 digests
 	DigestLatest string
 
-	CurrentImgDigest  string
-	CurrentImageID    string
-	CurrentImgDigests []string
-
 	// calculated values
-	HasUpdate      bool
 	VersionCurrent string
 	VersionLatest  string
-}
-
-func (i *ImageInfo) HasDigest(digest string) bool {
-	// multi-arch images have 2 digests: one for image itself, second - for manifest
-
-	for _, d := range i.CurrentImgDigests {
-		if strings.EqualFold(digest, d) {
-			return true
-		}
-	}
-	return false
+	HasUpdate      bool
 }
 
 func NewUIModel() *UIModel {
@@ -109,9 +97,9 @@ func (m *UIModel) UpdateToMainnet() {
 }
 
 func (m *UIModel) SetProductVersion(v string) {
-    if len(v) == 0 {
-        return
-    }
+	if len(v) == 0 {
+		return
+	}
 
 	m.ProductVersion = v
 	if v[0] == 'v' {

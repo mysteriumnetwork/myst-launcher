@@ -24,7 +24,9 @@ type Controller struct {
 	model  *model.UIModel
 	ui     model.Gui_
 	action chan string
-	d      model.RunnerController
+	runner model.RunnerController
+
+	waitForShutdownReady bool
 }
 
 func NewController(m *model.UIModel, ui model.Gui_, a model.AppState) *Controller {
@@ -43,10 +45,10 @@ func (c *Controller) Start() {
 	//c.lg.Println("start")
 
 	restartBackendControl := func() {
-		if c.d != nil {
+		if c.runner != nil {
 			c.stopBackendControl()
 		}
-		c.d = NewBackend(c.model.Config.Backend, c.model, c.ui)
+		c.runner = NewBackend(c.model.Config.Backend, c.model, c.ui)
 
 		c.model.SwitchState(model.UIStateInitial)
 		c.startBackendControl()
@@ -77,11 +79,18 @@ func (c *Controller) Start() {
 	c.model.UIBus.SubscribeAsync("dlg-exit", func() {
 		c.ui.CloseUI()
 	}, false)
+
+	c.model.UIBus.SubscribeAsync("ready-to-shutdown", func() {
+		log.Println("control> ready-to-shutdown")
+		c.action <- model.ActionUpgradeGracefuly
+	}, false)
 }
 
 func (c *Controller) Shutdown() {
 	c.lg.Println("Shutdown >")
 	c.stopBackendControl()
+
+	// TODO: unsubscribe
 }
 
 func (c *Controller) TriggerAction(action string) {
@@ -104,15 +113,34 @@ func (c *Controller) startBackendControl() {
 	startNode := func() {
 		c.lg.Println("startNode >")
 
-		if !c.d.TryStartRuntime() {
-			c.d.TryInstallRuntime_()
+		if !c.runner.TryStartRuntime() {
+			c.runner.TryInstallRuntime_()
 			return
 		}
 		// now we have runtime (docker) running
 
-		c.d.StartContainer()
-		if c.model.Config.AutoUpgrade {
-			c.d.UpgradeContainer(false)
+		hasUpdates := c.runner.CheckCurrentVersionAndUpgrades(false)
+
+		if !c.runner.IsRunning() {
+			if c.model.Config.AutoUpgrade && hasUpdates {
+				c.runner.UpgradeContainer(false)
+			}
+		}
+
+		c.runner.StartContainer()
+		c.lg.Println("startNode >", c.model.Config.AutoUpgrade, hasUpdates)
+
+		if c.model.Config.AutoUpgrade && hasUpdates {
+
+			// start and wait for SHUTDOWN READY event
+			if !c.waitForShutdownReady {
+				c.waitForShutdownReady = true
+				c.model.Sh.Start()
+			}
+		}
+		if !c.model.Config.AutoUpgrade && c.waitForShutdownReady {
+			c.waitForShutdownReady = false
+			c.model.Sh.Stop()
 		}
 	}
 
@@ -127,33 +155,40 @@ func (c *Controller) startBackendControl() {
 				startNode()
 
 			case act := <-c.action:
-				fmt.Println("<-", act)
+				// log.Println("<-", act)
 
 				switch act {
-                case model.ActionCheck:
-                    c.d.CheckCurrentVersionAndUpgrades(true)
+				case model.ActionCheck:
+					c.runner.CheckCurrentVersionAndUpgrades(true)
 
-                case model.ActionUpgrade:
-                    c.d.UpgradeContainer(false)
+				case model.ActionUpgradeGracefuly:
+					if c.waitForShutdownReady {
+						c.waitForShutdownReady = false
+						c.model.Sh.Stop()
+						c.runner.UpgradeContainer(false)
+					}
+
+				case model.ActionUpgrade:
+					c.runner.UpgradeContainer(false)
 
 				case model.ActionInstall:
-					c.d.TryInstallRuntime()
+					c.runner.TryInstallRuntime()
 					return
 
 				case model.ActionStop:
-					c.d.StopContainer()
+					c.runner.StopContainer()
 					return
 
 				case model.ActionDisable:
 					c.model.SetStateContainer(model.RunnableStateUnknown)
-					c.d.StopContainer()
+					c.runner.StopContainer()
 
 				case model.ActionEnable:
-					c.d.StartContainer()
+					c.runner.StartContainer()
 
 				case model.ActionRestart:
 					c.model.SetStateContainer(model.RunnableStateUnknown)
-					c.d.RestartContainer()
+					c.runner.RestartContainer()
 				}
 			}
 		}

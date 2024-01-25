@@ -21,25 +21,28 @@ type Controller interface {
 type RunnerController interface {
 	TryInstallRuntime() bool
 	TryInstallRuntime_()
-
 	TryStartRuntime() bool
 	CheckSysRequirements() bool
+
+	IsRunning() bool
 	StartContainer()
 	StopContainer()
 	RestartContainer()
+
 	UpgradeContainer(refreshVersionCache bool)
-	CheckCurrentVersionAndUpgrades(refreshVersionCache bool)
+	CheckCurrentVersionAndUpgrades(refreshVersionCache bool) bool
 }
 
 const (
-	ActionCheck      = "check"
-	ActionUpgrade    = "upgrade"
-	ActionRestart    = "restart"
-	ActionEnable     = "enable"
-	ActionDisable    = "disable"
-	ActionStopRunner = "stop-runner"
-	ActionStop       = "stop"
-	ActionInstall    = "install" // install runner/container
+	ActionCheck            = "check"
+	ActionUpgrade          = "upgrade"
+	ActionUpgradeGracefuly = "upgrade-graceful"
+	ActionRestart          = "restart"
+	ActionEnable           = "enable"
+	ActionDisable          = "disable"
+	ActionStopRunner       = "stop-runner"
+	ActionStop             = "stop"
+	ActionInstall          = "install" // install runner/container
 )
 
 type AppState interface {
