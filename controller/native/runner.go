@@ -121,21 +121,31 @@ func KillPreviousLauncher() {
 func (r *NodeRunner) startNode() error {
 	log.Println("!startNode")
 	fullExePath := getNodeExePath()
+	c := r.mod.Config
+	log.Println("!startNode", c.EnablePortForwarding)
 
+	portsArg := ""
+	if c.EnablePortForwarding {
+		portsArg = fmt.Sprintf("--udp.ports=%d:%d", c.PortRangeBegin, c.PortRangeEnd)
+	}
+	userspaceArg := "--userspace"
 	versionArg := fmt.Sprintf("--launcher.ver=%s", r.mod.GetProductVersionString())
 	configDirArg := fmt.Sprintf("--config-dir=%s", r.configpath)
 	dataDirArg := fmt.Sprintf("--data-dir=%s", r.configpath)
 	logDirArg := fmt.Sprintf("--log-dir=%s", r.configpath)
 	nodeuiDirArg := fmt.Sprintf("--node-ui-dir=%s", path.Join(r.configpath, "nodeui"))
 
-	userspaceArg := "--userspace"
-
 	args2 := make([]string, 0)
 	if r.mod.NodeFlags != "" {
 		args2 = strings.Split(r.mod.NodeFlags, " ")
 	}
 
-	args := []string{userspaceArg, versionArg}
+	args := []string{}
+	if portsArg != "" {
+		args = append(args, portsArg)
+	}
+	args = append(args, userspaceArg, versionArg)
+
 	if len(args2) > 0 {
 		args = append(args, args2...)
 	} else {
