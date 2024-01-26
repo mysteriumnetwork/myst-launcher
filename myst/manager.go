@@ -15,6 +15,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -24,6 +26,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/client"
+
 	"github.com/docker/go-connections/nat"
 	errors2 "github.com/pkg/errors"
 
@@ -60,6 +63,18 @@ type Manager struct {
 }
 
 func NewManager(model *model.UIModel) (*Manager, error) {
+
+	if runtime.GOOS == "darwin" {
+		// Prefer DOCKER_HOST, don't override it
+		_, hasDockerHost := os.LookupEnv("DOCKER_HOST")
+		if !hasDockerHost {
+			if _, err := os.Stat("/var/run/docker.sock"); os.IsNotExist(err) {
+				// path does not exist
+				os.Setenv("DOCKER_HOST", "unix://"+filepath.Join(utils.GetUserProfileDir(), ".docker/run/docker.sock"))
+			}
+		}
+	}
+
 	dc, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, errors2.Wrap(err, ErrCouldNotConnect.Error())
