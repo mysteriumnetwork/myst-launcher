@@ -87,7 +87,7 @@ func (m *Manager) Features() (bool, error) {
 }
 
 func (m *Manager) SystemUnderVm() (bool, error) {
-	con,_ := wmiAPIInit()
+	con, err := wmiAPIInit()
 	defer wmiAPIRelease(con)
 
 	res, err := con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")
@@ -120,7 +120,7 @@ func (m *Manager) SystemUnderVm() (bool, error) {
  */
 
 func (m *Manager) IsVMcomputeRunning() (bool, error) {
-	con,_ := wmiAPIInit()
+	con, _ := wmiAPIInit()
 	defer wmiAPIRelease(con)
 
 	res, err := con.CallMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
@@ -140,7 +140,7 @@ func (m *Manager) IsVMcomputeRunning() (bool, error) {
 }
 
 func (m *Manager) StartVmcomputeIfNotRunning() (bool, error) {
-	con,_ := wmiAPIInit()
+	con, _ := wmiAPIInit()
 	defer wmiAPIRelease(con)
 
 	res, err := con.CallMethod("ExecQuery", "SELECT * FROM Win32_Service Where Name='vmcompute'")
@@ -176,7 +176,7 @@ func (m *Manager) StartVmcomputeIfNotRunning() (bool, error) {
 // We can not use the IsProcessorFeaturePresent approach, as it does not matter in self-virtualized environment
 // see https://devblogs.microsoft.com/oldnewthing/20201216-00/?p=104550
 func (m *Manager) HasVTx() (bool, error) {
-	con,_ := wmiAPIInit()
+	con, _ := wmiAPIInit()
 	defer wmiAPIRelease(con)
 
 	res, err := con.CallMethod("ExecQuery", "SELECT * FROM Win32_ComputerSystem")

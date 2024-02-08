@@ -215,7 +215,7 @@ func NewInstallationFrame(parent walk.Container, mdl *model.UIModel) *Installati
 						AssignTo:   &f.btnFinish,
 						Text:       "Finish",
 						OnClicked: func() {
-							mdl.UIBus.Publish("click-finish")
+							mdl.UIBus.Publish("install-dlg-exit", model.DLG_TERM)
 						},
 					},
 				},
@@ -224,9 +224,9 @@ func NewInstallationFrame(parent walk.Container, mdl *model.UIModel) *Installati
 	}
 	c.Create(NewBuilder(parent))
 
-	f.mdl.UIBus.Subscribe("model-change", f.handlerState)
+	mdl.UIBus.Subscribe("model-change", f.handlerState)
 	mdl.UIBus.Subscribe("want-exit", f.handler)
-	mdl.UIBus.Subscribe("log", f.handlerLog)
+	mdl.UIBus.SubscribeAsync("log", f.handlerLog, false)
 
 	return f
 }

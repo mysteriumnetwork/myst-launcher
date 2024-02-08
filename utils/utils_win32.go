@@ -444,6 +444,7 @@ func DiscoverDockerPathAndPatchEnv(wait bool) {
 		if sfx != "" {
 			break
 		}
+		log.Println("DiscoverDockerPathAndPatchEnv>")
 		time.Sleep(5 * time.Second)
 	}
 
@@ -652,7 +653,7 @@ func HideFile(path string, hide bool) (string, error) {
 	}
 	flags := uint32(0)
 	if hide {
-	    flags |= syscall.FILE_ATTRIBUTE_HIDDEN
+		flags |= syscall.FILE_ATTRIBUTE_HIDDEN
 	}
 	err = syscall.SetFileAttributes(p, flags)
 	if err != nil {
@@ -673,16 +674,16 @@ func RunMsi(msi string) error {
 	defer devNull.Close()
 
 	attr := &os.ProcAttr{
-		Sys: &syscall.SysProcAttr{},
+		Sys:   &syscall.SysProcAttr{},
 		Files: []*os.File{devNull, devNull, devNull},
 		Dir:   filepath.Dir(msi),
 	}
 	msiexec := filepath.Join(system32, "msiexec.exe")
-	
+
 	_, err = os.StartProcess(msiexec, []string{msiexec, "/qb!-", "/i", filepath.Base(msi), `RUNAFTER=1`}, attr)
 	return err
 }
 
 func IsAdmin() bool {
-    return w32.SHIsUserAnAdmin()
+	return w32.SHIsUserAnAdmin()
 }

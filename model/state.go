@@ -34,6 +34,10 @@ const (
 	InitialStateNormalRun            = InitialState(4)
 )
 
+func (s InitialState) Not1Not2() bool {
+	return s != InitialStateStage1 && s != InitialStateStage2
+}
+
 type Config struct {
 	AutoStart              bool `json:"auto_start"`
 	Enabled                bool `json:"enabled"`
@@ -42,12 +46,14 @@ type Config struct {
 	InitialState InitialState `json:"state"`
 
 	// autoupgrade node
-	AutoUpgrade      bool      `json:"auto_upgrade"`
+	AutoUpgrade bool `json:"auto_upgrade"`
+
 	NodeExeTimestamp time.Time `json:"-"`
 	NodeExeDigest    string    `json:"node_exe_digest"`
 	NodeExeVersion   string    `json:"node_exe_version"`
-	NodeLatestTag    string    `json:"node_latest_tag"`    // cache latest tag
-	LastUpgradeCheck int64     `json:"last_upgrade_check"` // node exe last check, once a day
+	NodeExeLatestTag string    `json:"node_exe_latest_tag"` // cache latest tag (native)
+	NodeLatestTag    string    `json:"node_latest_tag"`     // cache latest tag (docker)
+	LastUpgradeCheck int64     `json:"last_upgrade_check"`  // node exe last check, once a day
 
 	Backend string `json:"backend"` // runner: docker | native
 
@@ -55,6 +61,10 @@ type Config struct {
 	EnablePortForwarding bool `json:"enable_port_forwarding"`
 	PortRangeBegin       int  `json:"port_range_begin"`
 	PortRangeEnd         int  `json:"port_range_end"`
+
+
+	// exit node terms & conditions agreement consent
+	AgreementConsentDate time.Time `json:"agreement_consent_date"`
 
 	Network         string `json:"network"`
 	LauncherVersion string `json:"version"`
@@ -97,7 +107,7 @@ func (c *Config) RefreshLastUpgradeCheck() {
 const upgradeCheckPeriod = 24 * time.Hour
 
 // Check if 24 hours passed since last upgrade check
-func (c *Config) NeedToCheckUpgrade() bool {
+func (c *Config) TimeToCheckUpgrade() bool {
 	t := time.Unix(c.LastUpgradeCheck, 0)
 	return t.Add(upgradeCheckPeriod).Before(time.Now())
 }

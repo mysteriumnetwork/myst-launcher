@@ -17,49 +17,51 @@ import (
 
 	"github.com/gonutz/w32"
 	"github.com/lxn/win"
-	"github.com/winlabs/gowin32"
-	"golang.org/x/sys/windows"
-
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/native"
-	"github.com/mysteriumnetwork/myst-launcher/platform"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
+	"github.com/winlabs/gowin32"
+	"golang.org/x/sys/windows"
 )
 
 const dockerUsersGroup = "docker-users"
 
-// returns: will exit
-func (c *Controller) tryInstallDocker() {
-	mgr := c.mgr.(*platform.Manager)
-	mdl := c.a.GetModel()
-	ui := c.a.GetUI()
+func (c *Docker_) TryInstallRuntime_() {
 
-	mdl.ResetProperties()
-	mdl.SwitchState(model.UIStateInstallNeeded)
+	if c.model.Config.InitialState.Not1Not2() {
+		c.model.SwitchState(model.UIStateInstallNeeded)
 
-	if mdl.Config.InitialState != model.InitialStateStage1 && mdl.Config.InitialState != model.InitialStateStage2 {
-		ok := ui.WaitDialogueComplete()
-		if ok == model.DLG_TERM {
-			c.wantExitCtl = true
-			return
-		}
+	} else {
+		// begin install immediately
+		c.TryInstallRuntime()
 	}
+}
+
+// returns: will exit
+func (c *Docker_) TryInstallRuntime() bool {
+	fmt.Println("TryInstallRuntime >")
+	mdl := c.model
+	ui := c.ui
 
 	if !w32.SHIsUserAnAdmin() {
-		if mdl.Config.InitialState != model.InitialStateStage1 && mdl.Config.InitialState != model.InitialStateStage2 {
+		if mdl.Config.InitialState.Not1Not2() {
 			mdl.Config.InitialState = model.InitialStateStage1
 			mdl.Config.Save()
 		}
 		utils.RunasWithArgsNoWait("")
-		c.wantExit = true
-		return
+
+		// force immediate exit
+		c.model.UIBus.Publish("dlg-exit")
+		return true
 	}
 
+	mdl.ResetProperties()
 	mdl.SwitchState(model.UIStateInstallInProgress)
 
-	executor := StepExec{c.a.GetModel(), nil}
+	executor := NewStepExecutor(mdl)
 	executor.AddStep("CheckWindowsVersion", func() bool {
 		c.lg.Println("Checking Windows version")
+
 		if !utils.IsWindowsVersionCompatible() {
 			c.lg.Println("You must run Windows 10 version 2004 or above.")
 			ui.ConfirmModal("Installation", "Please update to Windows 10 version 2004 or above.")
@@ -67,64 +69,7 @@ func (c *Controller) tryInstallDocker() {
 		}
 		return true
 	})
-	executor.AddStep("InstallExecutable", func() bool {
-		if mdl.Config.InitialState != model.InitialStateStage2 {
-			c.lg.Println("Install executable")
-			if err := utils.CheckAndInstallExe(); err != nil {
-				c.lg.Println("Failed to install executable")
-				return false
-			}
 
-			mdl.Config.InitialState = model.InitialStateStage2
-			mdl.Config.Save()
-
-			utils.EnableAutorun(true)
-			utils.CreateDesktopShortcut("")
-			utils.CreateStartMenuShortcut("")
-		}
-		return true
-	})
-
-	executor.AddStep("CheckVTx", func() bool {
-		// Don't check VT-x / EPT as it's just enough to check VMPlatform WSL and vmcompute
-		ok, err := c.mgr.Features()
-		if err != nil {
-			c.lg.Println(err)
-			return false
-		}
-		if !ok {
-			mgr.EnableHyperVPlatform()
-
-			ret := ui.YesNoModal("Installation", "Reboot is required to enable Windows optional feature\r\n"+"Click Yes to reboot now")
-			if ret == win.IDYES {
-				native.ShellExecuteNowait(0, "", "shutdown", "-r", "", syscall.SW_NORMAL)
-			}
-			return false
-		}
-
-		// proceeding install after reboot
-		mdl.UpdateProperties(model.UIProps{"RebootAfterWSLEnable": model.StepFinished})
-
-		c.lg.Println("Checking vmcompute (Hyper-V Host Compute Service)")
-		ok, err = mgr.IsVMcomputeRunning()
-		if err != nil {
-			c.lg.Println(err)
-			return false
-		}
-		// force service to start
-		if !ok {
-			ok, _ = mgr.StartVmcomputeIfNotRunning()
-		}
-		if !ok {
-			c.lg.Println("Vmcompute (Hyper-V Host Compute Service) is not running")
-			ui.ConfirmModal("Installation", "Vmcompute (Hyper-V Host Compute Service) is not running.\r\n\r\n"+
-				"Please enable virtualization in a system BIOS: VT-x and EPT options for Intel, SVM for AMD")
-
-			return false
-		}
-
-		return true
-	})
 	executor.AddStep("DownloadFiles", func() bool {
 		mdl.UpdateProperties(model.UIProps{"DownloadFiles": model.StepInProgress})
 		download := func() error {
@@ -133,7 +78,7 @@ func (c *Controller) tryInstallDocker() {
 				{"https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi", "wsl_update_x64.msi"},
 			}
 			for fi, v := range list {
-				c.lg.Println(fmt.Sprintf("Downloading %d of %d: %s", fi+1, len(list), v.name))
+				c.lg.Printf("Downloading %d of %d: %s", fi+1, len(list), v.name)
 
 				if _, err := os.Stat(utils.GetTmpDir() + "\\" + v.name); err != nil {
 					err := utils.DownloadFile(utils.GetTmpDir()+"\\"+v.name, v.url, func(progress int) {
@@ -162,7 +107,8 @@ func (c *Controller) tryInstallDocker() {
 		}
 		return true
 	})
-	executor.AddStep("InstallWSLUpdate", func() bool {
+
+	InstallWSLUpdate := func() bool {
 		mdl.UpdateProperties(model.UIProps{"InstallWSLUpdate": model.StepInProgress})
 		c.lg.Println("Installing wsl_update_x64.msi")
 
@@ -183,8 +129,9 @@ func (c *Controller) tryInstallDocker() {
 			c.lg.Println("WSL is already updated!")
 		}
 		return true
-	})
+	}
 
+	executor.AddStep("InstallWSLUpdate", InstallWSLUpdate)
 	executor.AddStep("InstallDocker", func() bool {
 		c.lg.Println("Installing docker desktop (wait ~5 minutes)")
 
@@ -200,28 +147,7 @@ func (c *Controller) tryInstallDocker() {
 		}
 		return true
 	})
-	executor.AddStep("InstallWSLUpdate", func() bool {
-		mdl.UpdateProperties(model.UIProps{"InstallWSLUpdate": model.StepInProgress})
-		c.lg.Println("Installing wsl_update_x64.msi")
-
-		gowin32.SetInstallerInternalUI(gowin32.InstallUILevelProgressOnly) // UI Level for a prompt
-		wslIsUpdated, err := utils.IsWSLUpdated()
-		if err != nil {
-			c.lg.Println("IsWSLUpdated err>", err)
-			return false
-		}
-
-		if !wslIsUpdated {
-			err = gowin32.InstallProduct(utils.GetTmpDir()+"\\wsl_update_x64.msi", "ACTION=INSTALL")
-			if err != nil {
-				c.lg.Println("InstallProduct err>", err)
-				return false
-			}
-		} else {
-			c.lg.Println("WSL is already updated!")
-		}
-		return true
-	})
+	executor.AddStep("InstallWSLUpdate", InstallWSLUpdate)
 
 	executor.AddStep("CheckGroupMembership", func() bool {
 		mdl.Config.InitialState = model.InitialStateFirstRunAfterInstall
@@ -246,18 +172,11 @@ func (c *Controller) tryInstallDocker() {
 	if !executor.Run() {
 		mdl.SwitchState(model.UIStateInstallError)
 		c.lg.Println("Installation have stopped")
-		c.wantExit = true
-	} else {
-		// TODO: unelevate rights
-
-		utils.DiscoverDockerPathAndPatchEnv(true)
-		mdl.SwitchState(model.UIStateInstallFinished)
-		c.lg.Println("Installation succeeded")
+		return false
 	}
-
-	ok := ui.WaitDialogueComplete()
-	if ok == model.DLG_TERM {
-		c.wantExitCtl = true
-		return
-	}
+	// TODO: unelevate rights
+	utils.DiscoverDockerPathAndPatchEnv(true)
+	mdl.SwitchState(model.UIStateInstallFinished)
+	c.lg.Println("Installation succeeded")
+	return true
 }

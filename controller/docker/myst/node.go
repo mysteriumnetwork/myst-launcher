@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package updates
+package myst
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -88,7 +88,8 @@ func checkVersionRequirement(v string, minVersion []int) bool {
 	return verMatches
 }
 
-func CheckVersionAndUpgrades(mod *model.UIModel, refreshVersionCache bool) {
+// checkVersionAndUpgrades: returns true if has update
+func (m *Manager) checkVersionAndUpgrades(mod *model.UIModel, refreshVersionCache bool) bool {
 	log.Println("[updates] !CheckCurrentVersionAndUpgrades")
 
 	var data []byte
@@ -103,7 +104,7 @@ func CheckVersionAndUpgrades(mod *model.UIModel, refreshVersionCache bool) {
 		if resp.StatusCode != 200 {
 			return false
 		}
-		data, err = ioutil.ReadAll(resp.Body)
+		data, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return false
 		}
@@ -149,28 +150,27 @@ func CheckVersionAndUpgrades(mod *model.UIModel, refreshVersionCache bool) {
 					}
 
 					// multi-arch images have 2 digests: one for image itself, second - for manifest
-					if mod.ImageInfo.HasDigest(im.Digest) {
+					if m.imageHasDigest(im.Digest) {
 						currentVersion = res.Name
 						found = true
 					}
 				}
 			}
 		}
-
 		if !found {
 			currentVersion = ""
 		}
 	}
 
-	hasUpdate := func() bool {
-		if latestDigest != "" {
-			// has a digest of the latest version
-			return !mod.ImageInfo.HasDigest(latestDigest)
-		}
-		return false
-	}
-
 	updateUI := func() {
+		hasUpdate := func() bool {
+			if latestDigest != "" {
+				// has a digest of the latest version
+				return !m.imageHasDigest(latestDigest)
+			}
+			return false
+		}
+
 		mod.ImageInfo.DigestLatest = latestDigest
 		mod.ImageInfo.VersionCurrent = currentVersion
 		mod.ImageInfo.VersionLatest = latestVersion
@@ -181,24 +181,24 @@ func CheckVersionAndUpgrades(mod *model.UIModel, refreshVersionCache bool) {
 	if len(data) != 0 {
 		parseJson()
 		updateUI()
-	}
-	if checkVersionRequirement(currentVersion, minVersion) {
-		mod.CurrentImgHasReportVersionOption = true
+		if checkVersionRequirement(currentVersion, minVersion) {
+			mod.CurrentImgHasReportVersionOption = true
+		}
 	}
 
 	// Reload image list if cache has no info about current version
-	if refreshVersionCache || len(data) == 0 || mod.Config.NeedToCheckUpgrade() || currentVersion == "" {
+	if refreshVersionCache || len(data) == 0 || mod.Config.TimeToCheckUpgrade() || currentVersion == "" {
 		ok := getFile()
 		if ok {
 			os.WriteFile(f, data, 0777)
 
 			parseJson()
 			updateUI()
-
 			if checkVersionRequirement(currentVersion, minVersion) {
 				mod.CurrentImgHasReportVersionOption = true
 			}
 		}
 	}
 
+	return mod.ImageInfo.HasUpdate
 }

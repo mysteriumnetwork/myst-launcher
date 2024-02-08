@@ -9,18 +9,11 @@ package model
 
 type Gui_ interface {
 	CloseUI()
-
-	OpenDialogue(id int)
-	DialogueComplete(action int)
-	WaitDialogueComplete() int
-	TerminateWaitDialogueComplete()
-
 	PopupMain()
 	ShowMain()
 	ShowNotificationInstalled()
 	ShowNotificationUpgrade()
 	OpenNodeUI()
-
 	ConfirmModal(title, message string) int
 	YesNoModal(title, message string) int
 	ErrorModal(title, message string) int

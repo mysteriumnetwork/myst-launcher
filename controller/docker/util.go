@@ -14,6 +14,12 @@ type StepExec struct {
 	steps []step
 }
 
+func NewStepExecutor(model *model.UIModel) *StepExec {
+	return &StepExec{
+		model: model,
+	}
+}
+
 func (e *StepExec) AddStep(stepName string, f func() bool) {
 	e.steps = append(e.steps, step{
 		name:   stepName,
