@@ -77,7 +77,7 @@ func (c *Native_) StartContainer() {
 
 func (c *Native_) StopContainer() {
 	c.model.SetStateContainer(model.RunnableStateUnknown)
-	//c.runner.Stop()
+	c.runner.Stop()
 }
 
 func (c *Native_) RestartContainer() {

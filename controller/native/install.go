@@ -77,7 +77,7 @@ func (c *Native_) CheckAndUpgradeNodeExe_(refreshVersionCache, doUpgrade bool) b
 	setUi()
 
 	hasUpdate := func() bool {
-		return (cfg.NodeExeVersion != cfg.NodeLatestTag) || cfg.NodeExeVersion == ""
+		return (cfg.NodeExeVersion != cfg.NodeExeLatestTag) || cfg.NodeExeVersion == ""
 	}
 
 	doRefresh := cfg.NodeExeVersion == "" || cfg.NodeExeLatestTag == "" ||
@@ -96,8 +96,8 @@ func (c *Native_) CheckAndUpgradeNodeExe_(refreshVersionCache, doUpgrade bool) b
 		return false
 	}
 	cfg.NodeExeLatestTag = release.TagName
+	cfg.RefreshLastUpgradeCheck()
 	defer func() {
-		cfg.RefreshLastUpgradeCheck()
 		cfg.Save()
 	}()
 

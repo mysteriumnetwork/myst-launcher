@@ -50,11 +50,5 @@ type AppState interface {
 	StopAppController()
 
 	GetModel() *UIModel
-	// SetModel(ui *UIModel)
 	GetUI() Gui_
-	// SetUI(ui Gui_)
-
-	// Write(b []byte) (int, error)
-	// TriggerAction(action string)
-	// GetInTray() bool
 }

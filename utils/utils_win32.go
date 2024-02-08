@@ -444,7 +444,6 @@ func DiscoverDockerPathAndPatchEnv(wait bool) {
 		if sfx != "" {
 			break
 		}
-		log.Println("DiscoverDockerPathAndPatchEnv>")
 		time.Sleep(5 * time.Second)
 	}
 
