@@ -23,6 +23,7 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
 	"github.com/mysteriumnetwork/myst-launcher/controller/native"
 	"github.com/mysteriumnetwork/myst-launcher/controller/shutdown"
+	"github.com/mysteriumnetwork/myst-launcher/controller/terms"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -141,6 +142,8 @@ func main() {
 	mod.Sh = shutdown.NewShutdownController(mod.UIBus)
 
 	go controller.CheckLauncherUpdates(mod)
+	go terms.CheckTermsAgreement(mod)
+
 	ap.StartAppController()
 	ipc.Listen(ui)
 

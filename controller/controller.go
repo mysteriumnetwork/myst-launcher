@@ -113,6 +113,10 @@ func (c *Controller) startBackendControl() {
 	startNode := func() {
 		c.lg.Println("startNode >")
 
+		if c.model.Config.AgreementConsentDate.IsZero() {
+			return
+		}
+
 		if !c.runner.TryStartRuntime() {
 			c.runner.TryInstallRuntime_()
 			return
