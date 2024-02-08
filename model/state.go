@@ -62,6 +62,10 @@ type Config struct {
 	PortRangeBegin       int  `json:"port_range_begin"`
 	PortRangeEnd         int  `json:"port_range_end"`
 
+
+	// exit node terms & conditions agreement consent
+	AgreementConsentDate time.Time `json:"agreement_consent_date"`
+
 	Network         string `json:"network"`
 	LauncherVersion string `json:"version"`
 }

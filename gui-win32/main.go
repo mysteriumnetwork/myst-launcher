@@ -141,6 +141,11 @@ func (g *Gui) CreateMainWindow() {
 			g.OpenUpgradeLauncherDlg()
 		})
 	})
+	g.model.UIBus.Subscribe("show-agreement", func(txt string) {
+		g.dlg.Synchronize(func() {
+			g.OpenAgreementDlg(txt)
+		})
+	})
 
 	// prevent closing the app
 	g.dlg.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
