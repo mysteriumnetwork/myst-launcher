@@ -11,7 +11,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/codingsince1985/checksum v1.3.0
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v24.0.7+incompatible
+	github.com/docker/docker v24.0.9+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -32,7 +32,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/scjalliance/comshim v0.0.0-20230315213746-5e51f40bd3b9
-	github.com/shirou/gopsutil/v3 v3.23.9 // indirect
+	github.com/shirou/gopsutil/v3 v3.23.9
 	github.com/stretchr/testify v1.8.4
 	github.com/tc-hib/winres v0.1.6
 	github.com/tryor/gdiplus v0.0.0-20200830101413-c570de9579b3
