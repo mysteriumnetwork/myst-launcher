@@ -52,8 +52,7 @@ func NewInstallationWelcomeFrame(parent walk.Container, mdl *model.UIModel) *Ins
 						AssignTo: &f.btnBegin,
 						Text:     "Install",
 						OnClicked: func() {
-							//setState(1)
-							mdl.UIBus.Publish("click-finish")
+							mdl.UIBus.Publish("install-dlg-exit", model.DLG_OK)
 						},
 					},
 				},

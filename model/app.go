@@ -13,20 +13,36 @@ type App interface {
 }
 
 type Controller interface {
-	SetApp(a AppState)
 	Start()
 	Shutdown()
-	GetCaps() int
+	TriggerAction(action string)
+}
+
+type RunnerController interface {
+	TryInstallRuntime() bool
+	TryInstallRuntime_()
+	TryStartRuntime() bool
+	CheckSysRequirements() bool
+
+	IsRunning() bool
+	StartContainer()
+	StopContainer()
+	RestartContainer()
+
+	UpgradeContainer(refreshVersionCache bool)
+	CheckCurrentVersionAndUpgrades(refreshVersionCache bool) bool
 }
 
 const (
-	ActionCheck      = "check"
-	ActionUpgrade    = "upgrade"
-	ActionRestart    = "restart"
-	ActionEnable     = "enable"
-	ActionDisable    = "disable"
-	ActionStopRunner = "stop-runner"
-	ActionStop       = "stop"
+	ActionCheck            = "check"
+	ActionUpgrade          = "upgrade"
+	ActionUpgradeGracefuly = "upgrade-graceful"
+	ActionRestart          = "restart"
+	ActionEnable           = "enable"
+	ActionDisable          = "disable"
+	ActionStopRunner       = "stop-runner"
+	ActionStop             = "stop"
+	ActionInstall          = "install" // install runner/container
 )
 
 type AppState interface {
@@ -34,12 +50,5 @@ type AppState interface {
 	StopAppController()
 
 	GetModel() *UIModel
-	// SetModel(ui *UIModel)
-	GetAction() chan string
 	GetUI() Gui_
-	// SetUI(ui Gui_)
-
-	// Write(b []byte) (int, error)
-	// TriggerAction(action string)
-	// GetInTray() bool
 }

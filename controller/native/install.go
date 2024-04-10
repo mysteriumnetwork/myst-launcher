@@ -27,6 +27,7 @@ const (
 func getAssetName() string {
 	os := runtime.GOOS
 	arch := runtime.GOARCH
+
 	f := "tar.gz"
 	if os == "windows" {
 		f = "zip"
@@ -34,13 +35,23 @@ func getAssetName() string {
 	return fmt.Sprintf("myst_%s_%s.%s", os, arch, f)
 }
 
-func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
-	mdl := c.a.GetModel()
+// return: has update
+func (c *Native_) CheckAndUpgradeNodeExe_(refreshVersionCache, doUpgrade bool) bool {
+	log.Println("CheckAndUpgradeNodeExe>")
+
+	mdl := c.model
 	cfg := &mdl.Config
 
+	// set ui part
+	setUi := func() {
+		mdl.ImageInfo.VersionLatest = cfg.NodeExeLatestTag
+		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
+		mdl.ImageInfo.HasUpdate = cfg.NodeExeLatestTag != cfg.NodeExeVersion
+		mdl.Update()
+	}
+
 	exename := getNodeProcessName()
-	fullpath := path.Join(c.runner.binpath, exename)
-	fullpath = utils.MakeCanonicalPath(fullpath)
+	fullpath := utils.MakeCanonicalPath(path.Join(c.runner.binpath, exename))
 
 	file, err := os.Stat(fullpath)
 	if err != nil {
@@ -49,88 +60,79 @@ func (c *Controller) CheckAndUpgradeNodeExe(forceUpgrade bool) bool {
 	} else {
 		modTime := file.ModTime()
 		if !modTime.Equal(cfg.NodeExeTimestamp) {
-			log.Println("CheckAndUpgradeNodeExe>", fullpath)
 
 			sha256, _ := checksum.SHA256sum(fullpath)
-			log.Println("CheckAndUpgradeNodeExe>", cfg.NodeExeDigest, sha256, cfg.NodeExeDigest == sha256)
 
-			if cfg.NodeExeDigest == sha256 {
-				mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
-				mdl.Update()
-			}
+			// if cfg.NodeExeDigest == sha256 {
+			// }
 			if cfg.NodeExeDigest != sha256 || sha256 == "" {
 				cfg.NodeExeDigest = sha256
 				cfg.NodeExeVersion = ""
-				cfg.Save()
 			}
+
 			cfg.NodeExeTimestamp = modTime
+			cfg.Save()
 		}
 	}
+	setUi()
 
-	doRefresh := (cfg.NodeLatestTag != cfg.NodeExeVersion && cfg.AutoUpgrade) ||
-		cfg.NodeExeVersion == "" ||
-		cfg.NeedToCheckUpgrade() ||
-		forceUpgrade
+	hasUpdate := func() bool {
+		return (cfg.NodeExeVersion != cfg.NodeExeLatestTag) || cfg.NodeExeVersion == ""
+	}
 
-	if doRefresh {
-		log.Println("CheckAndUpgradeNodeExe doRefresh>")
+	doRefresh := cfg.NodeExeVersion == "" || cfg.NodeExeLatestTag == "" ||
+		cfg.TimeToCheckUpgrade() ||
+		refreshVersionCache ||
+		doUpgrade
 
-		ctx := context.Background()
-		release, err := updates.FetchLatestRelease(ctx, org, repo)
-		if err != nil {
-			log.Println("FetchLatestRelease>", err)
-			return false
-		}
-		tagLatest := release.TagName
+	if !doRefresh {
+		return hasUpdate()
+	}
 
-		mdl.ImageInfo.VersionLatest = tagLatest
-		mdl.ImageInfo.VersionCurrent = cfg.NodeExeVersion
-		mdl.ImageInfo.HasUpdate = tagLatest != cfg.NodeExeVersion
-		mdl.Update()
-
-		cfg.NodeLatestTag = tagLatest
-
-		defer func() {
-			cfg.RefreshLastUpgradeCheck()
-			cfg.Save()
-		}()
-
-		// log.Println("cfg.NodeExeVersion != tagLatest >", cfg.NodeExeVersion, tagLatest, cfg.AutoUpgrade)
-		doUpgrade := (cfg.NodeExeVersion != tagLatest && cfg.AutoUpgrade) || cfg.NodeExeVersion == ""
-		log.Println("CheckAndUpgradeNodeExe doUpgrade>", doUpgrade)
-		if doUpgrade {
-			fullpath := path.Join(c.runner.binpath, exename)
-			fullpath = utils.MakeCanonicalPath(fullpath)
-			p, _ := utils.IsProcessRunningExt(exename, fullpath)
-			if p != 0 {
-				utils.TerminateProcess(p, 0)
-			}
-
-			err := c.tryInstall(release)
-			if err != nil {
-				c.lg.Println("tryInstall >", err)
-				return false
-			}
-
-			sha256, _ := checksum.SHA256sum(fullpath)
-			cfg.NodeExeVersion = tagLatest
-			cfg.NodeExeDigest = sha256
-
-			return true
-		}
-
+	log.Println("CheckAndUpgradeNodeExe doRefresh>")
+	release, err := updates.FetchLatestRelease(context.Background(), org, repo)
+	if err != nil {
+		log.Println("FetchLatestRelease>", err)
 		return false
 	}
+	cfg.NodeExeLatestTag = release.TagName
+	cfg.RefreshLastUpgradeCheck()
+	defer func() {
+		cfg.Save()
+	}()
 
-	return false
+	setUi()
+
+	doUpgrade_ := hasUpdate() && doUpgrade
+	log.Println("CheckAndUpgradeNodeExe doUpgrade>", doUpgrade_)
+
+	if doUpgrade_ {
+		p, _ := utils.IsProcessRunningExt(exename, fullpath)
+		if p != 0 {
+			utils.TerminateProcess(p, 0)
+		}
+
+		err := c.tryInstall(release)
+		if err != nil {
+			c.lg.Println("tryInstall >", err)
+			return false
+		}
+
+		sha256, _ := checksum.SHA256sum(fullpath)
+		cfg.NodeExeVersion = cfg.NodeExeLatestTag
+		cfg.NodeExeDigest = sha256
+
+		return true
+	}
+
+	return doUpgrade_
 }
 
 // returns: will exit
-func (c *Controller) tryInstall(release updates.Release) error {
+func (c *Native_) tryInstall(release updates.Release) error {
 	log.Println("tryInstall >")
 
-	model := c.a.GetModel()
-	model.SetStateContainer(model_.RunnableStateInstalling)
+	c.model.SetStateContainer(model_.RunnableStateInstalling)
 
 	asset := getAssetName()
 	for _, v := range release.Assets {
@@ -156,8 +158,7 @@ func (c *Controller) tryInstall(release updates.Release) error {
 		break
 	}
 
-	ui := c.a.GetUI()
-	tryInstallFirewallRules(ui)
+	tryInstallFirewallRules(c.ui)
 	return nil
 }
 

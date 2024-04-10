@@ -63,7 +63,7 @@ type Gui struct {
 	model              *model2.UIModel
 	lastNotificationID NotificationTypeID
 
-	bus       EventBus.Bus
+	bus EventBus.Bus
 }
 
 func NewGui(m *model2.UIModel) *Gui {
@@ -131,11 +131,11 @@ func (g *Gui) CreateMainWindow() {
 			g.refresh()
 		})
 	})
-	g.model.UIBus.Subscribe("state-change", func() {
+	g.model.UIBus.SubscribeAsync("state-change", func() {
 		g.dlg.Synchronize(func() {
 			g.refresh()
 		})
-	})
+	}, false)
 	g.model.UIBus.Subscribe("launcher-update", func() {
 		g.dlg.Synchronize(func() {
 			g.OpenUpgradeLauncherDlg()
@@ -156,7 +156,6 @@ func (g *Gui) CreateMainWindow() {
 	g.bus.Subscribe("exit", func() {
 		g.dlg.Synchronize(func() {
 			g.dlg.Close()
-			// g.mw.Close()
 		})
 	})
 
@@ -171,13 +170,6 @@ func (g *Gui) CreateMainWindow() {
 			g.OpenUpgradeNetworkDlg()
 		})
 	})
-	g.model.UIBus.Subscribe("click-finish", func() {
-		if g.model.WantExit {
-			g.CloseUI()
-		}
-		g.DialogueComplete(model2.DLG_OK)
-	})
-
 }
 
 func (g *Gui) enableMenu(enable bool) {
@@ -302,27 +294,6 @@ func (g *Gui) SetModalReturnCode(rc int) {}
 
 func (g *Gui) Run() {
 	g.mw.Run()
-}
-
-func (g *Gui) OpenDialogue(id int) {
-}
-
-// returns false, if dialogue was terminated
-func (g *Gui) WaitDialogueComplete() int {
-	action := make(chan int)
-
-	g.bus.SubscribeOnce("dlg-exit", func(id int) {
-		action <- id
-	})
-	return <-action
-}
-
-func (g *Gui) TerminateWaitDialogueComplete() {
-	g.bus.Publish("dlg-exit", model2.DLG_TERM)
-}
-
-func (g *Gui) DialogueComplete(action int) {
-	g.bus.Publish("dlg-exit", action)
 }
 
 func (g *Gui) CloseUI() {

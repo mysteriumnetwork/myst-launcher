@@ -22,6 +22,7 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/controller"
 	"github.com/mysteriumnetwork/myst-launcher/controller/docker"
 	"github.com/mysteriumnetwork/myst-launcher/controller/native"
+	"github.com/mysteriumnetwork/myst-launcher/controller/shutdown"
 	gui_win32 "github.com/mysteriumnetwork/myst-launcher/gui-win32"
 	ipc_ "github.com/mysteriumnetwork/myst-launcher/ipc"
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -132,9 +133,12 @@ func main() {
 	ap.SetModel(mod)
 	log.SetOutput(ap)
 
+	// init ui in separate thread b.c of Coinitialize modes conflict when WMI is invoked in the same goroutine
 	ui.CreateNotifyIcon(mod)
 	ui.CreateMainWindow()
 	ap.SetUI(ui)
+
+	mod.Sh = shutdown.NewShutdownController(mod.UIBus)
 
 	go controller.CheckLauncherUpdates(mod)
 	ap.StartAppController()

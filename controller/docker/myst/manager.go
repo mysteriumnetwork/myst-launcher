@@ -31,7 +31,6 @@ import (
 	errors2 "github.com/pkg/errors"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
-	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
 
@@ -56,8 +55,12 @@ var (
 
 type Manager struct {
 	dockerAPI *client.Client
-	//launcherCfg *model.Config
-	model   *model.UIModel
+	model     *model.UIModel
+
+	CurrentImgDigest  string
+	CurrentImageID    string
+	CurrentImgDigests []string
+
 	dataDir string
 	lg      *log.Logger
 }
@@ -98,6 +101,21 @@ func (m *Manager) GetDockerClient() *client.Client {
 	return m.dockerAPI
 }
 
+func (m *Manager) IsRunning() bool {
+	m.lg.Println("is running >")
+
+	mystContainer, err := m.findMystContainer()
+	if errors.Is(err, ErrContainerNotFound) {
+		return false
+	}
+	if err != nil {
+		m.lg.Println("err >", err)
+		return false
+	}
+
+	return mystContainer.isRunning()
+}
+
 // Returns: alreadyRunning, error
 func (m *Manager) Start() (bool, error) {
 	m.lg.Println("start >")
@@ -121,11 +139,11 @@ func (m *Manager) Start() (bool, error) {
 		return false, err
 	}
 
+	// TODO: check: not used anymore as node has to be restarted on launcher exit
 	// refresh config if image has support of a ReportVersion option
 	if m.model.CurrentImgHasReportVersionOption &&
 		!strings.Contains(mystContainer.Command, reportLauncherVersionFlag) ||
 		m.launcherVersionChanged(mystContainer) {
-
 		return true, m.Restart()
 	}
 
@@ -188,6 +206,17 @@ func extractRepoDigests(repoDigests []string) []string {
 		a = append(a, strings.Split(d, "@")[1])
 	}
 	return a
+}
+
+func (m *Manager) imageHasDigest(digest string) bool {
+	// multi-arch images have 2 digests: one for image itself, second - for manifest
+
+	for _, d := range m.CurrentImgDigests {
+		if strings.EqualFold(digest, d) {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *Manager) launcherVersionChanged(mystContainer *Container) bool {
@@ -308,6 +337,7 @@ func (m *Manager) pullMystLatestByDigestLatest() error {
 
 func (m *Manager) pullMystLatest() error {
 	image := m.model.Config.GetFullImageName()
+	m.lg.Println("pullMystLatest>", image)
 	return m.pullMystImage(image)
 }
 
@@ -395,19 +425,15 @@ func (m *Manager) createMystContainer() error {
 	return nil
 }
 
-func (m *Manager) timeout() *time.Duration {
-	t := operationTimeout
-	return &t
-}
-
 func (m *Manager) timeoutSec() *int {
 	t := operationTimeoutSec
 	return &t
 }
 
-func (m *Manager) CheckCurrentVersionAndUpgrades(refreshVersionCache bool) {
+// CheckVersionAndUpgrades: returns true if has update
+func (m *Manager) CheckCurrentVersionAndUpgrades(refreshVersionCache bool) bool {
 	m.getCurrentImageDigest()
-	updates.CheckVersionAndUpgrades(m.model, refreshVersionCache)
+	return m.checkVersionAndUpgrades(m.model, refreshVersionCache)
 }
 
 func (m *Manager) getCurrentImageDigest() {
@@ -418,6 +444,7 @@ func (m *Manager) getCurrentImageDigest() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
 	defer cancel()
+
 	images, err := m.dockerAPI.ImageList(ctx, types.ImageListOptions{})
 	if err != nil {
 		return
@@ -425,8 +452,7 @@ func (m *Manager) getCurrentImageDigest() {
 
 	for _, i := range images {
 		if i.ID == mystContainer.ImageID {
-			// m.lg.Println("getCurrentImageDigest >", i.RepoDigests)
-			m.model.ImageInfo.CurrentImgDigests = extractRepoDigests(i.RepoDigests)
+			m.CurrentImgDigests = extractRepoDigests(i.RepoDigests)
 		}
 	}
 }

@@ -63,17 +63,11 @@ func getNodeExePath() string {
 	return fullExePath
 }
 
-func (r *NodeRunner) IsRunning() bool {
-	exe := getNodeProcessName()
-	return utils.IsProcessRunning(exe)
-}
-
 func getNodeProcessName() string {
-	exe := "myst"
 	if runtime.GOOS == "windows" {
-		exe = "myst.exe"
+		return "myst.exe"
 	}
-	return exe
+	return "myst"
 }
 
 func (r *NodeRunner) isRunning() uint32 {
@@ -84,6 +78,16 @@ func (r *NodeRunner) isRunning() uint32 {
 	p, _ := utils.IsProcessRunningExt(exename, fullpath)
 	return p
 }
+
+// func (r *NodeRunner) IsRunning() bool {
+// 	exe := getNodeProcessName()
+// 	return utils.IsProcessRunning(exe)
+// }
+
+func (r *NodeRunner) IsRunning() bool {
+	return r.isRunning() > 0
+}
+
 
 // return values: isRunning
 func (r *NodeRunner) IsRunningOrTryStart() bool {
@@ -122,7 +126,6 @@ func (r *NodeRunner) startNode() error {
 	log.Println("!startNode")
 	fullExePath := getNodeExePath()
 	c := r.mod.Config
-	log.Println("!startNode", c.EnablePortForwarding)
 
 	portsArg := ""
 	if c.EnablePortForwarding {
@@ -154,7 +157,7 @@ func (r *NodeRunner) startNode() error {
 
 	switch runtime.GOOS {
 	case "windows", "darwin", "linux":
-    	log.Println("!startNode", fullExePath, args)
+		log.Println("!startNode", fullExePath, args)
 
 		cmd, err := utils.CmdStart(fullExePath, args...)
 		if err != nil {

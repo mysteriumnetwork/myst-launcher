@@ -1,6 +1,6 @@
 package docker
 
-import "github.com/mysteriumnetwork/myst-launcher/myst"
+import "github.com/mysteriumnetwork/myst-launcher/controller/docker/myst"
 
 func UninstallMystContainer() error {
 	mystManager, err := myst.NewManager(nil)
