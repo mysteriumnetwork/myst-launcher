@@ -129,10 +129,9 @@ func (c *Controller) startBackendControl() {
 		}
 		// now we have runtime (docker) running
 
-		hasUpdates := false
-		if !c.waitForShutdownReady {
-			hasUpdates = c.runner.CheckCurrentVersionAndUpgrades(false)
-		}
+// 		if !c.waitForShutdownReady {
+// 		}
+        hasUpdates := c.runner.CheckCurrentVersionAndUpgrades(false)
 
 		if !c.runner.IsRunning() {
 			if c.model.Config.AutoUpgrade && hasUpdates {
@@ -141,7 +140,6 @@ func (c *Controller) startBackendControl() {
 		}
 
 		c.runner.StartContainer()
-		c.lg.Println("startNode >", c.model.Config.AutoUpgrade, hasUpdates)
 
 		if c.model.Config.AutoUpgrade && hasUpdates {
 
