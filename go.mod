@@ -5,7 +5,7 @@ go 1.16
 require (
 	code.cloudfoundry.org/archiver v0.0.0-20230320125732-4c59f8192b7d
 	github.com/Microsoft/go-winio v0.6.0
-	github.com/advbet/sseclient v0.0.0-20220420050220-2d425222e61b // indirect
+	github.com/advbet/sseclient v0.0.0-20220420050220-2d425222e61b
 	github.com/artdarek/go-unzip v1.0.0
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/bi-zone/go-fileversion v1.0.0
@@ -23,7 +23,6 @@ require (
 	github.com/google/cabbie v1.0.5 // indirect
 	github.com/google/deck v1.1.0 // indirect
 	github.com/google/glazier v0.0.0-20230310154036-250f5ed41d5b
-	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/iamacarpet/go-win64api v0.0.0-20221230174906-cb41e6e774e8
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
@@ -32,7 +31,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/r3labs/sse/v2 v2.10.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/scjalliance/comshim v0.0.0-20230315213746-5e51f40bd3b9
 	github.com/shirou/gopsutil/v3 v3.23.9
@@ -42,8 +40,8 @@ require (
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
 	github.com/winlabs/gowin32 v0.0.0-20221003142512-0d265587d3c9
 	golang.org/x/image v0.10.0 // indirect
-	golang.org/x/net v0.17.0
-	golang.org/x/sys v0.13.0
+	golang.org/x/net v0.23.0
+	golang.org/x/sys v0.18.0
 	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
