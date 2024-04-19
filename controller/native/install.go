@@ -53,10 +53,12 @@ func (c *Native_) CheckAndUpgradeNodeExe_(refreshVersionCache, doUpgrade bool) b
 	exename := getNodeProcessName()
 	fullpath := utils.MakeCanonicalPath(path.Join(c.runner.binpath, exename))
 
+    fileAbsent := false
 	file, err := os.Stat(fullpath)
 	if err != nil {
 		cfg.NodeExeVersion = ""
 		cfg.NodeExeTimestamp = time.Time{}
+        fileAbsent = true
 	} else {
 		modTime := file.ModTime()
 		if !modTime.Equal(cfg.NodeExeTimestamp) {
@@ -83,6 +85,7 @@ func (c *Native_) CheckAndUpgradeNodeExe_(refreshVersionCache, doUpgrade bool) b
 	doRefresh := cfg.NodeExeVersion == "" || cfg.NodeExeLatestTag == "" ||
 		cfg.TimeToCheckUpgrade() ||
 		refreshVersionCache ||
+		fileAbsent ||
 		doUpgrade
 
 	if !doRefresh {
@@ -104,9 +107,9 @@ func (c *Native_) CheckAndUpgradeNodeExe_(refreshVersionCache, doUpgrade bool) b
 	setUi()
 
 	doUpgrade_ := hasUpdate() && doUpgrade
-	log.Println("CheckAndUpgradeNodeExe doUpgrade>", doUpgrade_)
+	log.Println("CheckAndUpgradeNodeExe doUpgrade>", hasUpdate(), doUpgrade_)
 
-	if doUpgrade_ {
+	if doUpgrade_ || fileAbsent {
 		p, _ := utils.IsProcessRunningExt(exename, fullpath)
 		if p != 0 {
 			utils.TerminateProcess(p, 0)
@@ -124,8 +127,7 @@ func (c *Native_) CheckAndUpgradeNodeExe_(refreshVersionCache, doUpgrade bool) b
 
 		return true
 	}
-
-	return doUpgrade_
+	return hasUpdate()
 }
 
 // returns: will exit
