@@ -14,23 +14,40 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/mysteriumnetwork/myst-launcher/ctrl/util"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
+	"github.com/mysteriumnetwork/myst-launcher/platform"
+
 )
 
-func (c *Controller) tryInstallDocker() {
-	fmt.Println("TryInstallDocker>")
+
+func (c *Docker_) TryInstallRuntime_() {
+
+	if c.model.Config.InitialState.Not1Not2() {
+		c.lg.Println("TryInstallRuntime_ !!!!2>")
+
+		c.model.SwitchState(model.UIStateInstallNeeded)
+
+	} else {
+		// begin install immediately
+		c.TryInstallRuntime()
+	}
+}
+
+func (c *Docker_) TryInstallRuntime() bool {
+	fmt.Println("TryInstallRuntime>")
 
 	mdl := c.model
-	ui := c.ui
+	//ui := c.ui
+	mgr, _ := platform.NewManager()
+	name := "Docker.dmg"
 
 	mdl.ResetProperties()
 	mdl.SwitchState(model.UIStateInstallInProgress)
 
-	executor := util.NewStepExecutor(mdl)
+	executor := NewStepExecutor(mdl)
 	executor.AddStep("CheckVTx", func() bool {
-		featuresOK, err := c.mgr.Features()
+		featuresOK, err := mgr.Features()
 		if err != nil {
 			c.lg.Println("Failed to query feature:", err)
 			return false
@@ -56,7 +73,6 @@ func (c *Controller) tryInstallDocker() {
 	})
 
 	executor.AddStep("DownloadFiles", func() bool {
-		name := "Docker.dmg"
 		url, err := utils.GetDockerDesktopLink()
 		if err != nil {
 			c.lg.Println("Couldn't get Docker Desktop link")
@@ -77,7 +93,7 @@ func (c *Controller) tryInstallDocker() {
 
 	executor.AddStep("InstallDocker", func() bool {
 		var buf bytes.Buffer
-		_, err = utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
+		_, err := utils.CmdRun(&buf, "/usr/sbin/diskutil", "unmount", "/Volumes/Docker")
 		if err != nil {
 			c.lg.Println("Failed to run command:", err)
 			return false

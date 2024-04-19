@@ -44,17 +44,25 @@ func NewController(m *model.UIModel, ui model.Gui_, a model.AppState) *Controlle
 func (c *Controller) Start() {
 	//c.lg.Println("start")
 
-	restartBackendControl := func() {
+	restartBackendControl := func(afterInstall bool) {
+		fmt.Println("restartBackendControl>")
+
 		if c.runner != nil {
-			c.stopBackendControl()
+			fmt.Println("restartBackendControl stop>")
+			c.stopBackendControl(afterInstall)
+			fmt.Println("restartBackendControl stop>>>")
 		}
 		c.runner = NewBackend(c.model.Config.Backend, c.model, c.ui)
 
 		c.model.SwitchState(model.UIStateInitial)
 		c.startBackendControl()
 	}
-	restartBackendControl()
-	c.model.Bus2.Subscribe("backend", restartBackendControl)
+	restartBackendControl(false)
+
+	onBackendChange := func() {
+		restartBackendControl(false)
+	}
+	c.model.Bus2.Subscribe("backend", onBackendChange)
 
 	c.model.UIBus.SubscribeAsync("install-dlg-exit", func(id int) {
 		fmt.Println("install-dlg-exit>", id, c.model.State)
@@ -66,7 +74,7 @@ func (c *Controller) Start() {
 		case model.UIStateInstallFinished:
 			c.model.SwitchState(model.UIStateInitial)
 			// restart controller as it stops after installation
-			restartBackendControl()
+			restartBackendControl(true)
 
 		case model.UIStateInstallError:
 			c.ui.CloseUI()
@@ -88,7 +96,7 @@ func (c *Controller) Start() {
 
 func (c *Controller) Shutdown() {
 	c.lg.Println("Shutdown >")
-	c.stopBackendControl()
+	c.stopBackendControl(false)
 
 	// TODO: unsubscribe
 }
@@ -99,10 +107,12 @@ func (c *Controller) TriggerAction(action string) {
 
 /////////////////////////////////////////////////////////////////////////
 
-func (c *Controller) stopBackendControl() {
+func (c *Controller) stopBackendControl(afterInstall bool) {
 	c.lg.Println("stop")
 
-	c.action <- model.ActionStop
+	if !afterInstall {
+		c.action <- model.ActionStop
+	}
 	c.wg.Wait()
 }
 
@@ -158,7 +168,7 @@ func (c *Controller) startBackendControl() {
 				startNode()
 
 			case act := <-c.action:
-				// log.Println("<-", act)
+				log.Println("<-", act)
 
 				switch act {
 				case model.ActionCheck:
@@ -180,6 +190,7 @@ func (c *Controller) startBackendControl() {
 
 				case model.ActionStop:
 					c.runner.StopContainer()
+					log.Println("<- exit")
 					return
 
 				case model.ActionDisable:
