@@ -37,6 +37,10 @@ func pressAnyKey(do bool) {
 	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
 
+var (
+	res_debugMode string
+)
+
 func main() {
 	installFirewall := flag.Bool(_const.FlagInstallFirewall, false, "setup firewall rules")
 	nodeArgsFlags := flag.String(_const.FlagNodeArgs, "", "pass args to node")
@@ -46,13 +50,16 @@ func main() {
 	debugMode := flag.Bool(_const.FlagDebug, false, "debug mode")
 	flagAutorun := flag.Bool(_const.FlagAutorun, false, "app is started by means of autorun")
 	flag.Parse()
+	if res_debugMode == "1" {
+		*debugMode = true
+	}
 
 	if *debugMode {
-		utils.AllocConsole(false)
+		//utils.AllocConsole(false)
 	}
 	fmt.Println(*debugMode, *installFirewall, os.Args)
 
-	ap := app.NewApp()
+	ap := app.NewApp(*debugMode)
 
 	if *installFirewall {
 		log.Println("Setting firewall rules")
@@ -131,6 +138,7 @@ func main() {
 	}
 
 	ap.SetModel(mod)
+	log.Print("SetOutput >>>>")
 	log.SetOutput(ap)
 
 	// init ui in separate thread b.c of Coinitialize modes conflict when WMI is invoked in the same goroutine

@@ -88,6 +88,7 @@ func NewManager(model *model.UIModel) (*Manager, error) {
 		return nil, err
 	}
 	lg := log.New(log.Writer(), "[myst] ", log.Ldate|log.Ltime)
+	// lg := log.Default()
 
 	return &Manager{
 		dockerAPI: dc,

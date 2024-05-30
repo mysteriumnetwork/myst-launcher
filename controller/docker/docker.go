@@ -20,6 +20,7 @@ type Docker_ struct {
 }
 
 func NewSvc(m *model.UIModel, ui model.Gui_) *Docker_ {
+	// lg := log.Default()
 	lg := log.New(log.Writer(), "[docker] ", log.Ldate|log.Ltime)
 
 	m.Caps = 1

@@ -361,6 +361,8 @@ func KillProcessByName(exeName string) error {
 }
 
 func IsProcessRunningExt(exeName, fullpath string) (uint32, error) {
+	log.Println("!IsProcessRunningExt", exeName, fullpath)
+
 	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if e != nil {
 		return 0, e

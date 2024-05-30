@@ -30,6 +30,7 @@ require (
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
+	github.com/otiai10/copy v1.14.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/scjalliance/comshim v0.0.0-20230315213746-5e51f40bd3b9

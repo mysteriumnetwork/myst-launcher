@@ -39,7 +39,7 @@ func main() {
 		return
 	}
 
-	ap := app.NewApp()
+	ap := app.NewApp(false)
 
 	mod := model.NewUIModel()
 	mod.SetApp(ap)

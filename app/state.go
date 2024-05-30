@@ -9,19 +9,29 @@ package app
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/mysteriumnetwork/myst-launcher/controller"
 	"github.com/mysteriumnetwork/myst-launcher/model"
 )
 
 type AppState struct {
-	model  *model.UIModel //gui.Model
-	ui     model.Gui_
-	ctrApp model.Controller
+	model   *model.UIModel //gui.Model
+	ui      model.Gui_
+	ctrApp  model.Controller
+	logfile *os.File
 }
 
-func NewApp() *AppState {
+func NewApp(debug bool) *AppState {
 	s := &AppState{}
+
+	if debug {
+		file, err := os.OpenFile("myst_launcher_log_.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			panic(err)
+		}
+		s.logfile = file
+	}
 	return s
 }
 
@@ -58,6 +68,9 @@ func (s *AppState) Write(b []byte) (int, error) {
 
 	if s.model.DuplicateLogToConsole {
 		fmt.Print(string(bCopy))
+		if s.logfile != nil {
+			s.logfile.Write(bCopy)
+		}
 	}
 
 	s.model.Publish("log", bCopy)

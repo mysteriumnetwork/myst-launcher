@@ -30,6 +30,7 @@ type NodeRunner struct {
 }
 
 func NewRunner(mod *model.UIModel) *NodeRunner {
+	log.Print("NewRunner>")
 
 	binpath := getNodeBinDirPath()
 	utils.MakeDirectoryIfNotExists(binpath)
@@ -76,6 +77,7 @@ func (r *NodeRunner) isRunning() uint32 {
 	fullpath = utils.MakeCanonicalPath(fullpath)
 
 	p, _ := utils.IsProcessRunningExt(exename, fullpath)
+	log.Println("!isRunning", p)
 	return p
 }
 
@@ -87,7 +89,6 @@ func (r *NodeRunner) isRunning() uint32 {
 func (r *NodeRunner) IsRunning() bool {
 	return r.isRunning() > 0
 }
-
 
 // return values: isRunning
 func (r *NodeRunner) IsRunningOrTryStart() bool {
