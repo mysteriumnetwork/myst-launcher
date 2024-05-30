@@ -594,13 +594,14 @@ func IsWSLUpdated() (bool, error) {
 }
 
 func OpenUrlInBrowser(url string) {
-	native.ShellExecuteAndWait(
+	native.ShellExecuteNowait(
 		0,
+		"open",
+		url,
 		"",
-		"rundll32",
-		"url.dll,FileProtocolHandler "+url,
 		"",
-		syscall.SW_NORMAL)
+		syscall.SW_NORMAL,
+	)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
