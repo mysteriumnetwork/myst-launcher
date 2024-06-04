@@ -7,14 +7,15 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/codingsince1985/checksum"
+	cp "github.com/otiai10/copy"
 
 	_const "github.com/mysteriumnetwork/myst-launcher/const"
 	"github.com/mysteriumnetwork/myst-launcher/model"
-	model_ "github.com/mysteriumnetwork/myst-launcher/model"
 	"github.com/mysteriumnetwork/myst-launcher/updates"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
 )
@@ -53,12 +54,12 @@ func (c *Native_) CheckAndUpgradeNodeExe_(refreshVersionCache, doUpgrade bool) b
 	exename := getNodeProcessName()
 	fullpath := utils.MakeCanonicalPath(path.Join(c.runner.binpath, exename))
 
-    fileAbsent := false
+	fileAbsent := false
 	file, err := os.Stat(fullpath)
 	if err != nil {
 		cfg.NodeExeVersion = ""
 		cfg.NodeExeTimestamp = time.Time{}
-        fileAbsent = true
+		fileAbsent = true
 	} else {
 		modTime := file.ModTime()
 		if !modTime.Equal(cfg.NodeExeTimestamp) {
@@ -134,7 +135,7 @@ func (c *Native_) CheckAndUpgradeNodeExe_(refreshVersionCache, doUpgrade bool) b
 func (c *Native_) tryInstall(release updates.Release) error {
 	log.Println("tryInstall >")
 
-	c.model.SetStateContainer(model_.RunnableStateInstalling)
+	c.model.SetStateContainer(model.RunnableStateInstalling)
 
 	asset := getAssetName()
 	for _, v := range release.Assets {
@@ -143,7 +144,8 @@ func (c *Native_) tryInstall(release updates.Release) error {
 		}
 
 		c.lg.Println("Downloading node: ", v.URL)
-		fullPath := path.Join(utils.GetTmpDir(), asset)
+
+		fullPath := path.Join(os.TempDir(), asset)
 		err := utils.DownloadFile(fullPath, v.URL, func(progress int) {
 			if progress%10 == 0 {
 				c.lg.Printf("%s - %d%%\n", v.Name, progress)
@@ -153,10 +155,28 @@ func (c *Native_) tryInstall(release updates.Release) error {
 			c.lg.Println("download>", err)
 			return err
 		}
-		if err = extractNodeBinary(fullPath, c.runner.binpath); err != nil {
+
+		temp, _ := os.MkdirTemp("", ".mysterium-bin")
+		defer os.RemoveAll(temp)
+		if err = extractNodeBinary(fullPath, temp); err != nil {
 			c.lg.Println("extractNodeBinary", err)
 			return err
 		}
+
+		// copy files to target dir, ignore access error for "myst_supervisor.exe"
+		o := cp.Options{
+			OnError: func(src, dest string, err error) error {
+				if strings.Contains(src, "myst_supervisor") {
+					return nil
+				}
+				return err
+			},
+		}
+		if err = cp.Copy(temp, c.runner.binpath, o); err != nil {
+			c.lg.Println("cp.Copy", err)
+			return err
+		}
+
 		break
 	}
 

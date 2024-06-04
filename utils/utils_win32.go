@@ -361,6 +361,8 @@ func KillProcessByName(exeName string) error {
 }
 
 func IsProcessRunningExt(exeName, fullpath string) (uint32, error) {
+	log.Println("!IsProcessRunningExt", exeName, fullpath)
+
 	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if e != nil {
 		return 0, e
@@ -592,13 +594,14 @@ func IsWSLUpdated() (bool, error) {
 }
 
 func OpenUrlInBrowser(url string) {
-	native.ShellExecuteAndWait(
+	native.ShellExecuteNowait(
 		0,
+		"open",
+		url,
 		"",
-		"rundll32",
-		"url.dll,FileProtocolHandler "+url,
 		"",
-		syscall.SW_NORMAL)
+		syscall.SW_NORMAL,
+	)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

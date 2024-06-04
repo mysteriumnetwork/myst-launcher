@@ -6,6 +6,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/mysteriumnetwork/myst-launcher/model"
@@ -35,12 +36,11 @@ func checkLauncherUpdates(model *model.UIModel) bool {
 
 	hasUpdate := launcherHasUpdate(&release, latest, &currentVer, model)
 	if !hasUpdate {
-		fmt.Println("Mysterium Launcher is up to date")
+		log.Println("Launcher is up to date")
 		return false
 	}
-	fmt.Println("There's an update for Mysterium Launcher")
-	fmt.Println("Current version:", currentVer)
-	fmt.Println("Latest version:", latest)
+	log.Println("Launcher - current version:", currentVer)
+	log.Println("Launcher - latest version:", latest)
 
 	if model != nil {
 		model.ProductVersionLatestUrl = release.Assets[0].URL

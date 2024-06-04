@@ -16,6 +16,7 @@ type Native_ struct {
 
 func NewSvc(m *model.UIModel, ui model.Gui_) *Native_ {
 	lg := log.New(log.Writer(), "[native] ", log.Ldate|log.Ltime)
+	// lg := log.Default()
 
 	m.Caps = 1
 	m.UIBus.Publish("model-change")
@@ -83,7 +84,7 @@ func (c *Native_) StopContainer() {
 func (c *Native_) RestartContainer() {
 	c.model.SetStateContainer(model.RunnableStateInstalling)
 	c.runner.Stop()
-	
+
 	ok := c.runner.IsRunningOrTryStart()
 	if ok {
 		c.model.SetStateContainer(model.RunnableStateRunning)
