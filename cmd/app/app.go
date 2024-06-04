@@ -138,7 +138,6 @@ func main() {
 	}
 
 	ap.SetModel(mod)
-	log.Print("SetOutput >>>>")
 	log.SetOutput(ap)
 
 	// init ui in separate thread b.c of Coinitialize modes conflict when WMI is invoked in the same goroutine

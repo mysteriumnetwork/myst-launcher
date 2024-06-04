@@ -46,12 +46,9 @@ func (c *Controller) Start() {
 	//c.lg.Println("start")
 
 	restartBackendControl := func(afterInstall bool) {
-		log.Println("restartBackendControl>")
 
 		if c.runner != nil {
-			log.Println("restartBackendControl stop>")
 			c.stopBackendControl(afterInstall)
-			log.Println("restartBackendControl stop>>>")
 		}
 		c.runner = NewBackend(c.model.Config.Backend, c.model, c.ui)
 
@@ -100,6 +97,7 @@ func (c *Controller) Shutdown() {
 	c.stopBackendControl(false)
 
 	// TODO: unsubscribe
+	// however it's not criticall, b/c controller is shutdown only once - on app exit
 }
 
 func (c *Controller) TriggerAction(action string) {
@@ -130,8 +128,8 @@ func (c *Controller) startBackendControl() {
 		}
 		// now we have runtime (docker) running
 
-		// 		if !c.waitForShutdownReady {
-		// 		}
+		// if !c.waitForShutdownReady {
+		// }
 		hasUpdates := c.runner.CheckCurrentVersionAndUpgrades(false)
 
 		if !c.runner.IsRunning() {

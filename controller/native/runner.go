@@ -30,8 +30,6 @@ type NodeRunner struct {
 }
 
 func NewRunner(mod *model.UIModel) *NodeRunner {
-	log.Print("NewRunner>")
-
 	binpath := getNodeBinDirPath()
 	utils.MakeDirectoryIfNotExists(binpath)
 
