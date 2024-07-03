@@ -12,6 +12,7 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/model"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/util"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
+	"golang.org/x/sys/windows"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -62,8 +63,13 @@ func Handler() {
 }
 
 func sendCmdSetupFirewall(conn net.Conn) error {
+	sessionID := windows.WTSGetActiveConsoleSessionId()
+	fmt.Println("SessionID>", sessionID)
+
 	cmd := model.KVMap{
 		"cmd": daemon.CommandSetupFW,
+		"sid": sessionID,
+		"exe": `C:\Users\user\src\node\build\myst\myst.exe`,
 	}
 	res := client.SendCommand(conn, cmd)
 	if res["resp"] == "error" {

@@ -24,9 +24,11 @@ import (
 	"io"
 	"strings"
 
-	transport2 "github.com/mysteriumnetwork/myst-launcher/supervisor/daemon/transport"
+	"github.com/mysteriumnetwork/myst-launcher/controller/native"
+	"github.com/mysteriumnetwork/myst-launcher/supervisor/daemon/transport"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/model"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/util"
+	"github.com/mysteriumnetwork/myst-launcher/supervisor/util/winutil"
 
 	"github.com/rs/zerolog/log"
 )
@@ -45,16 +47,16 @@ func New(cfg *model.Config) Daemon {
 }
 
 // Start the daemon. Blocks.
-func (d *Daemon) Start(options transport2.Options) error {
+func (d *Daemon) Start(options transport.Options) error {
 	defer util.PanicHandler("dialog_")
 
 	log.Info().Msgf("Daemon !Start > %v", options)
-	return transport2.Start(d.dialog, options)
+	return transport.Start(d.dialog, options)
 }
 
 // dialog talks to the client via established connection.
 func (d *Daemon) dialog(conn io.ReadWriteCloser) {
-	log.Info().Msg("Daemon !dialog >>>")
+	log.Info().Msg("Daemon !dialog >")
 
 	answer := responder{conn}
 	lines := make(chan interface{})
@@ -68,8 +70,6 @@ func (d *Daemon) dialog(conn io.ReadWriteCloser) {
 		lines <- scan.Err()
 	}()
 
-	log.Info().Msg("Daemon !dialog")
-
 	for l := range lines {
 		switch line := l.(type) {
 		case []byte:
@@ -78,7 +78,7 @@ func (d *Daemon) dialog(conn io.ReadWriteCloser) {
 			m := make(map[string]interface{})
 			_ = json.Unmarshal([]byte(line), &m)
 			op := strings.ToLower(m["cmd"].(string))
-			d.doOperation(op, answer, m)
+			d.doOperation(op, answer, m, line)
 
 		default:
 			// no match;
@@ -86,7 +86,12 @@ func (d *Daemon) dialog(conn io.ReadWriteCloser) {
 	}
 }
 
-func (d *Daemon) doOperation(op string, answer responder, m map[string]interface{}) {
+type dtoCmdSetupFw struct {
+	Sid int    `json:"sid"`
+	Exe string `json:"exe"`
+}
+
+func (d *Daemon) doOperation(op string, answer responder, m map[string]interface{}, b []byte) {
 	log.Info().Msg("Daemon !doOperation")
 
 	switch op {
@@ -97,6 +102,20 @@ func (d *Daemon) doOperation(op string, answer responder, m map[string]interface
 		answer.pong()
 
 	case CommandSetupFW:
+		dto := dtoCmdSetupFw{}
+		err := json.Unmarshal(b, &dto)
+		if err != nil || dto.Sid <= 0 || dto.Exe == "" {
+			answer.err_("wrong sid")
+			return
+		}
+
+		closure := func() {
+			native.CheckAndInstallFirewallRules(dto.Exe)
+		}
+		if !winutil.RunAsUserInThread(dto.Sid, closure) {
+			answer.err_("setup firewall faied")
+			return
+		}
 		answer.ok(nil)
 
 	default:

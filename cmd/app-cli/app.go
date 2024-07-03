@@ -35,7 +35,7 @@ func main() {
 
 	if *installFirewall {
 		log.Println("Setting firewall rules")
-		native.CheckAndInstallFirewallRules()
+		native.CheckAndInstallFirewallRules(native.GetNodeExePath())
 		return
 	}
 

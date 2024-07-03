@@ -45,13 +45,17 @@ func (r *responder) ok(data interface{}) {
 	r._message(string(b))
 }
 
-func (r *responder) err(err error) {
+func (r *responder) err_(err string) {
 	m := Result{
 		Resp: "error",
-		Err:  err.Error(),
+		Err:  err,
 	}
 	b, _ := json.Marshal(m)
 	r._message(string(b))
+}
+
+func (r *responder) err(err error) {
+	r.err_(err.Error())
 }
 
 func (r *responder) pong() {

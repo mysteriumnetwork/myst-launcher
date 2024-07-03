@@ -56,7 +56,7 @@ func getNodeBinDirPath() string {
 	return getNodeDirPath(`.mysterium-bin`)
 }
 
-func getNodeExePath() string {
+func GetNodeExePath() string {
 	fullExePath := path.Join(getNodeBinDirPath(), getNodeProcessName())
 	fullExePath = utils.MakeCanonicalPath(fullExePath)
 	return fullExePath
@@ -123,7 +123,7 @@ func KillPreviousLauncher() {
 
 func (r *NodeRunner) startNode() error {
 	log.Println("!startNode")
-	fullExePath := getNodeExePath()
+	fullExePath := GetNodeExePath()
 	c := r.mod.Config
 
 	portsArg := ""

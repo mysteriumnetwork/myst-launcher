@@ -71,7 +71,7 @@ func installSvc() error {
 	options := install.Options{
 		ExecuatblePath: path,
 	}
-	log.Info().Msgf("Installing dual-mode helper with options: %#v", options)
+	log.Info().Msgf("Installing helper service with options: %#v", options)
 	if err = install.Install(options); err != nil {
 		return errors.Wrap(err, "Failed to install service")
 	}

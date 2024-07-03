@@ -19,8 +19,7 @@ const (
 	fwRuleNameUDP = "myst_launcher_udp"
 )
 
-func CheckAndInstallFirewallRules() {
-	fullExe := getNodeExePath()
+func CheckAndInstallFirewallRules(fullExe string) {
 
 	//rule, err := winapi.FirewallIsEnabled(winapi.NET_FW_PROFILE2_PUBLIC|winapi.NET_FW_PROFILE2_PRIVATE)
 	rule, err := wapi.FirewallRuleGet(fwRuleNameUDP)
