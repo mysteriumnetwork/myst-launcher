@@ -76,9 +76,13 @@ func (d *Daemon) dialog(conn io.ReadWriteCloser) {
 			log.Info().Msgf("Daemon !dialog: %v", string(line))
 
 			m := make(map[string]interface{})
-			_ = json.Unmarshal([]byte(line), &m)
-			op := strings.ToLower(m["cmd"].(string))
-			d.doOperation(op, answer, m, line)
+			err := json.Unmarshal([]byte(line), &m)
+			if err == nil {
+				op := strings.ToLower(m["cmd"].(string))
+				d.doOperation(op, answer, m, line)
+			} else {
+				answer.err_("wrong string")
+			}
 
 		default:
 			// no match;
