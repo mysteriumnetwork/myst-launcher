@@ -11,8 +11,9 @@ require (
 	github.com/bi-zone/go-fileversion v1.0.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/codingsince1985/checksum v1.3.0
-	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v24.0.9+incompatible
+	github.com/containerd/log v0.1.0 // indirect
+	github.com/distribution/reference v0.6.0 // indirect
+	github.com/docker/docker v25.0.6+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -24,30 +25,26 @@ require (
 	github.com/google/deck v1.1.0 // indirect
 	github.com/google/glazier v0.0.0-20230310154036-250f5ed41d5b
 	github.com/iamacarpet/go-win64api v0.0.0-20221230174906-cb41e6e774e8
-	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
-	github.com/otiai10/copy v1.14.0 // indirect
+	github.com/otiai10/copy v1.14.0
 	github.com/pkg/errors v0.9.1
-	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/scjalliance/comshim v0.0.0-20230315213746-5e51f40bd3b9
 	github.com/shirou/gopsutil/v3 v3.23.9
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/tc-hib/winres v0.1.6
 	github.com/tryor/gdiplus v0.0.0-20200830101413-c570de9579b3
 	github.com/tryor/winapi v0.0.0-20200525040926-cd87d62e2f9b
 	github.com/winlabs/gowin32 v0.0.0-20221003142512-0d265587d3c9
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.53.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.28.0 // indirect
 	golang.org/x/image v0.10.0 // indirect
-	golang.org/x/net v0.23.0
-	golang.org/x/sys v0.18.0
-	golang.org/x/time v0.1.0 // indirect
-	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
+	golang.org/x/net v0.26.0
+	golang.org/x/sys v0.21.0
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-	gotest.tools/v3 v3.0.3 // indirect
 )
 
 replace (
