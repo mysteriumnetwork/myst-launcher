@@ -33,6 +33,8 @@ func Start(handle handlerFunc, options Options) error {
 	if options.WinService {
 		return svc.Run("Mysterium VM helper", &managerService{handle: handle})
 	} else {
+
+		// 
 		return listenPipe(handle)
 	}
 }
