@@ -61,10 +61,9 @@ type threadArgs struct {
 func threadProc(p uintptr) uintptr {
 	args := (*threadArgs)(unsafe.Pointer(p))
 
-	log.Info().Msgf("non-Go thread: %v", args)
 	err := windows.SetThreadToken(nil, windows.Token(args.token))
 	if err != nil {
-		log.Info().Msgf("non-Go err: %v", err)
+		log.Info().Msgf("threadProc err: %v", err)
 		return p
 	}
 	args.closure()

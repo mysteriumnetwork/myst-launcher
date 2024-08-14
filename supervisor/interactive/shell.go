@@ -67,9 +67,10 @@ func sendCmdSetupFirewall(conn net.Conn) error {
 	fmt.Println("SessionID>", sessionID)
 
 	cmd := model.KVMap{
-		"cmd": daemon.CommandSetupFW,
-		"sid": sessionID,
-		"exe": `C:\Users\user\src\node\build\myst\myst.exe`,
+		"cmd":     daemon.CommandSetupFW,
+		"sid":     sessionID,
+		"exe":     `C:\Users\user\src\node\build\myst\myst.exe`,
+		"version": "2",
 	}
 	res := client.SendCommand(conn, cmd)
 	if res["resp"] == "error" {

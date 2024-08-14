@@ -32,13 +32,19 @@ func CheckAndInstallFirewallRules(ver, fullExe string) {
 	rule, err := wapi.FirewallRuleGet(fwRuleNameUDP)
 	if err != nil || rule.Name == "" {
 		_, err := wapi.FirewallRuleCreate(fwRuleNameUDP, "", "", fullExe, "*", wapi.NET_FW_IP_PROTOCOL_UDP)
-		log.Println(err)
+		if err != nil {
+			log.Println("err>", err)
+			return
+		}
 	}
 	fwRuleNameTCP := getFWRuleNameTCP(ver)
 	rule, err = wapi.FirewallRuleGet(fwRuleNameTCP)
 	if err != nil || rule.Name == "" {
 		_, err := wapi.FirewallRuleCreate(fwRuleNameTCP, "", "", fullExe, "*", wapi.NET_FW_IP_PROTOCOL_TCP)
-		log.Println(err)
+		if err != nil {
+			log.Println("err>", err)
+			return
+		}
 	}
 }
 

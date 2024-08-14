@@ -10,6 +10,7 @@ import (
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/daemon/flags"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/daemon/transport"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/install"
+	"github.com/mysteriumnetwork/myst-launcher/supervisor/interactive"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/logconfig"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/model"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/util"
@@ -37,6 +38,8 @@ func main() {
 			log.Fatal().Err(err).Msg("Error running service")
 		}
 
+	} else if *flags.FlagCLI {
+		interactive.Handler()
 	} else {
 		cfg := new(model.Config)
 		svc := daemon.New(cfg)
@@ -44,7 +47,6 @@ func main() {
 			log.Fatal().Err(err).Msg("Error running service")
 		}
 
-		// interactive.Handler()
 	}
 }
 

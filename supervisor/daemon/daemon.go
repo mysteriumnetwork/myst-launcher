@@ -112,7 +112,7 @@ func (d *Daemon) doOperation(op string, answer responder, m map[string]interface
 		dto := dtoCmdSetupFw{}
 		err := json.Unmarshal(b, &dto)
 		if err != nil || dto.Sid <= 0 || dto.Exe == "" {
-			answer.err_("wrong sid")
+			answer.err_("wrong json")
 			return
 		}
 
@@ -120,7 +120,7 @@ func (d *Daemon) doOperation(op string, answer responder, m map[string]interface
 			native.CheckAndInstallFirewallRules(dto.Version, dto.Exe)
 		}
 		if !winutil.RunAsUserInThread(dto.Sid, closure) {
-			answer.err_("setup firewall faied")
+			answer.err_("setup firewall failed")
 			return
 		}
 		answer.ok(nil)
