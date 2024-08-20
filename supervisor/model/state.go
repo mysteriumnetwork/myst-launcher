@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	// Enabled      bool   `json:"enabled"`
+	V2Mode bool // launcher v2 mode
 }
 
 func (c *Config) getDefaultValues() {

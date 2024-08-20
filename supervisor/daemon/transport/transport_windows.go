@@ -25,6 +25,7 @@ import (
 	"golang.org/x/sys/windows/svc"
 
 	consts "github.com/mysteriumnetwork/myst-launcher/supervisor/const"
+	"github.com/mysteriumnetwork/myst-launcher/supervisor/daemon/flags"
 )
 
 // Start starts a listener on a unix domain socket.
@@ -34,7 +35,7 @@ func Start(handle handlerFunc, options Options) error {
 		return svc.Run("Mysterium VM helper", &managerService{handle: handle})
 	} else {
 
-		// 
+		//
 		return listenPipe(handle)
 	}
 }
@@ -85,7 +86,11 @@ func listenPipe(handle handlerFunc) error {
 		OutputBufferSize:   65536,
 	}
 
-	l, err := winio.ListenPipe(consts.Sock, &c)
+	sock := consts.Sock
+	if *flags.FlagV2Mode {
+		sock = consts.Sock + "-v2"
+	}
+	l, err := winio.ListenPipe(sock, &c)
 	if err != nil {
 		return fmt.Errorf("error listening: %w", err)
 	}

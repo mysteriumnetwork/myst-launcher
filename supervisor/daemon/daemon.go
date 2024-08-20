@@ -95,7 +95,6 @@ func (d *Daemon) dialog(conn io.ReadWriteCloser) {
 type dtoCmdSetupFw struct {
 	Sid     int    `json:"sid"`
 	Exe     string `json:"exe"`
-	Version string `json:"version"` // version of launcher: "" - legacy, "2" - new
 }
 
 func (d *Daemon) doOperation(op string, answer responder, m map[string]interface{}, b []byte) {
@@ -117,7 +116,11 @@ func (d *Daemon) doOperation(op string, answer responder, m map[string]interface
 		}
 
 		closure := func() {
-			native.CheckAndInstallFirewallRules(dto.Version, dto.Exe)
+			ver := ""
+			if d.cfg.V2Mode {
+				ver = "2"
+			}
+			native.CheckAndInstallFirewallRules(ver, dto.Exe)
 		}
 		if !winutil.RunAsUserInThread(dto.Sid, closure) {
 			answer.err_("setup firewall failed")

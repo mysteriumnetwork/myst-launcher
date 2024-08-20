@@ -36,6 +36,7 @@ const (
 type LogOptions struct {
 	LogLevel string
 	Filepath string
+	LogFilePostfix string
 }
 
 // Configure configures global logger instance.
@@ -53,6 +54,7 @@ func Configure(opts LogOptions) error {
 		if err != nil {
 			return fmt.Errorf("could not get default log path: %w", err)
 		}
+		opts.Filepath += opts.LogFilePostfix
 	}
 
 	logsWriter, err := newLogWriter(opts.Filepath)

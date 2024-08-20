@@ -28,6 +28,7 @@ var (
 	FlagUninstall  = flag.Bool("uninstall", false, "Uninstall myst VM helper")
 	FlagWinService = flag.Bool("winservice", false, "Run via service manager instead of standalone (windows only).")
 	FlagCLI        = flag.Bool("cli", false, "Install or repair VM helper")
+	FlagV2Mode     = flag.Bool("v2", false, "Version v2 (launcher v2) mode")
 )
 
 // Parse parses command flags.

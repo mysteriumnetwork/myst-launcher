@@ -33,6 +33,8 @@ func main() {
 		initLogger()
 
 		cfg := new(model.Config)
+		cfg.V2Mode = *flags.FlagV2Mode
+
 		svc := daemon.New(cfg)
 		if err := svc.Start(transport.Options{WinService: *flags.FlagWinService}); err != nil {
 			log.Fatal().Err(err).Msg("Error running service")
@@ -42,6 +44,8 @@ func main() {
 		interactive.Handler()
 	} else {
 		cfg := new(model.Config)
+		cfg.V2Mode = *flags.FlagV2Mode
+
 		svc := daemon.New(cfg)
 		if err := svc.Start(transport.Options{WinService: *flags.FlagWinService}); err != nil {
 			log.Fatal().Err(err).Msg("Error running service")
@@ -51,9 +55,15 @@ func main() {
 }
 
 func initLogger() {
+	logFilePostfix := ""
+	if *flags.FlagV2Mode {
+		logFilePostfix = "_v2"
+	}
+
 	logOpts := logconfig.LogOptions{
-		LogLevel: "info",
-		Filepath: "",
+		LogLevel:       "info",
+		Filepath:       "",
+		LogFilePostfix: logFilePostfix,
 	}
 	if err := logconfig.Configure(logOpts); err != nil {
 		log.Fatal().Err(err).Msg("Failed to configure logging")

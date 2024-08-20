@@ -9,6 +9,7 @@ import (
 	consts "github.com/mysteriumnetwork/myst-launcher/supervisor/const"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/daemon"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/daemon/client"
+	"github.com/mysteriumnetwork/myst-launcher/supervisor/daemon/flags"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/model"
 	"github.com/mysteriumnetwork/myst-launcher/supervisor/util"
 	"github.com/mysteriumnetwork/myst-launcher/utils"
@@ -23,7 +24,11 @@ func connect() (net.Conn, error) {
 	err := utils.Retry(3, time.Second, func() error {
 		var err error
 
-		conn, err = winio.DialPipe(consts.Sock, nil)
+		sock := consts.Sock
+		if *flags.FlagV2Mode {
+			sock += "-v2"
+		}
+		conn, err = winio.DialPipe(sock, nil)
 		return err
 	})
 	if err != nil {
@@ -70,7 +75,6 @@ func sendCmdSetupFirewall(conn net.Conn) error {
 		"cmd":     daemon.CommandSetupFW,
 		"sid":     sessionID,
 		"exe":     `C:\Users\user\src\node\build\myst\myst.exe`,
-		"version": "2",
 	}
 	res := client.SendCommand(conn, cmd)
 	if res["resp"] == "error" {
