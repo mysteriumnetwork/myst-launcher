@@ -37,7 +37,7 @@ require (
 
 require (
 	github.com/arthurkiller/rollingwriter v1.1.3-0.20220211070658-c19a8e8b35be // indirect
-	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
+	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
