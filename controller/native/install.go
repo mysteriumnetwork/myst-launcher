@@ -198,7 +198,7 @@ func tryInstallFirewallRules(ui model.Gui_) {
 			}
 			if ret == model.IDYES {
 				if utils.IsAdmin() {
-					CheckAndInstallFirewallRules()
+					CheckAndInstallFirewallRules("", GetNodeExePath())
 				} else {
 					utils.RunasWithArgsAndWait("-" + _const.FlagInstallFirewall)
 				}

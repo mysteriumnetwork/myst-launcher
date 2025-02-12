@@ -17,4 +17,4 @@ func checkFirewallRules() bool {
 	return false
 }
 
-func CheckAndInstallFirewallRules() {}
+func CheckAndInstallFirewallRules(ver, fullExe string) {}
